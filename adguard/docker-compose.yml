@@ -27,6 +27,7 @@ services:
     restart: "no"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./site:/srv:ro
       - caddy_data:/data
 
 volumes:

@@ -94,6 +94,11 @@ bash ~/elcaciquedeck/adguard/setup-adguard.sh
 Then finish in the browser at `http://localhost:3000`: admin page on port **3000** (not 80), DNS on port **53**,
 create a login, and add one DNS rewrite: **`*.home` → the laptop number**.
 
+**For the family (no settings to change):** the Cacique front page also opens at the plain laptop
+number, `http://<laptop number>` (no port). On each phone: open it once → Share → **Add to Home Screen**.
+It becomes a **Cacique** icon, and its buttons lead to every server. This needs the laptop's number to never
+change (a fixed IP / DHCP reservation on the router).
+
 **Using the easy names on another device:** set that device's DNS to the laptop number
 (phone/PC Wi-Fi settings → DNS → manual). Devices that don't change keep working normally through the router.
 

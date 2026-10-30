@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-title" content="Cacique">
+<meta name="application-name" content="Cacique">
+<meta name="theme-color" content="#0b0b0d">
+<title>Cacique</title>
+<style>
+:root{--glow:#ff8a1c;--glow2:#ffb35c;--txt:#f4efe6;--muted:#8a8478;--card:#141417;--line:#2c2c30}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#0b0b0d;color:var(--txt);
+ font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace;display:flex;flex-direction:column;align-items:center;padding:32px 16px}
+h1{font-style:italic;letter-spacing:.15em;color:var(--glow2);text-shadow:0 0 12px var(--glow);margin:8px 0 4px;font-size:clamp(24px,7vw,42px);text-align:center}
+.sub{color:var(--muted);letter-spacing:.3em;font-size:11px;margin:0 0 28px;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;width:100%;max-width:780px}
+a.card{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--glow2);text-decoration:none}
+a.card:hover,a.card:focus{border-color:var(--glow);box-shadow:0 0 14px #ff8a1c55;outline:none}
+.icon{font-size:28px;line-height:1}
+.name{font-weight:700;letter-spacing:.08em}
+.desc{display:block;color:var(--muted);font-size:12px;margin-top:4px;font-weight:400;letter-spacing:0}
+.dot{margin-left:auto;width:10px;height:10px;border-radius:50%;background:#333;flex:none}
+.dot.up{background:#46ff6a;box-shadow:0 0 8px #46ff6a}
+.foot{margin-top:28px;color:var(--muted);font-size:11px;text-align:center;line-height:1.8}
+</style>
+</head>
+<body>
+<h1>CACIQUE</h1>
+<p class="sub">ELCACIQUEDECK · HOME LAB · PUERTO RICO</p>
+<div class="grid" id="grid"></div>
+<p class="foot" id="foot"></p>
+<script>
+// Works two ways:
+//  - opened as http://cacique.home      -> buttons use the .home names
+//  - opened as http://<laptop number>   -> buttons use <laptop number>:<port>
+var SERVERS = [
+  ["📚", "CaciqueLibrary", "Enciclopedia sin internet · Offline encyclopedia",          "caciquelibrary", 8080],
+  ["🎬", "CaciqueFlix",    "Películas, series y anime · Movies & shows",           "caciqueflix",    8096],
+  ["📄", "CaciqueDocs",    "Documentos importantes · Documents",              "caciquedocs",    8000],
+  ["🏎️", "CaciqueDash",    "Indicadores del servidor · Server gauges",            "caciquedash",    8888],
+  ["🛡️", "CaciqueGuard",   "Anuncios y nombres · Ad blocking & names",       "caciqueguard",   3000]
+];
+var host = location.hostname;
+var named = /\.home$/.test(host);
+var grid = document.getElementById("grid");
+SERVERS.forEach(function (s) {
+  var href = named ? "http://" + s[3] + ".home" : "http://" + host + ":" + s[4];
+  var a = document.createElement("a");
+  a.className = "card"; a.href = href;
+  a.innerHTML = '<span class="icon">' + s[0] + '</span><span><span class="name">' + s[1].toUpperCase() +
+    '</span><span class="desc">' + s[2] + '</span></span><span class="dot" title="checking"></span>';
+  grid.appendChild(a);
+  // light the dot green if that server answers
+  var dot = a.querySelector(".dot");
+  fetch(href, {mode: "no-cors", cache: "no-store"}).then(function () { dot.className = "dot up"; dot.title = "running"; })
+    .catch(function () { dot.title = "not running"; });
+});
+document.getElementById("foot").innerHTML = named
+  ? "Usando nombres Cacique · Using Cacique names"
+  : "Dirección: " + host + "<br>Añadir a pantalla de inicio · Add to Home Screen";
+</script>
+</body>
+</html>

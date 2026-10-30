@@ -135,6 +135,8 @@ echo "=================================================================="
 echo " Done: $OK OK, $WARN warnings.   Report: $REPORT"
 echo "=================================================================="
 echo
+echo " FAMILY FRONT PAGE (works on every device, no settings):  http://${LAPTOP_IP:-<laptop number>}"
+echo
 echo " NEXT - finish in the browser (one time only):"
 echo "  1. Open  http://localhost:3000"
 echo "  2. Click 'Get Started'"
