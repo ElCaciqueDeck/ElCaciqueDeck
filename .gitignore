@@ -1,1 +1,3 @@
-
+# Private settings - never upload these
+.env
+*.env
