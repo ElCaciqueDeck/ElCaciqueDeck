@@ -16,9 +16,12 @@ self-reliant home server that works **without the internet**:
 |---|---|---|
 | 📚 **Kiwix** | Offline encyclopedia: Wikipedia, wikiHow, iFixit, dictionaries, books (English and Spanish) | `http://<laptop number>:8080` |
 | 🎬 **Jellyfin** | Home movie and series server for media the family owns | `http://<laptop number>:8096` |
-| 🏎️ **Dashboard** | JDM-style gauges: CPU, RAM, temperature, battery, fan, network, disks | `http://<laptop number>:8888` |
+| 🏎️ **Dashboard** | JDM-style gauges: CPU, RAM, temperature, battery, fan, network, disks. Also logs a reading every minute | `http://<laptop number>:8888` |
+| 📄 **Paperless-ngx** | Private document vault: scan, read (OCR in Spanish and English), tag and search documents | `http://<laptop number>:8000` |
 
 Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoRa mesh radio, in progress).
+
+**Single-laptop roadmap:** ✅ Docker → ✅ Paperless-ngx → AdGuard Home → Immich → Home Assistant → Homepage
 
 **Road ahead:** RTL-SDR radio listening, Meshtastic node, and a 3-node mini-PC Proxmox cluster in a 10" rack.
 
@@ -29,6 +32,7 @@ Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoR
 ```
 Library (external drive)
 ├── Kiwix/                     ← all .zim files
+├── Vault/paperless/           ← document vault (data, media, export, consume)
 └── MEDIA/Jellyfin/
     ├── Movies/   Coco (2017)/Coco (2017).mkv
     ├── Series/   Show Name (2005)/Season 01/Show Name S01E01.mkv
@@ -37,7 +41,7 @@ Library (external drive)
 
 ---
 
-## ▶️ Starting the 3 servers
+## ▶️ Starting the 4 servers
 
 Each server runs in its **own Terminal window**. Open a new one with **Ctrl+Alt+T**.
 Stop any of them with **Ctrl+C** in its window.
@@ -47,20 +51,43 @@ Stop any of them with **Ctrl+C** in its window.
 kiwix-serve --port 8080 /media/$USER/Library/Kiwix/*.zim
 ```
 
-**2. Jellyfin (movies).** The command depends on how it was installed:
+**2. Jellyfin (movies).** This deck uses the **Flatpak** version:
 ```
-sudo snap start jellyfin        # snap version
-sudo snap stop jellyfin
+flatpak run org.jellyfin.JellyfinServer
 ```
-```
-sudo systemctl start jellyfin   # official installer version
-sudo systemctl stop jellyfin
-```
+Stop it with **Ctrl+C**, or from another window: `flatpak kill org.jellyfin.JellyfinServer`
 
-**3. Dashboard**
+**3. Dashboard** (also saves a reading every minute to `~/deck-logs/`)
 ```
 cd ~/elcaciquedeck
 python3 caciquedash.py
+```
+
+**4. Paperless-ngx (document vault).** Runs in the background with Docker:
+```
+cd ~/elcaciquedeck/paperless
+docker compose up -d      # start
+docker compose down       # stop
+```
+First-time setup: create the Vault folders on the Library drive, then create the private key
+(it stays on the laptop and is never uploaded):
+```
+echo "PAPERLESS_SECRET_KEY=$(openssl rand -hex 32)" > .env
+docker compose up -d
+docker compose exec webserver createsuperuser
+```
+
+---
+
+## 📊 Logs
+
+Every minute the dashboard is running, it adds one line to `~/deck-logs/deck-log-YYYY-MM-DD.csv`:
+time, CPU, temperature, RAM, battery, AC power, fan, network, internet, disks, and which servers are up.
+One file per day; it opens in any spreadsheet app.
+```
+ls ~/deck-logs                       # list the log files
+wc -l ~/deck-logs/*.csv              # how many readings (lowercase L)
+tail -n 3 ~/deck-logs/*.csv          # the latest readings
 ```
 
 ---
@@ -143,6 +170,11 @@ sudo hostnamectl set-hostname elcaciquedeck-00
 | `systemctl` doesn't work | Typed with the number 1 | It's a lowercase **L**: system-c-t-**l** |
 | `setfacl … Invalid argument` | Jellyfin came from the app store | Skip it. Store versions handle permissions differently |
 | Force-close Firefox | Firefox frozen | `pkill -9 firefox` |
+| The prompt shows `>` instead of your name | Bash is waiting for the rest of the command (for example a missing `done`) | Finish the command, or **Ctrl+C** to cancel |
+| `wc: invalid option -- 1` | Number one instead of a lowercase L | `wc -l` |
+| `snap "jellyfin" not found` | This deck's Jellyfin is the Flatpak version | `flatpak run org.jellyfin.JellyfinServer` |
+| Docker: `permission denied … docker API` | User not in the docker group yet | `sudo usermod -aG docker $USER`, then reboot |
+| Paperless says wrong user or password | Typo when created, or the username has different capitals | `docker compose exec webserver python3 manage.py changepassword USERNAME` |
 
 ---
 
