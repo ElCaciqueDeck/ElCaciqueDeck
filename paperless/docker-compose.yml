@@ -1,1 +1,38 @@
+# ElCaciqueDeck - Paperless-ngx (document vault)
+# Start:  cd ~/elcaciquedeck/paperless && docker compose up -d
+# Stop:   cd ~/elcaciquedeck/paperless && docker compose down
+# Open:   http://<laptop number>:8000
+#
+# All documents are stored on the Library drive in Vault/paperless.
+# Nothing here starts by itself at boot (restart: "no").
 
+services:
+  broker:
+    image: docker.io/library/redis:7
+    restart: "no"
+    volumes:
+      - redisdata:/data
+
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: "no"
+    depends_on:
+      - broker
+    ports:
+      - "8000:8000"
+    volumes:
+      - /media/${USER}/Library/Vault/paperless/data:/usr/src/paperless/data
+      - /media/${USER}/Library/Vault/paperless/media:/usr/src/paperless/media
+      - /media/${USER}/Library/Vault/paperless/export:/usr/src/paperless/export
+      - /media/${USER}/Library/Vault/paperless/consume:/usr/src/paperless/consume
+    env_file:
+      - .env
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_TIME_ZONE: America/Puerto_Rico
+      PAPERLESS_OCR_LANGUAGE: spa+eng
+      USERMAP_UID: 1000
+      USERMAP_GID: 1000
+
+volumes:
+  redisdata:
