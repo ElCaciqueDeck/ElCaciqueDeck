@@ -12,16 +12,20 @@
 ElCaciqueDeck is an old Intel ThinkPad running **Ubuntu Linux**. It's being turned into a small,
 self-reliant home server that works **without the internet**:
 
-| Server | What it does | Address |
-|---|---|---|
-| 📚 **Kiwix** | Offline encyclopedia: Wikipedia, wikiHow, iFixit, dictionaries, books (English and Spanish) | `http://<laptop number>:8080` |
-| 🎬 **Jellyfin** | Home movie and series server for media the family owns | `http://<laptop number>:8096` |
-| 🏎️ **Dashboard** | JDM-style gauges: CPU, RAM, temperature, battery, fan, network, disks. Also logs a reading every minute | `http://<laptop number>:8888` |
-| 📄 **Paperless-ngx** | Private document vault: scan, read (OCR in Spanish and English), tag and search documents | `http://<laptop number>:8000` |
+| Cacique name | Server | What it does | Easy address | Number address |
+|---|---|---|---|---|
+| 🧭 **Cacique** | Caddy | Front page with a button for every server | `http://cacique.home` | — |
+| 📚 **CaciqueLibrary** | Kiwix | Offline encyclopedia: Wikipedia, wikiHow, iFixit, dictionaries, books (English and Spanish) | `http://caciquelibrary.home` | `:8080` |
+| 🎬 **CaciqueFlix** | Jellyfin | Movies, series and anime the family owns | `http://caciqueflix.home` | `:8096` |
+| 📄 **CaciqueDocs** | Paperless-ngx | Private document vault: scan, OCR (Spanish and English), tag and search | `http://caciquedocs.home` | `:8000` |
+| 🏎️ **CaciqueDash** | caciquedash.py | JDM-style gauges, plus a log reading every minute | `http://caciquedash.home` | `:8888` |
+| 🛡️ **CaciqueGuard** | AdGuard Home | Gives every server its easy name, blocks ads for devices that use it | `http://caciqueguard.home` | `:3000` |
+
+"Number address" = `http://<laptop number>:<port>`. It always works, even when the easy names don't.
 
 Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoRa mesh radio, in progress).
 
-**Single-laptop roadmap:** ✅ Docker → ✅ Paperless-ngx → AdGuard Home → Immich → Home Assistant → Homepage
+**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs (Paperless-ngx) → 🔧 CaciqueGuard (AdGuard Home) → CaciquePhotos (Immich) → CaciqueHome (Home Assistant) → Cacique (Homepage)
 
 **Road ahead:** RTL-SDR radio listening, Meshtastic node, and a 3-node mini-PC Proxmox cluster in a 10" rack.
 
@@ -41,7 +45,7 @@ Library (external drive)
 
 ---
 
-## ▶️ Starting the 4 servers
+## ▶️ Starting the servers
 
 Each server runs in its **own Terminal window**. Open a new one with **Ctrl+Alt+T**.
 Stop any of them with **Ctrl+C** in its window.
@@ -76,6 +80,22 @@ echo "PAPERLESS_SECRET_KEY=$(openssl rand -hex 32)" > .env
 docker compose up -d
 docker compose exec webserver createsuperuser
 ```
+
+**5. CaciqueGuard + easy names (AdGuard Home + Caddy).** Runs in the background with Docker:
+```
+cd ~/elcaciquedeck/adguard
+docker compose up -d      # start
+docker compose down       # stop
+```
+First time only, run the setup script. It does everything and saves a report in `~/elcaciquedeck/reports/`:
+```
+bash ~/elcaciquedeck/adguard/setup-adguard.sh
+```
+Then finish in the browser at `http://localhost:3000`: admin page on port **3000** (not 80), DNS on port **53**,
+create a login, and add one DNS rewrite: **`*.home` → the laptop number**.
+
+**Using the easy names on another device:** set that device's DNS to the laptop number
+(phone/PC Wi-Fi settings → DNS → manual). Devices that don't change keep working normally through the router.
 
 ---
 
@@ -174,6 +194,9 @@ sudo hostnamectl set-hostname elcaciquedeck-00
 | `wc: invalid option -- 1` | Number one instead of a lowercase L | `wc -l` |
 | `snap "jellyfin" not found` | This deck's Jellyfin is the Flatpak version | `flatpak run org.jellyfin.JellyfinServer` |
 | Docker: `permission denied … docker API` | User not in the docker group yet | `sudo usermod -aG docker $USER`, then reboot |
+| `caciqueflix.home` doesn't open on a phone or TV | That device isn't using CaciqueGuard for DNS, or the server isn't running | Use the number address, or set the device's DNS to the laptop number |
+| A `.home` name opens a search page instead | The browser treated it as a search | Type `http://` in front the first time, then bookmark it |
+| AdGuard setup: "port 53 in use" | Ubuntu's DNS helper holds it | Run `setup-adguard.sh` again, it frees the port |
 | Paperless says wrong user or password | Typo when created, or the username has different capitals | `docker compose exec webserver python3 manage.py changepassword USERNAME` |
 
 ---

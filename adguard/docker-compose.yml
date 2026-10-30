@@ -1,0 +1,33 @@
+# ElCaciqueDeck - CaciqueGuard (AdGuard Home) + Caddy (easy names)
+#
+# AdGuard Home answers "where is caciqueflix.home?" (DNS, port 53)
+# Caddy sends each name to the right server, so no port numbers are needed (port 80)
+#
+# First time:  bash ~/elcaciquedeck/adguard/setup-adguard.sh
+# Start:       cd ~/elcaciquedeck/adguard && docker compose up -d
+# Stop:        cd ~/elcaciquedeck/adguard && docker compose down
+# Admin page:  http://<laptop number>:3000   (later: http://caciqueguard.home)
+#
+# Nothing here starts by itself at boot (restart: "no").
+
+services:
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: caciqueguard
+    network_mode: host
+    restart: "no"
+    volumes:
+      - ./work:/opt/adguardhome/work
+      - ./conf:/opt/adguardhome/conf
+
+  caddy:
+    image: caddy:2
+    container_name: caciquenames
+    network_mode: host
+    restart: "no"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+
+volumes:
+  caddy_data:

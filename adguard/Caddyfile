@@ -1,0 +1,57 @@
+# ElCaciqueDeck - name map
+# Each name on the left is sent to the server on the right.
+# All servers run on this same laptop, so "localhost" is correct here.
+
+http://caciquelibrary.home {
+	reverse_proxy localhost:8080
+}
+
+http://caciqueflix.home {
+	reverse_proxy localhost:8096
+}
+
+http://caciquedocs.home {
+	reverse_proxy localhost:8000
+}
+
+http://caciquedash.home {
+	reverse_proxy localhost:8888
+}
+
+http://caciqueguard.home {
+	reverse_proxy localhost:3000
+}
+
+# Coming soon (uncomment when installed):
+# http://caciquephotos.home {
+# 	reverse_proxy localhost:2283
+# }
+# http://caciquehome.home {
+# 	reverse_proxy localhost:8123
+# }
+
+# Front page until Homepage is installed
+http://cacique.home {
+	header Content-Type "text/html; charset=utf-8"
+	respond <<HTML
+	<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>ElCaciqueDeck</title>
+	<style>
+	body{margin:0;min-height:100vh;background:#0b0b0d;color:#f4efe6;font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+	h1{font-style:italic;letter-spacing:.15em;color:#ffb35c;text-shadow:0 0 12px #ff8a1c;margin:0 0 4px;font-size:clamp(22px,6vw,40px);text-align:center}
+	p{color:#8a8478;letter-spacing:.3em;font-size:11px;margin:0 0 28px;text-align:center}
+	.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;width:100%;max-width:760px}
+	a{display:block;padding:18px;border:1px solid #333;border-radius:10px;background:#141417;color:#ffb35c;text-decoration:none;font-weight:700;letter-spacing:.1em}
+	a span{display:block;color:#8a8478;font-weight:400;font-size:12px;margin-top:6px;letter-spacing:0}
+	a:hover{border-color:#ff8a1c;box-shadow:0 0 14px #ff8a1c55}
+	</style></head><body>
+	<h1>ELCACIQUEDECK</h1><p>HOME LAB · PUERTO RICO</p>
+	<div class="grid">
+	<a href="http://caciquelibrary.home">CACIQUELIBRARY<span>Offline encyclopedia</span></a>
+	<a href="http://caciqueflix.home">CACIQUEFLIX<span>Movies, series, anime</span></a>
+	<a href="http://caciquedocs.home">CACIQUEDOCS<span>Document vault</span></a>
+	<a href="http://caciquedash.home">CACIQUEDASH<span>Gauges and logs</span></a>
+	<a href="http://caciqueguard.home">CACIQUEGUARD<span>Ad blocking and names</span></a>
+	</div></body></html>
+	HTML 200
+}

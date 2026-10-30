@@ -31,6 +31,7 @@ services:
       PAPERLESS_REDIS: redis://broker:6379
       PAPERLESS_TIME_ZONE: America/Puerto_Rico
       PAPERLESS_OCR_LANGUAGE: spa+eng
+      PAPERLESS_CSRF_TRUSTED_ORIGINS: http://caciquedocs.home
       USERMAP_UID: 1000
       USERMAP_GID: 1000
 

@@ -14,7 +14,13 @@ import csv, json, os, socket, sys, threading, time, glob
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8888
-SERVICES = {"KIWIX": 8080, "JELLYFIN": 8096, "PAPERLESS": 8000}
+SERVICES = {
+    "LIBRARY": 8080,   # CaciqueLibrary (Kiwix)
+    "FLIX": 8096,      # CaciqueFlix (Jellyfin)
+    "DOCS": 8000,      # CaciqueDocs (Paperless)
+    "GUARD": 3000,     # CaciqueGuard (AdGuard Home)
+    "NAMES": 80,       # Cacique names (Caddy)
+}
 LOG_DIR = os.path.expanduser("~/deck-logs")
 LOG_EVERY = 60  # seconds between log lines
 
@@ -178,6 +184,12 @@ def write_log(s):
     try:
         os.makedirs(LOG_DIR, exist_ok=True)
         path = os.path.join(LOG_DIR, "deck-log-%s.csv" % time.strftime("%Y-%m-%d"))
+        if os.path.exists(path):
+            with open(path) as f:
+                header = f.readline().strip()
+            if header != ",".join(LOG_FIELDS):
+                # columns changed after an update: start a fresh file for the rest of the day
+                path = path.replace(".csv", "-v2.csv")
         new = not os.path.exists(path)
         d = s.get("disks") or []
         b = s.get("bat") or {}
