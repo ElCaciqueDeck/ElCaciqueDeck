@@ -5,14 +5,18 @@ ElCaciqueDeck Dashboard - JDM-style system gauges for the home lab.
 Start:  python3 caciquedash.py          (opens on port 8888)
 Stop:   Ctrl+C
 View:   http://localhost:8888  or  http://<laptop number>:8888
+Log:    one reading per minute is saved to ~/deck-logs/deck-log-YYYY-MM-DD.csv
+        (one file per day, opens in any spreadsheet app)
 
 No internet needed. Uses only what Ubuntu already has (Python 3).
 """
-import json, os, socket, sys, threading, time, glob
+import csv, json, os, socket, sys, threading, time, glob
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8888
-SERVICES = {"KIWIX": 8080, "JELLYFIN": 8096}
+SERVICES = {"KIWIX": 8080, "JELLYFIN": 8096, "PAPERLESS": 8000}
+LOG_DIR = os.path.expanduser("~/deck-logs")
+LOG_EVERY = 60  # seconds between log lines
 
 state = {}
 lock = threading.Lock()
@@ -163,11 +167,40 @@ def disks():
     return out
 
 
+LOG_FIELDS = ["time", "cpu_pct", "temp_c", "ram_pct", "ram_used_gb", "battery_pct",
+              "battery_status", "ac_power", "watts", "fan_rpm", "net_down_mbps",
+              "net_up_mbps", "lan", "internet", "disk1_pct", "disk2_pct"] + \
+             [k.lower() + "_up" for k in SERVICES]
+
+
+def write_log(s):
+    """Append one reading to today's CSV file. Never crashes the dashboard."""
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        path = os.path.join(LOG_DIR, "deck-log-%s.csv" % time.strftime("%Y-%m-%d"))
+        new = not os.path.exists(path)
+        d = s.get("disks") or []
+        b = s.get("bat") or {}
+        row = [time.strftime("%Y-%m-%d %H:%M:%S"), s["cpu"], s["temp"], s["ram_pct"],
+               s["ram_used_gb"], b.get("pct"), b.get("status"), b.get("ac"), b.get("watts"),
+               s["fan"], s["rx"], s["tx"], s["link"], s["internet"],
+               d[0]["pct"] if len(d) > 0 else None, d[1]["pct"] if len(d) > 1 else None]
+        row += [s["services"].get(k) for k in SERVICES]
+        with open(path, "a", newline="") as f:
+            w = csv.writer(f)
+            if new:
+                w.writerow(LOG_FIELDS)
+            w.writerow(["" if v is None else v for v in row])
+    except Exception as e:
+        print("Log write failed:", e)
+
+
 def sampler():
     idle0, total0 = cpu_times()
     rx0, tx0 = net_bytes()
     t0 = time.time()
     net_ok, net_checked = None, 0
+    last_log = 0
     while True:
         time.sleep(1)
         idle1, total1 = cpu_times()
@@ -215,6 +248,9 @@ def sampler():
         }
         with lock:
             state.clear(); state.update(snap)
+        if t1 - last_log >= LOG_EVERY:
+            last_log = t1
+            write_log(snap)
 
 
 PAGE = r"""<!doctype html>
@@ -452,6 +488,7 @@ if __name__ == "__main__":
     print("ElCaciqueDeck dashboard running.")
     print("  On this laptop:   http://localhost:%d" % PORT)
     print("  Other devices:    http://<laptop number>:%d" % PORT)
+    print("  Logging every minute to: %s" % LOG_DIR)
     print("Press Ctrl+C to stop.")
     try:
         srv.serve_forever()
