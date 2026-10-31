@@ -1,5 +1,31 @@
-/* Cacique - a little JDM glow on the title */
-#information-widgets .text-xl, h1 {
+/* Cacique - dark carbon with amber glow, matching CaciqueDash */
+body, #page_wrapper {
+  background-color: #0b0b0d !important;
+}
+/* section titles: amber glow */
+#services h2, .services-group h2, [class*="service-group"] h2 {
+  color: #ffb35c !important;
+  text-shadow: 0 0 10px rgba(255, 138, 28, 0.55);
+  letter-spacing: 0.06em;
+}
+/* service names in amber */
+.service-name, .service-card .text-sm {
+  color: #ffb35c !important;
+}
+/* cards: glow on hover */
+.service-card, li.service > div {
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.service-card:hover, li.service > div:hover {
+  box-shadow: 0 0 14px rgba(255, 138, 28, 0.35);
+  border-color: rgba(255, 138, 28, 0.7) !important;
+}
+/* greeting */
+#information-widgets .text-xl {
+  color: #ffb35c;
   text-shadow: 0 0 10px rgba(255, 138, 28, 0.6);
-  letter-spacing: 0.04em;
+}
+/* the Kiwix icon is black: make it visible on the dark background */
+img[src*="kiwix"] {
+  filter: invert(1) brightness(1.2);
 }
