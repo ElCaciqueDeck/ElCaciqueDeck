@@ -1,0 +1,23 @@
+# Cacique - look and feel
+title: Cacique
+description: ElCaciqueDeck · Home lab · Puerto Rico
+theme: dark
+color: amber
+language: es
+headerStyle: clean
+cardStyle: hairline
+statusStyle: dot
+hideVersion: true
+disableUpdateCheck: true
+target: _self
+
+layout:
+  Familia · Family:
+    style: row
+    columns: 4
+  Hogar · Home:
+    style: row
+    columns: 4
+  Servidor · Server:
+    style: row
+    columns: 4

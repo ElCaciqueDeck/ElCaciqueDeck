@@ -22,18 +22,23 @@ http://caciqueguard.home {
 	reverse_proxy localhost:3000
 }
 
-# Coming soon (uncomment when installed):
-# http://caciquephotos.home {
-# 	reverse_proxy localhost:2283
-# }
-# http://caciquehome.home {
-# 	reverse_proxy localhost:8123
-# }
+http://caciquephotos.home {
+	reverse_proxy localhost:2283
+}
 
-# Front page: answers at http://cacique.home AND at the plain laptop number
-# (http://192.168.x.x with no port), so every device in the house can open it
-# without changing any settings.
+http://caciquehome.home {
+	reverse_proxy localhost:8123
+}
+
+# Front page: the Cacique Homepage, at http://cacique.home AND at the plain
+# laptop number (http://192.168.x.x, no port), so every device in the house
+# can open it without changing any settings.
+# If the Homepage isn't running, the simple backup page in ./site is shown instead.
 http://cacique.home, :80 {
-	root * /srv
-	file_server
+	reverse_proxy 127.0.0.1:3001
+	handle_errors {
+		root * /srv
+		rewrite * /index.html
+		file_server
+	}
 }

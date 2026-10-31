@@ -1,0 +1,49 @@
+# Cacique - the buttons on the front page
+# {{HOMEPAGE_VAR_IP}} is replaced with the laptop number (from .env).
+# Icons are saved on the laptop by the setup script (works offline).
+# siteMonitor checks the server on this same laptop and shows a green dot when it's up.
+
+- Familia · Family:
+    - CaciqueFlix:
+        icon: /icons/jellyfin.png
+        href: http://{{HOMEPAGE_VAR_IP}}:8096
+        description: Películas, series y anime · Movies & shows
+        siteMonitor: http://127.0.0.1:8096
+
+    - CaciquePhotos:
+        icon: /icons/immich.png
+        href: http://{{HOMEPAGE_VAR_IP}}:2283
+        description: Fotos y videos de la familia · Family photos
+        siteMonitor: http://127.0.0.1:2283
+
+    - CaciqueLibrary:
+        icon: /icons/kiwix.png
+        href: http://{{HOMEPAGE_VAR_IP}}:8080
+        description: Enciclopedia sin internet · Offline encyclopedia
+        siteMonitor: http://127.0.0.1:8080
+
+    - CaciqueDocs:
+        icon: /icons/paperless-ngx.png
+        href: http://{{HOMEPAGE_VAR_IP}}:8000
+        description: Documentos importantes · Documents
+        siteMonitor: http://127.0.0.1:8000
+
+- Hogar · Home:
+    - CaciqueHome:
+        icon: /icons/home-assistant.png
+        href: http://{{HOMEPAGE_VAR_IP}}:8123
+        description: Luces y casa inteligente · Smart home & lights
+        siteMonitor: http://127.0.0.1:8123
+
+- Servidor · Server:
+    - CaciqueDash:
+        icon: /icons/speedometer.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8888
+        description: Indicadores del servidor · Server gauges
+        siteMonitor: http://127.0.0.1:8888
+
+    - CaciqueGuard:
+        icon: /icons/adguard-home.png
+        href: http://{{HOMEPAGE_VAR_IP}}:3000
+        description: Anuncios y nombres · Ad blocking & names
+        siteMonitor: http://127.0.0.1:3000

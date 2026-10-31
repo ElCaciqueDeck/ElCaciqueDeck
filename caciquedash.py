@@ -20,6 +20,9 @@ SERVICES = {
     "DOCS": 8000,      # CaciqueDocs (Paperless)
     "GUARD": 3000,     # CaciqueGuard (AdGuard Home)
     "NAMES": 80,       # Cacique names (Caddy)
+    "PHOTOS": 2283,    # CaciquePhotos (Immich)
+    "HOME": 8123,      # CaciqueHome (Home Assistant)
+    "FRONT": 3001,     # Cacique front page (Homepage)
 }
 LOG_DIR = os.path.expanduser("~/deck-logs")
 LOG_EVERY = 60  # seconds between log lines
@@ -184,12 +187,15 @@ def write_log(s):
     try:
         os.makedirs(LOG_DIR, exist_ok=True)
         path = os.path.join(LOG_DIR, "deck-log-%s.csv" % time.strftime("%Y-%m-%d"))
-        if os.path.exists(path):
+        base, n = path, 1
+        while os.path.exists(path):
             with open(path) as f:
                 header = f.readline().strip()
-            if header != ",".join(LOG_FIELDS):
-                # columns changed after an update: start a fresh file for the rest of the day
-                path = path.replace(".csv", "-v2.csv")
+            if header == ",".join(LOG_FIELDS):
+                break
+            # columns changed after an update: use a fresh file for the rest of the day
+            n += 1
+            path = base.replace(".csv", "-v%d.csv" % n)
         new = not os.path.exists(path)
         d = s.get("disks") or []
         b = s.get("bat") or {}

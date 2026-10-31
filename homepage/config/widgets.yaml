@@ -1,0 +1,24 @@
+# Cacique - the top bar
+- greeting:
+    text_size: xl
+    text: ¡Bienvenidos a casa! · Welcome home
+
+- datetime:
+    locale: es
+    text_size: md
+    format:
+      dateStyle: long
+      timeStyle: short
+      hour12: true
+
+- resources:
+    label: ElCaciqueDeck
+    cpu: true
+    memory: true
+    cputemp: true
+    units: metric
+    uptime: true
+
+- resources:
+    label: Library
+    disk: /library

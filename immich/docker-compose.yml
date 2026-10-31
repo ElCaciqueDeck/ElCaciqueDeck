@@ -1,0 +1,71 @@
+# ElCaciqueDeck - CaciquePhotos (Immich): the family's own Google Photos
+#
+# First time:  bash ~/elcaciquedeck/immich/setup-immich.sh
+# Start:       cd ~/elcaciquedeck/immich && docker compose up -d
+# Stop:        cd ~/elcaciquedeck/immich && docker compose down
+# Open:        http://<laptop number>:2283   (phone app: same address)
+#
+# Based on the official Immich release compose file, with these changes:
+#  - nothing starts by itself at boot (restart: "no")
+#  - photos live on the Library drive, the database on the laptop's own disk
+#  - the smart-search/face engine (machine learning) only runs if the laptop
+#    has enough memory (the setup script decides; see COMPOSE_PROFILES in .env)
+# Private settings (database password, folders) are in .env, which never goes to GitHub.
+
+name: immich
+
+services:
+  immich-server:
+    container_name: immich_server
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    volumes:
+      - ${UPLOAD_LOCATION}:/data
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env
+    ports:
+      - '2283:2283'
+    depends_on:
+      - redis
+      - database
+    restart: "no"
+    healthcheck:
+      disable: false
+
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    profiles: ["ml"]
+    volumes:
+      - model-cache:/cache
+    env_file:
+      - .env
+    restart: "no"
+    healthcheck:
+      disable: false
+
+  redis:
+    container_name: immich_redis
+    image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+    restart: "no"
+
+  database:
+    container_name: immich_postgres
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+      DB_STORAGE_TYPE: ${DB_STORAGE_TYPE:-SSD}
+    volumes:
+      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
+    shm_size: 128mb
+    restart: "no"
+    healthcheck:
+      disable: false
+
+volumes:
+  model-cache:

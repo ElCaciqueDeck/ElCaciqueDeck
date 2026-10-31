@@ -1,0 +1,5 @@
+/* Cacique - a little JDM glow on the title */
+#information-widgets .text-xl, h1 {
+  text-shadow: 0 0 10px rgba(255, 138, 28, 0.6);
+  letter-spacing: 0.04em;
+}

@@ -1,0 +1,26 @@
+# ElCaciqueDeck - CaciqueHome (Home Assistant): smart home that works without internet
+#
+# First time:  bash ~/elcaciquedeck/homeassistant/setup-homeassistant.sh
+# Start:       cd ~/elcaciquedeck/homeassistant && docker compose up -d
+# Stop:        cd ~/elcaciquedeck/homeassistant && docker compose down
+# Open:        http://<laptop number>:8123
+#
+# Uses the laptop's network directly (network_mode: host) so it can find the
+# Philips Hue Bridge and other smart devices on the home network by itself.
+# Its settings live on the laptop's own disk (HA_CONFIG in .env).
+# Nothing here starts by itself at boot (restart: "no").
+
+services:
+  homeassistant:
+    container_name: caciquehome
+    image: ghcr.io/home-assistant/home-assistant:stable
+    network_mode: host
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      TZ: America/Puerto_Rico
+    volumes:
+      - ${HA_CONFIG}:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro

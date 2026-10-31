@@ -14,10 +14,12 @@ self-reliant home server that works **without the internet**:
 
 | Cacique name | Server | What it does | Easy address | Number address |
 |---|---|---|---|---|
-| 🧭 **Cacique** | Caddy | Front page with a button for every server | `http://cacique.home` | — |
+| 🧭 **Cacique** | Homepage | The family's front door: a button and status light for every server | `http://cacique.home` | `http://<laptop number>` (no port) |
 | 📚 **CaciqueLibrary** | Kiwix | Offline encyclopedia: Wikipedia, wikiHow, iFixit, dictionaries, books (English and Spanish) | `http://caciquelibrary.home` | `:8080` |
 | 🎬 **CaciqueFlix** | Jellyfin | Movies, series and anime the family owns | `http://caciqueflix.home` | `:8096` |
 | 📄 **CaciqueDocs** | Paperless-ngx | Private document vault: scan, OCR (Spanish and English), tag and search | `http://caciquedocs.home` | `:8000` |
+| 📸 **CaciquePhotos** | Immich | The family's own Google Photos: phone backup, albums, faces, search | `http://caciquephotos.home` | `:2283` |
+| 🏠 **CaciqueHome** | Home Assistant | Smart home and Philips Hue lights, working without internet | `http://caciquehome.home` | `:8123` |
 | 🏎️ **CaciqueDash** | caciquedash.py | JDM-style gauges, plus a log reading every minute | `http://caciquedash.home` | `:8888` |
 | 🛡️ **CaciqueGuard** | AdGuard Home | Gives every server its easy name, blocks ads for devices that use it | `http://caciqueguard.home` | `:3000` |
 
@@ -25,7 +27,7 @@ self-reliant home server that works **without the internet**:
 
 Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoRa mesh radio, in progress).
 
-**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs (Paperless-ngx) → 🔧 CaciqueGuard (AdGuard Home) → CaciquePhotos (Immich) → CaciqueHome (Home Assistant) → Cacique (Homepage)
+**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs → ✅ CaciqueGuard → 🔧 CaciquePhotos → 🔧 CaciqueHome → 🔧 Cacique Homepage
 
 **Road ahead:** RTL-SDR radio listening, Meshtastic node, and a 3-node mini-PC Proxmox cluster in a 10" rack.
 
@@ -37,17 +39,49 @@ Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoR
 Library (external drive)
 ├── Kiwix/                     ← all .zim files
 ├── Vault/paperless/           ← document vault (data, media, export, consume)
+├── Photos/immich/             ← family photos and videos
 └── MEDIA/Jellyfin/
     ├── Movies/   Coco (2017)/Coco (2017).mkv
     ├── Series/   Show Name (2005)/Season 01/Show Name S01E01.mkv
     └── Anime/    Show Name (2005)/Season 01/Show Name S01E01.mkv
 ```
 
+On the laptop's own disk (faster, not on the external drive):
+```
+~/elcaciquedeck-data/
+├── immich-postgres/           ← CaciquePhotos database
+└── homeassistant/             ← CaciqueHome settings
+~/deck-logs/                   ← CaciqueDash minute-by-minute logs
+```
+
 ---
 
-## ▶️ Starting the servers
+## 🚀 One command for everything
 
-Each server runs in its **own Terminal window**. Open a new one with **Ctrl+Alt+T**.
+```
+bash ~/elcaciquedeck/start-all.sh     # start every server that's set up
+bash ~/elcaciquedeck/status.sh        # which servers are up, and their addresses
+bash ~/elcaciquedeck/stop-all.sh      # stop everything
+```
+The servers keep running after you close the Terminal. Logs: `~/elcaciquedeck/reports/run/`.
+
+### First-time setup of each Docker server (once each, in this order)
+Every setup script checks everything, prints `[ OK ]` / `[WARN]` / `[FAIL]`, and saves a report in
+`~/elcaciquedeck/reports/`.
+```
+bash ~/elcaciquedeck/adguard/setup-adguard.sh               # CaciqueGuard + easy names
+bash ~/elcaciquedeck/immich/setup-immich.sh                 # CaciquePhotos
+bash ~/elcaciquedeck/homeassistant/setup-homeassistant.sh   # CaciqueHome
+bash ~/elcaciquedeck/homepage/setup-homepage.sh             # Cacique front page (run again if the laptop's number changes)
+```
+CaciqueDocs (Paperless) was set up by hand; see its section below.
+
+---
+
+## ▶️ Starting servers one by one (the manual way)
+
+`start-all.sh` does all of this for you. To run one server by itself, use its own Terminal window
+(**Ctrl+Alt+T**).
 Stop any of them with **Ctrl+C** in its window.
 
 **1. Kiwix (library)**
@@ -101,6 +135,31 @@ change (a fixed IP / DHCP reservation on the router).
 
 **Using the easy names on another device:** set that device's DNS to the laptop number
 (phone/PC Wi-Fi settings → DNS → manual). Devices that don't change keep working normally through the router.
+
+**6. CaciquePhotos (Immich)**
+```
+cd ~/elcaciquedeck/immich && docker compose up -d    # start
+cd ~/elcaciquedeck/immich && docker compose down     # stop
+```
+After setup: open `http://<laptop number>:2283`, create the admin account, then add family members
+under Administration → Users. Phones: install the **Immich** app, server `http://<laptop number>:2283`,
+turn on Backup. Smart search and faces only run if the laptop has 8 GB of memory or more.
+
+**7. CaciqueHome (Home Assistant)**
+```
+cd ~/elcaciquedeck/homeassistant && docker compose up -d    # start
+cd ~/elcaciquedeck/homeassistant && docker compose down     # stop
+```
+After setup: open `http://<laptop number>:8123` and create your account. Philips Hue appears by itself:
+click it and **press the button on top of the Hue Bridge**.
+
+**8. Cacique front page (Homepage)**
+```
+cd ~/elcaciquedeck/homepage && docker compose up -d    # start
+cd ~/elcaciquedeck/homepage && docker compose down     # stop
+```
+Buttons and look: `homepage/config/` (`services.yaml`, `settings.yaml`, `widgets.yaml`).
+If the Homepage is off, the plain address shows a simple backup page instead.
 
 ---
 
@@ -202,6 +261,9 @@ sudo hostnamectl set-hostname elcaciquedeck-00
 | `caciqueflix.home` doesn't open on a phone or TV | That device isn't using CaciqueGuard for DNS, or the server isn't running | Use the number address, or set the device's DNS to the laptop number |
 | A `.home` name opens a search page instead | The browser treated it as a search | Type `http://` in front the first time, then bookmark it |
 | AdGuard setup: "port 53 in use" | Ubuntu's DNS helper holds it | Run `setup-adguard.sh` again, it frees the port |
+| A setup script shows `[FAIL]` | The line says what's wrong | Fix that one thing and run the same script again (they're safe to repeat) |
+| Front page buttons point to an old number | The laptop's number changed | `bash ~/elcaciquedeck/homepage/setup-homepage.sh` |
+| `caciquehome.home` shows "400: Bad Request" | Home Assistant doesn't trust the name helper yet | Run `homeassistant/setup-homeassistant.sh` again |
 | Paperless says wrong user or password | Typo when created, or the username has different capitals | `docker compose exec webserver python3 manage.py changepassword USERNAME` |
 
 ---

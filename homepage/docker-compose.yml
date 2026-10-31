@@ -1,0 +1,26 @@
+# ElCaciqueDeck - Cacique (Homepage): the family's front door
+#
+# First time:  bash ~/elcaciquedeck/homepage/setup-homepage.sh
+# Start:       cd ~/elcaciquedeck/homepage && docker compose up -d
+# Stop:        cd ~/elcaciquedeck/homepage && docker compose down
+# Open:        http://<laptop number>   (or http://cacique.home)
+#              Caddy (in the adguard folder) shows it on the plain address.
+#
+# The look and the buttons are in ./config (settings, services, widgets).
+# The laptop number is filled in from .env, which never goes to GitHub.
+# Nothing here starts by itself at boot (restart: "no").
+
+services:
+  homepage:
+    container_name: caciquehomepage
+    image: ghcr.io/gethomepage/homepage:latest
+    network_mode: host
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      PORT: 3001
+    volumes:
+      - ./config:/app/config
+      - ${LIBRARY_PATH}:/library:ro
+      - ./icons:/app/public/icons:ro
