@@ -1,0 +1,72 @@
+# ElCaciqueDeck - CaciqueArcade (RomM): the family game library, playable in the browser
+#
+# First time:  bash ~/elcaciquedeck/arcade/setup-arcade.sh
+# Start:       cd ~/elcaciquedeck/arcade && docker compose up -d
+# Stop:        cd ~/elcaciquedeck/arcade && docker compose down
+# Open:        http://<laptop number>:8090
+#
+# Retro games (Game Boy, NES, SNES, Genesis, PS1, arcade...) run INSIDE the
+# player's browser, so the server does very little work. The browser player
+# (EmulatorJS) is built into RomM and works without internet.
+#
+# Based on RomM's official example compose, with these changes:
+#  - port 8090 (8080 is CaciqueLibrary)
+#  - nothing starts by itself at boot (restart: "no")
+#  - games and saves live on the Library drive (ARCADE_PATH in .env)
+#  - lighter settings for a laptop (2 scan workers)
+# Passwords are in .env, which never goes to GitHub.
+#
+# Only legal games: games you own and dumped yourself, or free homebrew whose
+# authors allow it (see Arcade/LICENSES on the Library drive).
+
+services:
+  romm:
+    image: rommapp/romm:latest
+    container_name: caciquearcade
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: romm-db
+      DB_NAME: romm
+      DB_USER: romm-user
+      HASHEOUS_API_ENABLED: "true"
+      SCAN_WORKERS: "2"
+      WEB_SERVER_CONCURRENCY: "2"
+      TZ: America/Puerto_Rico
+    volumes:
+      - romm_resources:/romm/resources
+      - romm_redis_data:/redis-data
+      - ${ARCADE_PATH}/library:/romm/library
+      - ${ARCADE_PATH}/assets:/romm/assets
+      - ${ARCADE_PATH}/config:/romm/config
+    ports:
+      - "8090:8080"
+    depends_on:
+      romm-db:
+        condition: service_healthy
+        restart: true
+
+  romm-db:
+    image: mariadb:11
+    container_name: caciquearcade-db
+    restart: "no"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWD}
+      MARIADB_DATABASE: romm
+      MARIADB_USER: romm-user
+      MARIADB_PASSWORD: ${DB_PASSWD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      start_interval: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+  romm_resources:
+  romm_redis_data:

@@ -30,6 +30,10 @@ http://caciquehome.home {
 	reverse_proxy localhost:8123
 }
 
+http://caciquearcade.home {
+	reverse_proxy localhost:8090
+}
+
 # Front page: the Cacique Homepage, at http://cacique.home AND at the plain
 # laptop number (http://192.168.x.x, no port), so every device in the house
 # can open it without changing any settings.

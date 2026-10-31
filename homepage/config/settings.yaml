@@ -14,7 +14,7 @@ target: _self
 layout:
   Familia · Family:
     style: row
-    columns: 4
+    columns: 5
   Hogar · Home:
     style: row
     columns: 4

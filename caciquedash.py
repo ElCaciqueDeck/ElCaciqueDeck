@@ -23,6 +23,7 @@ SERVICES = {
     "PHOTOS": 2283,    # CaciquePhotos (Immich)
     "HOME": 8123,      # CaciqueHome (Home Assistant)
     "FRONT": 3001,     # Cacique front page (Homepage)
+    "ARCADE": 8090,    # CaciqueArcade (RomM)
 }
 LOG_DIR = os.path.expanduser("~/deck-logs")
 LOG_EVERY = 60  # seconds between log lines

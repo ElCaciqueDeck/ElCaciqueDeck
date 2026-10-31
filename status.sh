@@ -10,7 +10,7 @@ echo
 line "SERVER" "STATUS" "ADDRESS"
 line "------" "------" "-------"
 for s in "Cacique:80" "CaciqueLibrary:8080" "CaciqueFlix:8096" "CaciqueDocs:8000" "CaciquePhotos:2283" \
-         "CaciqueHome:8123" "CaciqueDash:8888" "CaciqueGuard:3000"; do
+         "CaciqueHome:8123" "CaciqueArcade:8090" "CaciqueDash:8888" "CaciqueGuard:3000"; do
     name="${s%%:*}"; port="${s#*:}"
     addr="http://${IP:-<laptop>}"; [ "$port" != "80" ] && addr="$addr:$port"
     if up "$port"; then line "$name" "UP" "$addr"; else line "$name" "--" "not running (or not set up yet)"; fi

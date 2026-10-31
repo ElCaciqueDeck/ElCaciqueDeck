@@ -19,6 +19,7 @@ self-reliant home server that works **without the internet**:
 | 🎬 **CaciqueFlix** | Jellyfin | Movies, series and anime the family owns | `http://caciqueflix.home` | `:8096` |
 | 📄 **CaciqueDocs** | Paperless-ngx | Private document vault: scan, OCR (Spanish and English), tag and search | `http://caciquedocs.home` | `:8000` |
 | 📸 **CaciquePhotos** | Immich | The family's own Google Photos: phone backup, albums, faces, search | `http://caciquephotos.home` | `:2283` |
+| 🕹️ **CaciqueArcade** | RomM | Game library with box art; retro games play right in the browser | `http://caciquearcade.home` | `:8090` |
 | 🏠 **CaciqueHome** | Home Assistant | Smart home and Philips Hue lights, working without internet | `http://caciquehome.home` | `:8123` |
 | 🏎️ **CaciqueDash** | caciquedash.py | JDM-style gauges, plus a log reading every minute | `http://caciquedash.home` | `:8888` |
 | 🛡️ **CaciqueGuard** | AdGuard Home | Gives every server its easy name, blocks ads for devices that use it | `http://caciqueguard.home` | `:3000` |
@@ -27,7 +28,7 @@ self-reliant home server that works **without the internet**:
 
 Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoRa mesh radio, in progress).
 
-**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs → ✅ CaciqueGuard → 🔧 CaciquePhotos → 🔧 CaciqueHome → 🔧 Cacique Homepage
+**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs → ✅ CaciqueGuard → ✅ CaciquePhotos → ✅ CaciqueHome → ✅ Cacique Homepage → 🔧 CaciqueArcade
 
 **Road ahead:** RTL-SDR radio listening, Meshtastic node, and a 3-node mini-PC Proxmox cluster in a 10" rack.
 
@@ -40,6 +41,7 @@ Library (external drive)
 ├── Kiwix/                     ← all .zim files
 ├── Vault/paperless/           ← document vault (data, media, export, consume)
 ├── Photos/immich/             ← family photos and videos
+├── Arcade/library/roms/<console>/   ← games (gb, gbc, gba, nes, snes, genesis, n64, psx, arcade...)
 └── MEDIA/Jellyfin/
     ├── Movies/   Coco (2017)/Coco (2017).mkv
     ├── Series/   Show Name (2005)/Season 01/Show Name S01E01.mkv
@@ -72,6 +74,7 @@ Every setup script checks everything, prints `[ OK ]` / `[WARN]` / `[FAIL]`, and
 bash ~/elcaciquedeck/adguard/setup-adguard.sh               # CaciqueGuard + easy names
 bash ~/elcaciquedeck/immich/setup-immich.sh                 # CaciquePhotos
 bash ~/elcaciquedeck/homeassistant/setup-homeassistant.sh   # CaciqueHome
+bash ~/elcaciquedeck/arcade/setup-arcade.sh                 # CaciqueArcade
 bash ~/elcaciquedeck/homepage/setup-homepage.sh             # Cacique front page (run again if the laptop's number changes)
 ```
 CaciqueDocs (Paperless) was set up by hand; see its section below.
@@ -152,6 +155,19 @@ cd ~/elcaciquedeck/homeassistant && docker compose down     # stop
 ```
 After setup: open `http://<laptop number>:8123` and create your account. Philips Hue appears by itself:
 click it and **press the button on top of the Hue Bridge**.
+
+**9. CaciqueArcade (RomM)**
+```
+cd ~/elcaciquedeck/arcade && docker compose up -d    # start
+cd ~/elcaciquedeck/arcade && docker compose down     # stop
+```
+After setup: open `http://<laptop number>:8090`, create the admin account, then **Scan**. Add games by
+copying them into `Library/Arcade/library/roms/<console>/` and scanning again. Retro games play inside the
+browser of whoever is playing, so the laptop barely works. **Only legal games:** games you own and dumped
+yourself, or free homebrew whose authors allow it (the first game, µCity, is open source under GPLv3).
+
+Heavy consoles (PS2, GameCube/Wii, PS3, PS4) will run on the future gaming node (Bazzite + Sunshine) and
+stream to any screen with Moonlight.
 
 **8. Cacique front page (Homepage)**
 ```

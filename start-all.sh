@@ -61,6 +61,7 @@ start_stack paperless     "CaciqueDocs"   ".env"
 start_stack adguard       "CaciqueGuard"  "conf"
 start_stack immich        "CaciquePhotos" ".env"
 start_stack homeassistant "CaciqueHome"   ".env"
+start_stack arcade        "CaciqueArcade" ".env"
 start_stack homepage      "Cacique"       ".env"
 
 # --- status -------------------------------------------------------------

@@ -22,6 +22,12 @@
         description: Enciclopedia sin internet · Offline encyclopedia
         siteMonitor: http://127.0.0.1:8080
 
+    - CaciqueArcade:
+        icon: /icons/romm.png
+        href: http://{{HOMEPAGE_VAR_IP}}:8090
+        description: Juegos clásicos en el navegador · Retro games
+        siteMonitor: http://127.0.0.1:8090
+
     - CaciqueDocs:
         icon: /icons/paperless-ngx.png
         href: http://{{HOMEPAGE_VAR_IP}}:8000

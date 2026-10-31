@@ -35,7 +35,7 @@ ok "Buttons will point to $IP"
 step "3/6  Saving icons on the laptop (for offline use)"
 mkdir -p "$DIR/icons"
 CDN="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png"
-for i in jellyfin immich kiwix paperless-ngx home-assistant adguard-home; do
+for i in jellyfin immich kiwix romm paperless-ngx home-assistant adguard-home; do
     if [ -s "$DIR/icons/$i.png" ]; then
         ok "$i icon already saved"
     elif curl -sfL --max-time 20 -o "$DIR/icons/$i.png" "$CDN/$i.png"; then
