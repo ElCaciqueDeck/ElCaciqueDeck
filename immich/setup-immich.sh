@@ -67,7 +67,16 @@ docker compose up -d || fail "Could not start Immich."
 ok "Containers started"
 
 step "5/5  Testing (Immich takes 1-2 minutes to wake up the first time)"
-if wait_for "http://127.0.0.1:2283" 180; then
+# On the very first start the database needs a few minutes to set itself up.
+# If the server gave up waiting for it, start it again (up to 3 tries).
+for try in 1 2 3; do
+    wait_for "http://127.0.0.1:2283" 120 && break
+    if ! docker ps --format '{{.Names}}' | grep -qx immich_server; then
+        info "Server stopped while the database was getting ready - starting it again (try $try of 3)"
+        docker compose up -d >/dev/null 2>&1
+    fi
+done
+if wait_for "http://127.0.0.1:2283" 10; then
     ok "CaciquePhotos answers on port 2283"
 else
     warn "Not answering yet. Check in a minute with: docker compose logs immich-server"
