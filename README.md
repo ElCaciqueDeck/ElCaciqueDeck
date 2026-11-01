@@ -179,6 +179,18 @@ If the Homepage is off, the plain address shows a simple backup page instead.
 
 ---
 
+## 🧰 Tools
+
+**Arweave backup download** (`tools/arweave-backup.sh`): downloads a list of `https://arweave.net/...`
+links, sorts each file by kind (Images, Videos, Audio, Documents, Data, Web, Archives, 3D, Other) with the
+right file ending, and writes a `catalog.csv`. It can be stopped and re-run; finished files are skipped.
+```
+bash ~/elcaciquedeck/tools/arweave-backup.sh ~/my-links.txt
+```
+Saves to `Library/Backups/arweave-<date>/` unless you give another folder. Keep the links file private.
+
+---
+
 ## 📊 Logs
 
 Every minute the dashboard is running, it adds one line to `~/deck-logs/deck-log-YYYY-MM-DD.csv`:
