@@ -27,6 +27,7 @@ cat > "$DIR/.env" <<ENV
 HOMEPAGE_VAR_IP=$IP
 HOMEPAGE_ALLOWED_HOSTS=$IP,$IP:80,$IP:3001,cacique.home,localhost,localhost:3001,127.0.0.1:3001
 LIBRARY_PATH=$LIBRARY
+$(mountpoint -q "$VAULT" && echo "VAULT_PATH=$VAULT")
 PUID=$(id -u)
 PGID=$(id -g)
 ENV

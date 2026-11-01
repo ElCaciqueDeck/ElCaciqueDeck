@@ -16,5 +16,13 @@ for s in "Cacique:80" "CaciqueLibrary:8080" "CaciqueFlix:8096" "CaciqueDocs:8000
     if up "$port"; then line "$name" "UP" "$addr"; else line "$name" "--" "not running (or not set up yet)"; fi
 done
 echo
+for d in Library Vault; do
+    if mountpoint -q "/media/$USER/$d" 2>/dev/null; then
+        df -h "/media/$USER/$d" | awk -v n="$d" 'NR==2 {printf "  %-16s %-6s %s used of %s, %s free\n", n" drive", "OK", $3, $2, $4}'
+    else
+        printf "  %-16s %-6s %s\n" "$d drive" "--" "not connected"
+    fi
+done
+echo
 echo "  Family front door:  http://${IP:-<laptop number>}"
 echo

@@ -18,7 +18,8 @@
 
 set -u
 LIST="${1:-}"
-DEST="${2:-/media/$USER/Library/Backups/arweave-$(date +%Y-%m-%d)}"
+if mountpoint -q "/media/$USER/Vault" 2>/dev/null; then BASE="/media/$USER/Vault"; else BASE="/media/$USER/Library"; fi
+DEST="${2:-$BASE/Backups/arweave-$(date +%Y-%m-%d)}"
 JOBS="${JOBS:-4}"
 
 if [ -z "$LIST" ] || [ ! -f "$LIST" ]; then

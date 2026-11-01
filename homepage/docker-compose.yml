@@ -23,4 +23,5 @@ services:
     volumes:
       - ./config:/app/config
       - ${LIBRARY_PATH}:/library:ro
+      - ${VAULT_PATH:-${LIBRARY_PATH}}:/vault:ro
       - ./icons:/app/public/icons:ro

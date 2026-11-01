@@ -21,10 +21,18 @@ echo "  ELCACIQUEDECK · starting servers"
 echo "  ---------------------------------"
 
 if [ -d "$LIBRARY/Kiwix" ]; then
-    echo "  Library drive: connected"
+    echo "  Library drive: connected   (media, games, encyclopedia)"
 else
     echo "  Library drive: NOT connected - click 'Library' in the Files app, then run this again."
-    echo "  (Servers that need it - Library, Flix, Docs, Photos - may not work until then.)"
+    echo "  (Servers that need it - Library, Flix, Arcade - may not work until then.)"
+fi
+if mountpoint -q "/media/$USER/Vault" 2>/dev/null; then
+    echo "  Vault drive:   connected   (documents, photos, backups)"
+elif grep -qs "/media/$USER/Vault" "$REPO/paperless/.env" "$REPO/immich/.env"; then
+    echo "  Vault drive:   NOT connected - click 'Vault' in the Files app, then run this again."
+    echo "  (CaciqueDocs and CaciquePhotos live on Vault and won't start correctly without it.)"
+    echo "  Stopping here so they don't start with an empty drive."
+    exit 1
 fi
 echo
 

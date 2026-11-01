@@ -34,19 +34,32 @@ Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoR
 
 ---
 
-## 📁 Drive layout
+## 📁 Drive layout (two drives)
+
+| Drive | Holds | Why |
+|---|---|---|
+| 🎬 **Library** | Encyclopedia, movies/series/anime, arcade games | Big, but replaceable (re-download, re-rip) |
+| 🔐 **Vault** | Documents, family photos, backups | Irreplaceable, kept together so they're easy to back up |
 
 ```
-Library (external drive)
-├── Kiwix/                     ← all .zim files
-├── Vault/paperless/           ← document vault (data, media, export, consume)
-├── Photos/immich/             ← family photos and videos
-├── Arcade/library/roms/<console>/   ← games (gb, gbc, gba, nes, snes, genesis, n64, psx, arcade...)
-└── MEDIA/Jellyfin/
-    ├── Movies/   Coco (2017)/Coco (2017).mkv
-    ├── Series/   Show Name (2005)/Season 01/Show Name S01E01.mkv
-    └── Anime/    Show Name (2005)/Season 01/Show Name S01E01.mkv
+Library (drive 1, ext4)
+├── Kiwix/                          ← all .zim files
+├── MEDIA/Jellyfin/
+│   ├── Movies/   Coco (2017)/Coco (2017).mkv
+│   ├── Series/   Show Name (2005)/Season 01/Show Name S01E01.mkv
+│   └── Anime/    Show Name (2005)/Season 01/Show Name S01E01.mkv
+└── Arcade/library/roms/<console>/  ← games (gb, gbc, gba, nes, snes, genesis, n64, psx, arcade...)
+
+Vault (drive 2, ext4)
+├── paperless/                      ← CaciqueDocs (data, media, export, consume)
+├── Photos/immich/                  ← CaciquePhotos
+└── Backups/                        ← e.g. the Arweave backup
 ```
+See both drives, their space and what's on them: `bash ~/elcaciquedeck/tools/drives.sh`
+
+**Moving to two drives (one time):** after formatting the second drive as ext4 named `Vault`,
+`bash ~/elcaciquedeck/tools/move-to-vault.sh` copies CaciqueDocs and CaciquePhotos to Vault, verifies the
+copy, switches them over and keeps the old copies on Library (renamed `_old-...`) until you delete them.
 
 On the laptop's own disk (faster, not on the external drive):
 ```
@@ -187,7 +200,7 @@ right file ending, and writes a `catalog.csv`. It can be stopped and re-run; fin
 ```
 bash ~/elcaciquedeck/tools/arweave-backup.sh ~/my-links.txt
 ```
-Saves to `Library/Backups/arweave-<date>/` unless you give another folder. Keep the links file private.
+Saves to `Vault/Backups/arweave-<date>/` (or Library if Vault isn't connected) unless you give another folder. Keep the links file private.
 
 ---
 
@@ -292,6 +305,7 @@ sudo hostnamectl set-hostname elcaciquedeck-00
 | A setup script shows `[FAIL]` | The line says what's wrong | Fix that one thing and run the same script again (they're safe to repeat) |
 | Front page buttons point to an old number | The laptop's number changed | `bash ~/elcaciquedeck/homepage/setup-homepage.sh` |
 | `caciquehome.home` shows "400: Bad Request" | Home Assistant doesn't trust the name helper yet | Run `homeassistant/setup-homeassistant.sh` again |
+| `start-all.sh` stops with "Vault drive: NOT connected" | Docs and Photos live on Vault | Click **Vault** in the Files app, then run it again |
 | Paperless says wrong user or password | Typo when created, or the username has different capitals | `docker compose exec webserver python3 manage.py changepassword USERNAME` |
 
 ---

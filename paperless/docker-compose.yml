@@ -21,10 +21,12 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /media/${USER}/Library/Vault/paperless/data:/usr/src/paperless/data
-      - /media/${USER}/Library/Vault/paperless/media:/usr/src/paperless/media
-      - /media/${USER}/Library/Vault/paperless/export:/usr/src/paperless/export
-      - /media/${USER}/Library/Vault/paperless/consume:/usr/src/paperless/consume
+      # PAPERLESS_DIR is set in .env by tools/move-to-vault.sh (Vault drive).
+      # Until the move, the old location on the Library drive is used.
+      - ${PAPERLESS_DIR:-/media/${USER}/Library/Vault/paperless}/data:/usr/src/paperless/data
+      - ${PAPERLESS_DIR:-/media/${USER}/Library/Vault/paperless}/media:/usr/src/paperless/media
+      - ${PAPERLESS_DIR:-/media/${USER}/Library/Vault/paperless}/export:/usr/src/paperless/export
+      - ${PAPERLESS_DIR:-/media/${USER}/Library/Vault/paperless}/consume:/usr/src/paperless/consume
     env_file:
       - .env
     environment:

@@ -6,7 +6,8 @@
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck disable=SC2034  # used by the scripts that source this file
 DATA="$HOME/elcaciquedeck-data"          # app data that lives on the laptop's own disk
-LIBRARY="/media/$USER/Library"           # the Library drive
+LIBRARY="/media/$USER/Library"           # drive 1: media, games, encyclopedia (replaceable)
+VAULT="/media/$USER/Vault"               # drive 2: documents, photos, backups (irreplaceable)
 REPORT_DIR="$REPO/reports"
 OK=0; WARN=0
 
@@ -40,6 +41,14 @@ need_docker() {
     ok "Docker works"
     if ! command -v curl >/dev/null; then
         sudo apt-get install -y curl >/dev/null 2>&1 && ok "curl installed" || warn "Could not install curl"
+    fi
+}
+
+need_vault() {
+    if mountpoint -q "$VAULT" 2>/dev/null; then
+        ok "Vault drive is connected"
+    else
+        fail "The Vault drive isn't connected. Open the Files app, click 'Vault', then run this again."
     fi
 }
 

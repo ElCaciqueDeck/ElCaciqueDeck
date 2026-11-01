@@ -20,5 +20,9 @@
     uptime: true
 
 - resources:
-    label: Library
+    label: Library · Media
     disk: /library
+
+- resources:
+    label: Vault · Docs & Photos
+    disk: /vault
