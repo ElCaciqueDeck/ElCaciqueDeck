@@ -1138,6 +1138,8 @@ def pick(label, options):
     """Ask which one of a short list (number or name). Returns the chosen value or None."""
     if not options:
         return None
+    say("    These are the admin logins that exist today. Yours may have an older name (not \"jonnatan\");")
+    say("    pick the one you used to manage this app - it gets a new password and becomes yours.")
     if len(options) == 1:
         if yes("    %s: \"%s\" - use this one? (y/N): " % (label, options[0])):
             return options[0]
