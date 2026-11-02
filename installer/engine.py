@@ -9,7 +9,7 @@ ElCaciqueDeck installer - the engine (no windows here; cacique_installer.py is t
 
 The three levels:
   1 Laptop  programs only, everything on the computer's own disk, no media. Baseline: the ThinkPad L540
-            (4 threads, 8 GB memory). Like a "mirror" of the deck's programs.
+            (4 threads, 8 GB memory; 8 GB laptops with built-in graphics show ~6 GB, which still counts).
   2 Deck    level 1 + at least one more drive (Library for media/games/cameras, Vault for documents/photos).
   3 Lab     the closet rig (docs/rig-shopping-list.md): 16 GB+ memory, 8+ threads, 2+ data drives,
             plus network gear (VLAN router/switch, UPS) checked by the person installing.
@@ -31,11 +31,11 @@ LEVELS = {
     1: {"name": {"es": "Nivel 1 · Laptop", "en": "Level 1 · Laptop"},
         "desc": {"es": "Solo los programas, en el disco de esta computadora. Sin películas ni archivos grandes.",
                  "en": "Programs only, on this computer's own disk. No movies or big files."},
-        "min_threads": 4, "min_ram": 7.0, "min_free": 40},
+        "min_threads": 4, "min_ram": 5.5, "min_free": 40},
     2: {"name": {"es": "Nivel 2 · Deck", "en": "Level 2 · Deck"},
         "desc": {"es": "Nivel 1 + un disco más (Library y Vault) para películas, fotos, documentos y cámaras.",
                  "en": "Level 1 + another drive (Library and Vault) for movies, photos, documents and cameras."},
-        "min_threads": 4, "min_ram": 7.0, "min_free": 40, "min_drives": 1, "min_drive_gb": 250},
+        "min_threads": 4, "min_ram": 5.5, "min_free": 40, "min_drives": 1, "min_drive_gb": 250},
     3: {"name": {"es": "Nivel 3 · Lab", "en": "Level 3 · Lab"},
         "desc": {"es": "El rig del closet: más memoria, 2+ discos, red con VLANs, firewall y UPS.",
                  "en": "The closet rig: more memory, 2+ drives, VLAN network, firewall and UPS."},
@@ -205,8 +205,9 @@ def check_levels(s):
             why.append(("Procesador: %d hilos (mínimo %d)" % (s["threads"], req["min_threads"]),
                         "Processor: %d threads (needs %d)" % (s["threads"], req["min_threads"])))
         if s["ram_gb"] < req["min_ram"]:
-            why.append(("Memoria: %.1f GB (mínimo %.0f GB)" % (s["ram_gb"], req["min_ram"] + 0.5),
-                        "Memory: %.1f GB (needs %.0f GB)" % (s["ram_gb"], req["min_ram"] + 0.5)))
+            need = 8 if req["min_ram"] < 8 else 16    # 8 GB computers often show ~6 GB: the graphics borrow the rest
+            why.append(("Memoria: %.1f GB (mínimo %d GB)" % (s["ram_gb"], need),
+                        "Memory: %.1f GB (needs %d GB)" % (s["ram_gb"], need)))
         if s["home_free_gb"] < req["min_free"]:
             why.append(("Espacio libre en el disco: %.0f GB (mínimo %d GB)" % (s["home_free_gb"], req["min_free"]),
                         "Free disk space: %.0f GB (needs %d GB)" % (s["home_free_gb"], req["min_free"])))
