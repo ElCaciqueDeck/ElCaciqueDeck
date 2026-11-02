@@ -86,6 +86,7 @@ start_stack vaultwarden   "CaciqueVault"  ".env"
 start_stack calendar      "CaciqueCalendar" ".env"
 start_stack cameras       "CaciqueCams"   ".env"
 start_stack guide         "CaciqueGuía (AI engine)" ".env"
+[ -f "$REPO/homepage/.env" ] && bash "$REPO/homepage/make-live-config.sh" >/dev/null
 start_stack homepage      "Cacique"       ".env"
 
 # --- programs that are not in Docker, added by the installer --------------
