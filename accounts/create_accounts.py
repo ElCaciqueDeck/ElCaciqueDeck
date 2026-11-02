@@ -761,6 +761,204 @@ def write_outputs(people, pw, made, ip):
     return cards, path
 
 
+
+# ================================================================ fixing "whose account is this?" answers
+# python3 create_accounts.py --fix-owners   (bash accounts/fix-owners.sh)
+# For each app: shows the accounts that existed before (not made by this tool), asks whose each one is,
+# then offers to delete any EXTRA account this tool made by mistake. It only deletes an account that
+# still opens with its untouched starter password (so it was never used), and only if you type "y".
+
+class AppAdapter:
+    """What fix-owners needs from each app: list accounts, test a starter password, delete one."""
+
+    def __init__(self, app, people, pw):
+        self.app, self.people, self.pw = app, people, pw
+        self.ok = False
+
+    def default_ident(self, p):
+        return p["login"]
+
+
+class JellyfinAdapter(AppAdapter):
+    def connect(self):
+        tok, _ = jf_login("El Cacique", self.pw["elcacique"]["jellyfin"])
+        self.H = jf_auth(tok) if tok else None
+        return bool(tok)
+
+    def default_ident(self, p):
+        return p["nick"]
+
+    def accounts(self):
+        st, _, users = call(PORTS["jellyfin"], "GET", "/Users", headers=self.H)
+        return [(u["Id"], u["Name"], u["Name"]) for u in users] if st == 200 else []
+
+    def starter_works(self, ident, password):
+        st, _, _ = call(PORTS["jellyfin"], "POST", "/Users/AuthenticateByName", {"Username": ident, "Pw": password}, jf_auth())
+        return st == 200
+
+    def delete(self, uid):
+        st, _, _ = call(PORTS["jellyfin"], "DELETE", "/Users/%s" % uid, headers=self.H)
+        return st in (200, 204)
+
+
+class ImmichAdapter(AppAdapter):
+    def connect(self):
+        ec = next(p for p in self.people if p["type"] == "admin")
+        tok, _ = im_login(ec["email"], self.pw["elcacique"]["immich"])
+        self.H = {"Authorization": "Bearer " + tok} if tok else None
+        return bool(tok)
+
+    def default_ident(self, p):
+        return p["email"]
+
+    def accounts(self):
+        st, _, users = call(PORTS["immich"], "GET", "/api/admin/users", headers=self.H)
+        return [(u["id"], u["email"], u.get("name", "")) for u in users] if st == 200 else []
+
+    def starter_works(self, ident, password):
+        return bool(im_login(ident, password)[0])
+
+    def delete(self, uid):
+        st, _, _ = call(PORTS["immich"], "DELETE", "/api/admin/users/%s" % uid, {"force": False}, self.H)
+        return st in (200, 204)
+
+
+class PaperlessAdapter(AppAdapter):
+    def connect(self):
+        self.H = pl_headers("elcacique", self.pw["elcacique"]["paperless"])
+        return pl_check(self.H)
+
+    def accounts(self):
+        st, _, d = call(PORTS["paperless"], "GET", "/api/users/?page_size=1000", headers=self.H)
+        return [(u["id"], u["username"], u.get("first_name", "")) for u in d["results"]] if st == 200 else []
+
+    def starter_works(self, ident, password):
+        st, _, _ = call(PORTS["paperless"], "GET", "/api/ui_settings/", headers=pl_headers(ident, password))
+        return st == 200
+
+    def delete(self, uid):
+        st, _, _ = call(PORTS["paperless"], "DELETE", "/api/users/%s/" % uid, headers=self.H)
+        return st in (200, 204)
+
+
+class RommAdapter(AppAdapter):
+    def connect(self):
+        tok = rm_token("elcacique", self.pw["elcacique"]["romm"])
+        self.H = {"Authorization": "Bearer " + tok} if tok else None
+        return bool(tok)
+
+    def accounts(self):
+        st, _, users = call(PORTS["romm"], "GET", "/api/users", headers=self.H)
+        return [(u["id"], u["username"], u["username"]) for u in users] if st == 200 else []
+
+    def starter_works(self, ident, password):
+        st, _, _ = call(PORTS["romm"], "POST", "/api/token", form={
+            "grant_type": "password", "username": ident, "password": password, "scope": "me.read"})
+        return st == 200
+
+    def delete(self, uid):
+        st, _, _ = call(PORTS["romm"], "DELETE", "/api/users/%s" % uid, headers=self.H)
+        return st in (200, 204)
+
+
+class HomeAssistantAdapter(AppAdapter):
+    def connect(self):
+        tok, _ = ha_token("elcacique", self.pw["elcacique"]["homeassistant"])
+        if not tok:
+            return False
+        self.ws = WebSocket(HOST, PORTS["homeassistant"], "/api/websocket")
+        self.ws.recv()
+        self.ws.send({"type": "auth", "access_token": tok})
+        return self.ws.recv().get("type") == "auth_ok"
+
+    def accounts(self):
+        r = self.ws.call(type="config/auth/list")
+        return [(u["id"], u.get("username") or u.get("name"), u.get("name", ""))
+                for u in r.get("result", []) if not u.get("system_generated")]
+
+    def starter_works(self, ident, password):
+        return bool(ha_token(ident, password)[0])
+
+    def delete(self, uid):
+        persons = self.ws.call(type="person/list").get("result", {})
+        for person in persons.get("storage", []):
+            if person.get("user_id") == uid:
+                self.ws.call(type="person/delete", person_id=person["id"])
+        return bool(self.ws.call(type="config/auth/delete", user_id=uid).get("success"))
+
+
+ADAPTERS = {"jellyfin": JellyfinAdapter, "immich": ImmichAdapter, "paperless": PaperlessAdapter,
+            "romm": RommAdapter, "homeassistant": HomeAssistantAdapter}
+
+
+def fix_owners(people, pw):
+    adults = [p for p in people if p["type"] == "adult"]
+    logins = [p["login"] for p in adults]
+    links_all = pw.setdefault("links", {})
+    for app, cls in ADAPTERS.items():
+        say("")
+        say("== %s ==" % NAMES[app])
+        if not is_up(PORTS[app]):
+            say("  not running - skipped")
+            continue
+        ad = cls(app, people, pw)
+        try:
+            if not ad.connect():
+                say("  El Cacique can't log in here yet - run create-accounts.sh first. Skipped.")
+                continue
+            accounts = ad.accounts()
+            ours = {ad.default_ident(p).lower() for p in people}
+            links = links_all.setdefault(app, {})
+            # 1. accounts that existed before: whose are they?
+            older = [a for a in accounts if (a[1] or "").lower() not in ours]
+            if not older:
+                say("  No older accounts here.")
+            for uid, ident, name in older:
+                now = next((who for who, v in links.items() if v.lower() == ident.lower()), "")
+                say("  Account \"%s\"%s - right now it belongs to: %s" % (
+                    ident, (" (%s)" % name) if name and name != ident else "", now or "nobody on the list"))
+                try:
+                    ans = input("    whose is it? type a login (%s), \"none\", or Enter to keep: " % ", ".join(logins)).strip().lower()
+                except EOFError:
+                    ans = ""
+                if ans == "none":
+                    for who in [w for w, v in links.items() if v.lower() == ident.lower()]:
+                        del links[who]
+                    say("    OK: it's nobody's personal account now.")
+                elif ans in logins:
+                    for who in [w for w, v in links.items() if v.lower() == ident.lower() or w == ans]:
+                        del links[who]
+                    links[ans] = ident
+                    say("    OK: \"%s\" is %s's account." % (ident, ans))
+                elif ans:
+                    say("    \"%s\" is not on the list - nothing changed." % ans)
+            save_json(os.path.join(ACC, "passwords.json"), pw)
+            # 2. extra accounts made by mistake for someone who already had one
+            by_ident = {(a[1] or "").lower(): a for a in accounts}
+            for p in adults:
+                mine = links.get(p["login"])
+                extra = by_ident.get(ad.default_ident(p).lower())
+                if not mine or not extra or extra[1].lower() == mine.lower():
+                    continue
+                if not ad.starter_works(extra[1], pw["people"].get(p["login"], "")):
+                    say("  %s has an extra account \"%s\", but it was already used (its starter password changed)." % (p["login"], extra[1]))
+                    say("    Not touching it. Delete it by hand in %s if you don't want it." % NAMES[app])
+                    continue
+                try:
+                    ans = input("  Extra account \"%s\" was made for %s by mistake (they already have \"%s\"). Delete it? (y/N): "
+                                % (extra[1], p["login"], mine)).strip().lower()
+                except EOFError:
+                    ans = ""
+                if ans in ("y", "yes", "s", "si", "sí"):
+                    say("    Deleted." if ad.delete(extra[0]) else "    Could not delete it - remove it by hand in %s." % NAMES[app])
+                else:
+                    say("    Kept.")
+        except Exception as e:
+            say("  FAILED: %s: %s" % (e.__class__.__name__, short(str(e))))
+        finally:
+            if getattr(ad, "ws", None):
+                ad.ws.close()
+
 # ================================================================ main
 def main():
     only = None
@@ -774,6 +972,10 @@ def main():
     pw = load_passwords(people)
     ip = laptop_ip()
     say("  People: " + ", ".join("%s (%s)" % (p["nick"], p["type"]) for p in people))
+    if "--fix-owners" in sys.argv:
+        fix_owners(people, pw)
+        say("")
+        say("  Now making anything that's missing and refreshing the cards...")
     made = {}
     steps = [("jellyfin", lambda: do_jellyfin(people, pw)), ("immich", lambda: do_immich(people, pw, ip)),
              ("paperless", lambda: do_paperless(people, pw)), ("romm", lambda: do_romm(people, pw)),

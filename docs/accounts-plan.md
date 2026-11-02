@@ -45,6 +45,9 @@
 - Starter passwords: one per adult (word-word-word-00), on a card in `~/elcaciquedeck-data/accounts/cards/`;
   El Cacique gets a different strong password per app, ready to import into CaciqueVault. Delete the files with
   `people.sh forget-passwords` once saved.
+- Wrong answer to "whose account is this?": `accounts/fix-owners.sh` lists the older accounts in each app,
+  lets you say whose each one is, and offers to delete an extra account made by mistake (only if it was
+  never used, and only when you type y). Then it makes anything missing and rewrites the cards.
 - Removing admin rights from today's admin accounts is done by hand, after El Cacique is tested.
 
 ## ▶️ Pick up here
