@@ -208,14 +208,114 @@ def jf_auth(token=None):
     return {"Authorization": a, "X-Emby-Authorization": a}
 
 
+JF_LAST = {"why": ""}
+
+
 def jf_login(user, password):
     st, _, d = call(PORTS["jellyfin"], "POST", "/Users/AuthenticateByName", {"Username": user, "Pw": password}, jf_auth())
     if st == 200 and isinstance(d, dict) and d.get("AccessToken"):
         if not d.get("User", {}).get("Policy", {}).get("IsAdministrator"):
-            say("    That account is not an administrator in CaciqueFlix.")
+            JF_LAST["why"] = "that account works, but it is not an administrator in CaciqueFlix"
             return None, None
         return d["AccessToken"], d["User"]["Id"]
+    JF_LAST["why"] = "CaciqueFlix answered %s: %s" % (st, short(d, 200) if d else "(no message)")
     return None, None
+
+
+def jf_flatpak_dir():
+    return os.path.join(HOME, ".var", "app", "org.jellyfin.JellyfinServer")
+
+
+def jf_pin_reset(user):
+    """Jellyfin's own 'Forgot password' (only works from this laptop): the new password becomes the PIN."""
+    port = PORTS["jellyfin"]
+    st, _, d = call(port, "POST", "/Users/ForgotPassword", {"EnteredUsername": user}, jf_auth())
+    if st != 200 or not isinstance(d, dict) or d.get("Action") != "PinCode":
+        say("    CaciqueFlix would not start a reset for \"%s\" (%s %s). Check the name." % (user, st, short(d)))
+        return None
+    pin_file = d.get("PinFile") or ""
+    candidates = [pin_file] if os.path.exists(pin_file) else []
+    for root, _dirs, files in os.walk(jf_flatpak_dir()):
+        candidates += [os.path.join(root, f) for f in files if f.startswith("passwordreset") and f.endswith(".json")]
+    for path in candidates:
+        try:
+            pin = json.load(open(path, encoding="utf-8-sig"))["Pin"]
+        except Exception:
+            continue
+        st, _, res = call(port, "POST", "/Users/ForgotPassword/Pin", {"Pin": pin}, jf_auth())
+        if st == 200 and isinstance(res, dict) and res.get("Success"):
+            return pin.replace("-", "")
+    say("    Could not find or use the reset PIN file (looked in %s)." % jf_flatpak_dir())
+    return None
+
+
+def jf_unlock(user):
+    """Jellyfin locks an account after too many wrong passwords. Unlock it in its database (Jellyfin is stopped first)."""
+    import glob, shutil, sqlite3, time
+    dbs = glob.glob(os.path.join(jf_flatpak_dir(), "**", "jellyfin.db"), recursive=True)
+    if not dbs:
+        say("    Could not find CaciqueFlix's database under %s." % jf_flatpak_dir())
+        return False
+    db = dbs[0]
+    say("    Stopping CaciqueFlix for a moment...")
+    subprocess.run(["flatpak", "kill", "org.jellyfin.JellyfinServer"], capture_output=True)
+    for _ in range(30):
+        if not is_up(PORTS["jellyfin"]):
+            break
+        time.sleep(1)
+    time.sleep(2)
+    shutil.copy2(db, db + ".before-unlock")
+    try:
+        con = sqlite3.connect(db)
+        row = con.execute("SELECT Id FROM Users WHERE Username = ? COLLATE NOCASE", (user,)).fetchone()
+        if not row:
+            say("    No account called \"%s\" in CaciqueFlix." % user)
+        else:
+            con.execute("UPDATE Permissions SET Value = 0 WHERE UserId = ? AND Kind = 2", (row[0],))
+            con.execute("UPDATE Users SET InvalidLoginAttemptCount = 0 WHERE Id = ?", (row[0],))
+            con.commit()
+            say("    \"%s\" is unlocked (a copy of the old database: %s.before-unlock)." % (user, db))
+        con.close()
+    finally:
+        say("    Starting CaciqueFlix again...")
+        log = open(os.path.join(ACC, "jellyfin-restart.log"), "w")
+        subprocess.Popen(["flatpak", "run", "org.jellyfin.JellyfinServer"], stdout=log, stderr=log, start_new_session=True)
+        for _ in range(90):
+            if is_up(PORTS["jellyfin"]):
+                break
+            time.sleep(1)
+        time.sleep(5)
+    return bool(row)
+
+
+def yes(question):
+    try:
+        return input(question).strip().lower() in ("y", "yes", "s", "si", "sí")
+    except EOFError:
+        return False
+
+
+def jf_help(user):
+    """After a failed CaciqueFlix login: say why, and offer the fixes."""
+    why = JF_LAST["why"]
+    say("    It didn't work - " + why)
+    st, _, names = call(PORTS["jellyfin"], "GET", "/Users/Public", headers=jf_auth())
+    if st == 200 and isinstance(names, list) and names:
+        say("    Accounts shown on the CaciqueFlix login screen: " + ", ".join(n.get("Name", "?") for n in names))
+    if "disabled" in why.lower():
+        say("    CaciqueFlix LOCKED \"%s\" after too many wrong passwords." % user)
+        if yes("    Unlock it now? (y/N): ") and jf_unlock(user):
+            say("    Now type the name and password again.")
+        return None
+    if "Invalid username or password" in why:
+        say("    If you're sure of the name but not the password, CaciqueFlix can reset it with a PIN")
+        say("    (the new password becomes the PIN; you change it later in CaciqueFlix -> Profile -> Password).")
+        if yes("    Reset the password of \"%s\" now? (y/N): " % user):
+            pin = jf_pin_reset(user)
+            if pin:
+                say("    Done. The password of \"%s\" is now:  %s   (write it down, change it later)" % (user, pin))
+                return pin
+    return None
 
 
 def do_jellyfin(people, pw):
@@ -228,8 +328,10 @@ def do_jellyfin(people, pw):
             return {}
         tok, me = jf_login(*login)
         if not tok:
-            say("    Wrong name or password, try again.")
-        else:
+            new_pw = jf_help(login[0])
+            if new_pw:
+                tok, me = jf_login(login[0], new_pw)
+        if tok:
             ask_owner(app, login[0], people, pw)
     H = jf_auth(tok)
     st, _, users = call(PORTS[app], "GET", "/Users", headers=H)
@@ -388,9 +490,31 @@ def pl_headers(user, password):
     return {"Authorization": "Basic " + base64.b64encode(("%s:%s" % (user, password)).encode()).decode()}
 
 
+PL_LAST = {"why": ""}
+
+
 def pl_check(H):
     st, _, d = call(PORTS["paperless"], "GET", "/api/users/?page_size=1000", headers=H)
-    return st == 200 and isinstance(d, dict) and "results" in d
+    ok = st == 200 and isinstance(d, dict) and "results" in d
+    if not ok:
+        PL_LAST["why"] = "CaciqueDocs answered %s: %s" % (st, short(d, 200) if d else "(no message)")
+    return ok
+
+
+def pl_make_elcacique(password):
+    """Make (or repair) the El Cacique superuser from inside the CaciqueDocs server: no old password needed."""
+    code = ("import os; from django.contrib.auth.models import User; "
+            "u, _ = User.objects.get_or_create(username='elcacique'); "
+            "u.set_password(os.environ['CQ_PW']); u.is_superuser = True; u.is_staff = True; u.is_active = True; "
+            "u.first_name = 'El Cacique'; u.email = 'elcacique@%s'; u.save(); print('elcacique-ok')" % EMAIL_DOMAIN)
+    compose = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "paperless")
+    r = subprocess.run(["docker", "compose", "exec", "-T", "-e", "CQ_PW=" + password, "webserver",
+                        "python3", "manage.py", "shell", "-c", code],
+                       cwd=compose, capture_output=True, text=True, timeout=180)
+    if "elcacique-ok" in r.stdout:
+        return True
+    say("    Could not do it: " + short((r.stderr or r.stdout).strip()[-300:], 300))
+    return False
 
 
 def do_paperless(people, pw):
@@ -403,7 +527,18 @@ def do_paperless(people, pw):
             return {}
         H = pl_headers(*login)
         if not pl_check(H):
-            say("    Wrong name or password (remember: capital letters matter), or not an admin. Try again.")
+            say("    It didn't work - " + PL_LAST["why"])
+            if "403" in PL_LAST["why"].split(":")[0]:
+                say("    The name and password are right, but that account is not an admin in CaciqueDocs.")
+            elif "MFA" in PL_LAST["why"]:
+                say("    That account uses a second step (MFA), which this tool can't type for you.")
+            else:
+                say("    (Names in CaciqueDocs care about capital letters: Jonnatan is not jonnatan.)")
+            say("    Or skip the old login: I can make the El Cacique admin directly inside the CaciqueDocs server.")
+            if yes("    Make El Cacique directly now? (y/N): "):
+                if pl_make_elcacique(pw["elcacique"][app]):
+                    say("    El Cacique is ready in CaciqueDocs.")
+                    H = pl_headers("elcacique", pw["elcacique"][app])
         else:
             ask_owner(app, login[0], people, pw)
     st, _, d = call(PORTS[app], "GET", "/api/users/?page_size=1000", headers=H)
