@@ -92,9 +92,12 @@ def call(port, method, path, body=None, headers=None, form=None, timeout=20):
         h["Content-Type"] = "application/json"
     conn = httpclient.HTTPConnection(HOST, port, timeout=timeout)
     try:
-        conn.request(method, path, body=data, headers=h)
-        r = conn.getresponse()
-        raw = r.read()
+        try:
+            conn.request(method, path, body=data, headers=h)
+            r = conn.getresponse()
+            raw = r.read()
+        except (socket.timeout, TimeoutError):
+            raise TimeoutError("no answer from %s %s (port %d) after %d seconds" % (method, path.split("?")[0], port, timeout))
         hdrs = {}
         for k, v in r.getheaders():
             hdrs.setdefault(k.lower(), []).append(v)
