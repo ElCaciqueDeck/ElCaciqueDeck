@@ -192,6 +192,15 @@ cd ~/elcaciquedeck/homepage && docker compose down     # stop
 Buttons and look: `homepage/config/` (`services.yaml`, `settings.yaml`, `widgets.yaml`).
 If the Homepage is off, the plain address shows a simple backup page instead.
 
+**The look (Nov 2026 redesign):** dark glass over Puerto Rican mountains at dusk, a left menu on the
+computer, a narrow menu on tablets, and a bottom menu plus an **Estado · Status** button on phones (the six
+live numbers live there). Every card says its status in words (En línea · Online / Con problemas · Down /
+Revisando · Checking), read from the same live check as the dot. It's all in `homepage/config/custom.css`
+and `custom.js`, plus two pictures in `homepage/custom-icons/` (`cacique-dusk.svg`, `cacique-emblem.svg`).
+The buttons, links, health checks and numbers are untouched (`services.yaml`, `widgets.yaml`).
+To go back to the old look: `git checkout 83708b9 -- homepage/config/custom.css homepage/config/custom.js`,
+then reload the page.
+
 ---
 
 ## 🔄 Applying an update (after every `git pull`)
