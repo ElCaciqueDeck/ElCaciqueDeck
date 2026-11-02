@@ -19,7 +19,7 @@
 | Apps | Tick what to install (already-installed apps are marked and kept) |
 | Drives | Level 1: everything in `~/elcaciquedeck-data`. Levels 2–3: pick the **Library** and **Vault** drives |
 | Accounts | Admin name + password (default **ElCaciqueAdmin**), adults (login + nickname), Familia (PG), Invitado (PG-13) |
-| Options | Start the servers by themselves at power-on (**off** by default), the computer's password |
+| Options | Start the servers by themselves at power-on (**off** by default); **server mode** (on: never sleep on power, keep running with the lid closed, Wi-Fi without power saving); **clean start** when a previous El Cacique left program folders on the drives (they're moved to `_old-<date>/`, nothing deleted; movies, games and encyclopedias are never touched); the computer's password |
 | Summary → Installing → Done | Progress bar + every line of the install; at the end the family page address |
 
 ## The three levels
@@ -58,6 +58,11 @@ CaciqueDash gauges. `start-all.sh`, `update.sh` and the installer write to it by
 - `installer/engine.py` — scan, levels, steps (`python3 installer/engine.py --dry-run` to practise)
 - `~/elcaciquedeck-data/cacique.conf` — what was chosen (level, Library/Vault, apps, start at power-on)
 - New: `calendar/`, `cameras/`, `guide/`, `paperless/setup-paperless.sh`, `tools/logbook.py`
+
+## Network: cable, adapter or Wi-Fi
+All three work. The window shows which one the computer is using. A network cable (or a USB network adapter for
+laptops without the port, e.g. one with a Realtek RTL8153 chip) is steadier for movies; Wi-Fi is fine for everything else.
+Later: an optional **island mode** where the laptop broadcasts its own Wi-Fi for power outages or the field.
 
 ## Not automatic yet / limits
 - **VLANs and firewall** (Level 3) are a checklist + guide, not pushed to the Omada gear automatically.

@@ -86,6 +86,15 @@ T = {  # every text, Spanish + English
     "guest": ("Invitado: películas hasta PG-13, fotos Familia Abierta, juegos", "Invitado: movies up to PG-13, Familia Abierta photos, games"),
     "o_h": ("Opciones", "Options"), "o_s": ("Últimos detalles.", "Last details."),
     "auto": ("Prender los servidores solos cuando se encienda la computadora", "Start the servers by themselves when the computer turns on"),
+    "server": ("Modo servidor: no dormir con el cargador puesto, seguir con la tapa cerrada, Wi-Fi sin ahorro de energía",
+               "Server mode: never sleep on power, keep running with the lid closed, Wi-Fi without power saving"),
+    "clean": ("Empezar limpio: apartar carpetas de programas viejos que hay en los discos (no se borra nada)",
+              "Clean start: set aside old program folders found on the drives (nothing is deleted)"),
+    "clean_note": ("Encontradas: ", "Found: "),
+    "netk": ("Conexión", "Connection"),
+    "net_wifi": ("Wi-Fi (funciona; un cable o adaptador USB de red es más estable para películas)",
+                 "Wi-Fi (works; a cable or USB network adapter is steadier for movies)"),
+    "net_eth": ("cable de red (lo mejor)", "network cable (best)"),
     "auto_note": ("Apagado = como hasta ahora: usted los prende con start-all.sh.", "Off = as before: you start them with start-all.sh."),
     "sudo": ("Contraseña de esta computadora (la de Ubuntu, para instalar):", "This computer's password (Ubuntu's, to install):"),
     "sum_h": ("Resumen", "Summary"), "sum_s": ("Revise y presione Instalar.", "Check and press Install."),
@@ -113,7 +122,7 @@ T = {  # every text, Spanish + English
     "e_drive": ("Escoja el disco Library.", "Choose the Library drive."),
     "q_cancel": ("¿Salir de la instalación?", "Quit the setup?"),
     "q_stop": ("¿Detener la instalación? Lo que ya se instaló se queda.", "Stop the install? What's already installed stays."),
-    "dry": ("PRÁCTICA · PRACTICE: no se cambia nada · nothing changes", "PRÁCTICA · PRACTICE: no se cambia nada · nothing changes"),
+    "dry": ("PRÁCTICA · PRACTICE", "PRÁCTICA · PRACTICE"),
 }
 
 
@@ -148,6 +157,8 @@ class Wizard:
         self.v_guest = tk.BooleanVar(value=True)
         self.v_auto = tk.BooleanVar(value=False)
         self.v_sudo = tk.StringVar()
+        self.v_server = tk.BooleanVar(value=True)
+        self.v_clean = tk.BooleanVar(value=True)
         self.apps_defaulted = False
         self.build_frame()
         self.show()
@@ -296,7 +307,8 @@ class Wizard:
         rows = [(self.t("os"), s["os"]), (self.t("cpu"), "%s (%d %s)" % (s["cpu"][:48], s["threads"], self.t("threads"))),
                 (self.t("ram"), "%.1f GB" % s["ram_gb"]), (self.t("disk"), "%.0f GB" % s["home_free_gb"]),
                 (self.t("drives"), "\n".join(drives)),
-                (self.t("net"), "%s  (%s: %s)" % (s["ip"] or "?", self.t("internet"), yes if s["internet"] else no))]
+                (self.t("net"), "%s  (%s: %s)" % (s["ip"] or "?", self.t("internet"), yes if s["internet"] else no)),
+                (self.t("netk"), self.t("net_wifi") if s.get("net_kind") == "wifi" else self.t("net_eth") if s.get("net_kind") else "?")]
         if s["existing"]:
             rows.append((self.t("existing"), ", ".join(a[1] for a in engine.APPS if a[0] in s["existing"])))
         for i, (k, v) in enumerate(rows):
@@ -511,6 +523,13 @@ class Wizard:
         self.head("o_h", "o_s")
         tk.Checkbutton(self.body, text=self.t("auto"), variable=self.v_auto, bg=GRAY, activebackground=GRAY).pack(anchor="w")
         self.label(self.body, "      " + self.t("auto_note"), fg="#555").pack(anchor="w")
+        tk.Checkbutton(self.body, text=self.t("server"), variable=self.v_server, bg=GRAY, activebackground=GRAY,
+                       wraplength=560, justify="left").pack(anchor="w", pady=(8, 0))
+        old = engine.old_app_data(self.plan.library, self.plan.vault)
+        if old:
+            tk.Checkbutton(self.body, text=self.t("clean"), variable=self.v_clean, bg=GRAY, activebackground=GRAY,
+                           wraplength=560, justify="left").pack(anchor="w", pady=(8, 0))
+            self.label(self.body, "      " + self.t("clean_note") + ", ".join(old), fg="#555", wraplength=540).pack(anchor="w")
         self.label(self.body, "\n" + self.t("sudo")).pack(anchor="w")
         e = ttk.Entry(self.body, textvariable=self.v_sudo, show="•", width=30)
         e.pack(anchor="w", pady=2)
@@ -518,6 +537,8 @@ class Wizard:
 
     def ok_6(self):
         self.plan.autostart = self.v_auto.get()
+        self.plan.server_mode = self.v_server.get()
+        self.plan.clean_start = self.v_clean.get()
         pw = self.v_sudo.get()
         if not DRY:
             r = subprocess.run(["sudo", "-S", "-k", "-v"], input=pw + "\n", capture_output=True, text=True)

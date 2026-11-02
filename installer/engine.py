@@ -103,6 +103,8 @@ def scan():
     s["home_total_gb"] = round(st.f_blocks * st.f_frsize / 1e9, 1)
     s["drives"] = list_drives()
     s["ip"] = laptop_ip()
+    s["net_kind"] = network_kind()
+    s["laptop"] = is_laptop()
     s["internet"] = can_reach("github.com", 443)
     s["docker"] = bool(shutil.which("docker"))
     s["gpu"] = " ".join(l for l in sh_out(["lspci"]).splitlines() if re.search(r"VGA|3D", l))[:200]
@@ -185,6 +187,36 @@ def existing_install():
     return found
 
 
+# Program data a previous El Cacique left on the drives. Media (movies, games, encyclopedias, photos you copied)
+# is never touched; only these program folders are set aside on a clean start.
+OLD_APP_DATA = [("vault", "paperless"), ("vault", "vaultwarden"), ("vault", "Photos/immich"), ("vault", "calendar"),
+                ("vault", "Sync"), ("library", "Arcade/assets"), ("library", "Arcade/config"), ("library", "Cameras")]
+
+
+def old_app_data(library, vault):
+    found = []
+    for where, rel in OLD_APP_DATA:
+        path = os.path.join(vault if where == "vault" else library, rel)
+        if os.path.isdir(path) and os.listdir(path):
+            found.append(path)
+    return found
+
+
+def network_kind():
+    """'ethernet', 'wifi' or '' - how this computer reaches the router."""
+    m = re.search(r"\bdev (\S+)", sh_out(["ip", "route", "get", "1.1.1.1"]))
+    if not m:
+        return ""
+    dev = m.group(1)
+    if os.path.isdir("/sys/class/net/%s/wireless" % dev):
+        return "wifi"
+    return "ethernet"
+
+
+def is_laptop():
+    return any(os.path.exists(p) for p in ("/sys/class/power_supply/BAT0", "/sys/class/power_supply/BAT1"))
+
+
 def usable_drives(s, min_gb):
     return [d for d in s["drives"] if d["mount"] and d["size_gb"] >= min_gb and d["fstype"] in
             ("ext4", "xfs", "btrfs", "f2fs")]
@@ -258,6 +290,8 @@ class Plan:
         self.lang = "es"
         self.sudo_pw = ""
         self.lab_checklist = {}
+        self.clean_start = True     # set aside old program folders found on the drives (media is kept)
+        self.server_mode = True     # never sleep on power, keep running with the lid closed, Wi-Fi without power saving
 
     def summary(self, lang="es"):
         es = lang == "es"
@@ -270,7 +304,9 @@ class Plan:
                 (("Familia (PG) / Invitado (PG-13)", "Familia (PG) / Invitado (PG-13)"),
                  "%s / %s" % ("sí" if self.family else "no", "sí" if self.guest else "no") if es else
                  "%s / %s" % ("yes" if self.family else "no", "yes" if self.guest else "no")),
-                (("Prender solo al encender", "Start by itself at power-on"), ("sí" if self.autostart else "no") if es else ("yes" if self.autostart else "no"))]
+                (("Prender solo al encender", "Start by itself at power-on"), ("sí" if self.autostart else "no") if es else ("yes" if self.autostart else "no")),
+                (("Modo servidor", "Server mode"), ("sí" if self.server_mode else "no") if es else ("yes" if self.server_mode else "no")),
+                (("Empezar limpio en los discos", "Clean start on the drives"), ("sí" if self.clean_start else "no") if es else ("yes" if self.clean_start else "no"))]
         return [(k[0] if es else k[1], v) for k, v in rows]
 
 
@@ -410,6 +446,9 @@ class Installer:
         a, out = self.p.apps, []
         out.append((("Preparando", "Getting ready"), self.s_prepare))
         out.append((("Programas del sistema (Docker, etc.)", "System programs (Docker, etc.)"), self.s_packages))
+        if self.p.server_mode:
+            out.append((("Modo servidor (no dormir, tapa cerrada, Wi-Fi estable)", "Server mode (no sleep, lid closed, steady Wi-Fi)"),
+                        self.s_server_mode))
         if "names" in a:
             out.append((("CaciqueGuard: nombres y anuncios", "CaciqueGuard: names and ads"), self.s_names))
         if "library" in a:
@@ -498,6 +537,36 @@ class Installer:
                 f.write("\n".join(conf) + "\n")
         if not self.p.vault_is_folder and not os.path.ismount(self.p.vault) and not self.dry:
             self.log("  [WARN] Vault is not a separate drive; using a folder")
+        old = old_app_data(self.p.library, self.p.vault)
+        if old and self.p.clean_start:
+            stamp = time.strftime("%Y-%m-%d_%H%M")
+            for path in old:
+                base = self.p.vault if path.startswith(self.p.vault) else self.p.library
+                dest = os.path.join(base, "_old-%s" % stamp, os.path.relpath(path, base))
+                self.log("  clean start: %s -> %s (nothing deleted)" % (path, dest))
+                if not self.dry:
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                    r = subprocess.run(["sudo", "-A", "mv", path, dest], env=self.env, capture_output=True, text=True)
+                    if r.returncode != 0:
+                        raise RuntimeError("could not set aside %s: %s" % (path, r.stderr.strip()[:200]))
+        elif old:
+            self.log("  keeping the program data already on the drives: " + ", ".join(old))
+
+    def s_server_mode(self):
+        """A home server must not fall asleep: no sleep on power, lid closed = keep running, Wi-Fi without power saving."""
+        if is_laptop() or self.dry:
+            conf = "[Login]\nHandleLidSwitch=ignore\nHandleLidSwitchExternalPower=ignore\nHandleLidSwitchDocked=ignore\n"
+            self.run(["bash", "-c", "sudo mkdir -p /etc/systemd/logind.conf.d && printf %s | sudo tee "
+                      "/etc/systemd/logind.conf.d/elcaciquedeck-lid.conf >/dev/null" % shlex.quote(conf)])
+            self.log("  The lid can be closed: the server keeps running (takes effect after the next restart).")
+        self.run(["bash", "-c", "printf '[connection]\\nwifi.powersave = 2\\n' | sudo tee "
+                  "/etc/NetworkManager/conf.d/elcaciquedeck-wifi-powersave.conf >/dev/null"], check=False)
+        for key, val in (("sleep-inactive-ac-type", "'nothing'"), ("sleep-inactive-ac-timeout", "0")):
+            self.run(["gsettings", "set", "org.gnome.settings-daemon.plugins.power", key, val], check=False)
+        self.sudo("systemctl", "mask", "sleep.target", "suspend.target", "hibernate.target", "hybrid-sleep.target", check=False)
+        kind = network_kind()
+        self.log("  Network: %s" % {"wifi": "Wi-Fi (works; a cable or USB network adapter is steadier for movies)",
+                                     "ethernet": "cable (best)"}.get(kind, "not found"))
 
     def s_packages(self):
         pk = ["curl", "git", "openssl", "python3-bcrypt", "ufw", "sqlite3", "docker.io", "docker-compose-v2"]
