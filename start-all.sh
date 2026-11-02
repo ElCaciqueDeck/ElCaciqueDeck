@@ -31,6 +31,11 @@ else
 fi
 if mountpoint -q "/media/$USER/Vault" 2>/dev/null; then
     echo "  Vault drive:   connected   (documents, photos, backups)"
+    PDIR="$(grep -sE '^PAPERLESS_DIR=' "$REPO/paperless/.env" | tail -1 | cut -d= -f2- | tr -d '"'"'")"
+    if [ -n "$PDIR" ] && [ -d "$PDIR" ] && [ -n "$(find "$PDIR" -maxdepth 2 \( ! -uid 1000 -o ! -gid 1000 \) -print -quit 2>/dev/null)" ]; then
+        echo "  WARNING: some CaciqueDocs files aren't owned by 1000 (this causes Error 500)."
+        echo "           Fix:  bash ~/elcaciquedeck/tools/fix-docs.sh"
+    fi
 elif grep -qs "/media/$USER/Vault" "$REPO/paperless/.env" "$REPO/immich/.env"; then
     echo "  Vault drive:   NOT connected - click 'Vault' in the Files app, then run this again."
     echo "  (CaciqueDocs and CaciquePhotos live on Vault and won't start correctly without it.)"

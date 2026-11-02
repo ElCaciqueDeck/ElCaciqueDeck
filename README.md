@@ -342,6 +342,7 @@ sudo hostnamectl set-hostname elcaciquedeck-00
 | A `.home` name opens a search page instead | The browser treated it as a search | Type `http://` in front the first time, then bookmark it |
 | AdGuard setup: "port 53 in use" | Ubuntu's DNS helper holds it | Run `setup-adguard.sh` again, it frees the port |
 | A setup script shows `[FAIL]` | The line says what's wrong | Fix that one thing and run the same script again (they're safe to repeat) |
+| CaciqueDocs shows "Server Error (500)" | Its files on Vault belong to the wrong user, or it started before Vault was connected | `bash ~/elcaciquedeck/tools/fix-docs.sh` |
 | Front page buttons point to an old number | The laptop's number changed | `bash ~/elcaciquedeck/homepage/setup-homepage.sh` |
 | `caciquehome.home` shows "400: Bad Request" | Home Assistant doesn't trust the name helper yet | Run `homeassistant/setup-homeassistant.sh` again |
 | `start-all.sh` stops with "Vault drive: NOT connected" | Docs and Photos live on Vault | Click **Vault** in the Files app, then run it again |
