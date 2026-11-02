@@ -34,6 +34,12 @@ http://caciquearcade.home {
 	reverse_proxy localhost:8090
 }
 
+# CaciqueAcademy: the Home Lab training game (plain files from ../academy)
+http://caciqueacademy.home, :8095 {
+	root * /academy
+	file_server
+}
+
 # Front page: the Cacique Homepage, at http://cacique.home AND at the plain
 # laptop number (http://192.168.x.x, no port), so every device in the house
 # can open it without changing any settings.

@@ -52,6 +52,8 @@ else
     rm -f "$DIR/icons/speedometer.svg"; warn "Could not download the speedometer icon"
 fi
 
+cp -f "$DIR"/custom-icons/*.svg "$DIR/icons/" 2>/dev/null && ok "Cacique icons copied"
+
 step "4/6  Downloading and starting the Homepage"
 open_port 3001 "Homepage"
 cd "$DIR" || fail "Can't open $DIR"

@@ -24,6 +24,7 @@ SERVICES = {
     "HOME": 8123,      # CaciqueHome (Home Assistant)
     "FRONT": 3001,     # Cacique front page (Homepage)
     "ARCADE": 8090,    # CaciqueArcade (RomM)
+    "ACADEMY": 8095,   # CaciqueAcademy (game)
 }
 LOG_DIR = os.path.expanduser("~/deck-logs")
 LOG_EVERY = 60  # seconds between log lines
@@ -133,9 +134,15 @@ def lan():
 
 
 def port_open(port, host="127.0.0.1"):
+    """A server counts as UP only if it answers a web request without a server error.
+    (An open port that answers 500 is 'on but broken' - shown as down, like the Homepage does.)"""
+    import http.client
     try:
-        with socket.create_connection((host, port), timeout=0.4):
-            return True
+        conn = http.client.HTTPConnection(host, port, timeout=1.5)
+        conn.request("GET", "/", headers={"User-Agent": "CaciqueDash"})
+        status = conn.getresponse().status
+        conn.close()
+        return status < 500
     except Exception:
         return False
 
@@ -220,6 +227,7 @@ def sampler():
     t0 = time.time()
     net_ok, net_checked = None, 0
     last_log = 0
+    svc, svc_checked = {}, 0
     while True:
         time.sleep(1)
         idle1, total1 = cpu_times()
@@ -241,6 +249,8 @@ def sampler():
 
         if t1 - net_checked > 15:
             net_ok, net_checked = internet(), t1
+        if t1 - svc_checked > 5:      # web checks every 5 seconds is plenty
+            svc, svc_checked = {k: port_open(p) for k, p in SERVICES.items()}, t1
         link, iface, ip = lan()
         up = float((read("/proc/uptime", "0") or "0").split()[0])
         load = (read("/proc/loadavg", "0 0 0") or "0 0 0").split()[:3]
@@ -262,7 +272,7 @@ def sampler():
             "internet": net_ok,
             "uptime": int(up),
             "disks": disks(),
-            "services": {k: port_open(p) for k, p in SERVICES.items()},
+            "services": svc,
             "time": time.strftime("%H:%M:%S"),
         }
         with lock:

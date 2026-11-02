@@ -14,7 +14,10 @@ LIBRARY="/media/$USER/Library"
 RUN="$REPO/reports/run"
 mkdir -p "$RUN"
 
-up()   { curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$1" 2>/dev/null || (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+up() {   # true if something answers on the port (even with an error - we only avoid starting it twice)
+    if command -v curl >/dev/null; then [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "http://127.0.0.1:$1")" != "000" ]
+    else (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; fi
+}
 
 echo
 echo "  ELCACIQUEDECK · starting servers"

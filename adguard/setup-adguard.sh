@@ -20,7 +20,7 @@ mkdir -p "$REPORT_DIR"
 REPORT="$REPORT_DIR/adguard-setup-$(date +%Y-%m-%d_%H%M).txt"
 exec > >(tee "$REPORT") 2>&1
 
-NAMES="cacique.home caciquelibrary.home caciqueflix.home caciquedocs.home caciquedash.home caciqueguard.home caciquephotos.home caciquehome.home caciquearcade.home"
+NAMES="cacique.home caciquelibrary.home caciqueflix.home caciquedocs.home caciquedash.home caciqueguard.home caciquephotos.home caciquehome.home caciquearcade.home caciqueacademy.home"
 OK=0; WARN=0
 ok()   { echo "  [ OK ]  $*"; OK=$((OK+1)); }
 warn() { echo "  [WARN]  $*"; WARN=$((WARN+1)); }

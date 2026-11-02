@@ -28,6 +28,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./site:/srv:ro
+      - ../academy:/academy:ro
       - caddy_data:/data
 
 volumes:

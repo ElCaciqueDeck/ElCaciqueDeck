@@ -15,6 +15,9 @@ layout:
   Familia · Family:
     style: row
     columns: 5
+  Aprender · Learn:
+    style: row
+    columns: 4
   Hogar · Home:
     style: row
     columns: 4

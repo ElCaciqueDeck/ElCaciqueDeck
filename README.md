@@ -20,6 +20,8 @@ self-reliant home server that works **without the internet**:
 | 📄 **CaciqueDocs** | Paperless-ngx | Private document vault: scan, OCR (Spanish and English), tag and search | `http://caciquedocs.home` | `:8000` |
 | 📸 **CaciquePhotos** | Immich | The family's own Google Photos: phone backup, albums, faces, search | `http://caciquephotos.home` | `:2283` |
 | 🕹️ **CaciqueArcade** | RomM | Game library with box art; retro games play right in the browser | `http://caciquearcade.home` | `:8090` |
+| 🎓 **CaciqueAcademy** | Our own game | Learn to run the Home Lab by solving the real problems we hit, in a practice Terminal | `http://caciqueacademy.home` | `:8095` |
+| 📘 **Field Manual** | Kiwix book | Bilingual "for dummies" manual: start, care for, diagnose, fix. Lives offline in CaciqueLibrary | — | `:8080/content/elcaciquedeck-manual/` |
 | 🏠 **CaciqueHome** | Home Assistant | Smart home and Philips Hue lights, working without internet | `http://caciquehome.home` | `:8123` |
 | 🏎️ **CaciqueDash** | caciquedash.py | JDM-style gauges, plus a log reading every minute | `http://caciquedash.home` | `:8888` |
 | 🛡️ **CaciqueGuard** | AdGuard Home | Gives every server its easy name, blocks ads for devices that use it | `http://caciqueguard.home` | `:3000` |
@@ -28,7 +30,7 @@ self-reliant home server that works **without the internet**:
 
 Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoRa mesh radio, in progress).
 
-**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs → ✅ CaciqueGuard → ✅ CaciquePhotos → ✅ CaciqueHome → ✅ Cacique Homepage → 🔧 CaciqueArcade
+**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs → ✅ CaciqueGuard → ✅ CaciquePhotos → ✅ CaciqueHome → ✅ Cacique Homepage → ✅ CaciqueArcade → ✅ Field Manual + CaciqueAcademy → ⏳ Family accounts → ⏳ VLANs (needs hardware)
 
 **Road ahead:** RTL-SDR radio listening, Meshtastic node, and a 3-node mini-PC Proxmox cluster in a 10" rack.
 
@@ -192,6 +194,24 @@ If the Homepage is off, the plain address shows a simple backup page instead.
 
 ---
 
+## 🔄 Applying an update (after every `git pull`)
+```
+cd ~/elcaciquedeck && git pull
+bash ~/elcaciquedeck/tools/update.sh
+```
+Installs the newest Field Manual, reloads names and CaciqueAcademy, refreshes the front page,
+restarts CaciqueLibrary and CaciqueDash, and shows the status of everything.
+
+## 📚 Learning: Field Manual + CaciqueAcademy
+- **Field Manual** (`manual/`): source in `manual/src/*.md` (Spanish + English halves), built into
+  `manual/dist/elcaciquedeck-manual.zim` with `python3 manual/build_manual.py` (needs `pip install libzim markdown`).
+- **CaciqueAcademy** (`academy/index.html`): one offline page, served by Caddy on port 8095. Seven missions so far,
+  each one a real problem from building this lab. Progress is saved in each player's browser.
+
+## 🗺️ Plans waiting for hardware
+- `docs/network-plan.md`: VLANs (Management, Servers, Familia, Adultos, IoT), firewall rules, fiber to the house, shed, power.
+- `docs/accounts-plan.md`: Familia account (tap, no password, PG), personal accounts, single sign-on later.
+
 ## 🧰 Tools
 
 **Arweave backup download** (`tools/arweave-backup.sh`): downloads a list of `https://arweave.net/...`
@@ -306,6 +326,7 @@ sudo hostnamectl set-hostname elcaciquedeck-00
 | Front page buttons point to an old number | The laptop's number changed | `bash ~/elcaciquedeck/homepage/setup-homepage.sh` |
 | `caciquehome.home` shows "400: Bad Request" | Home Assistant doesn't trust the name helper yet | Run `homeassistant/setup-homeassistant.sh` again |
 | `start-all.sh` stops with "Vault drive: NOT connected" | Docs and Photos live on Vault | Click **Vault** in the Files app, then run it again |
+| `status.sh` says **ERROR (code 500)** | The server is on but failing inside | Field Manual → Troubleshooting; read its log with `docker compose logs --tail 20` |
 | Paperless says wrong user or password | Typo when created, or the username has different capitals | `docker compose exec webserver python3 manage.py changepassword USERNAME` |
 
 ---

@@ -34,6 +34,19 @@
         description: Documentos importantes · Documents
         siteMonitor: http://127.0.0.1:8000
 
+- Aprender · Learn:
+    - CaciqueAcademy:
+        icon: /icons/academy.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8095
+        description: Juego para aprender el Home Lab · Home Lab training game
+        siteMonitor: http://127.0.0.1:8095
+
+    - Manual de Campo:
+        icon: /icons/manual.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8080/content/elcaciquedeck-manual/
+        description: Cómo cuidar y arreglar todo · How to care for and fix everything
+        siteMonitor: http://127.0.0.1:8080
+
 - Hogar · Home:
     - CaciqueHome:
         icon: /icons/home-assistant.png
