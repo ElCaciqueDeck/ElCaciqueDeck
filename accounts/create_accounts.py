@@ -321,6 +321,10 @@ def jf_help(user):
 def do_jellyfin(people, pw):
     app = "jellyfin"
     tok, me = jf_login("El Cacique", pw["elcacique"][app])
+    if not tok and pw.get("reset", {}).get(app):
+        tok, me = jf_login(*pw["reset"][app])
+        if tok:
+            ask_owner(app, pw["reset"][app][0], people, pw)
     while not tok:
         login = ask_login(app)
         if not login:
@@ -393,6 +397,10 @@ def do_immich(people, pw, ip):
     app = "immich"
     ec = next(p for p in people if p["type"] == "admin")
     tok, me = im_login(ec["email"], pw["elcacique"][app])
+    if not tok and pw.get("reset", {}).get(app):
+        tok, me = im_login(*pw["reset"][app])
+        if tok:
+            ask_owner(app, pw["reset"][app][0], people, pw)
     while not tok:
         login = ask_login(app, "admin email")
         if not login:
@@ -595,6 +603,10 @@ def rm_token(user, password):
 def do_romm(people, pw):
     app = "romm"
     tok = rm_token("elcacique", pw["elcacique"][app])
+    if not tok and pw.get("reset", {}).get(app):
+        tok = rm_token(*pw["reset"][app])
+        if tok:
+            ask_owner(app, pw["reset"][app][0], people, pw)
     while not tok:
         login = ask_login(app)
         if not login:
@@ -738,6 +750,10 @@ def ha_token(user, password):
 def do_homeassistant(people, pw):
     app = "homeassistant"
     tok, why = ha_token("elcacique", pw["elcacique"][app])
+    if not tok and pw.get("reset", {}).get(app):
+        tok, why = ha_token(*pw["reset"][app])
+        if tok:
+            ask_owner(app, pw["reset"][app][0], people, pw)
     while not tok:
         login = ask_login(app)
         if not login:
@@ -1094,6 +1110,215 @@ def fix_owners(people, pw):
             if getattr(ad, "ws", None):
                 ad.ws.close()
 
+
+# ================================================================ "I don't know any admin password"
+# python3 create_accounts.py --reset-admins   (bash accounts/reset-admins.sh)
+# Gets admin access to each app WITHOUT the old passwords, using each app's own recovery tool on this laptop:
+#   CaciqueFlix   Jellyfin's "forgot password" PIN (+ unlock if it got locked)  -> your admin gets a new password
+#   CaciquePhotos immich-admin reset-admin-password                             -> your admin gets a new password
+#   CaciqueDocs   makes El Cacique directly (your own account is not touched)
+#   CaciqueArcade sets a new password on the admin you choose (database)
+#   CaciqueHome   sets a new password on the login you choose (HA's own "auth" tool; restarts CaciqueHome)
+# The new passwords are shown on screen and saved (private) in ~/elcaciquedeck-data/accounts/new-admin-passwords.txt.
+# Then the normal run uses them by itself to make El Cacique and everyone's accounts.
+
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def sh(args, cwd=None, inp=None, timeout=300):
+    try:
+        r = subprocess.run(args, cwd=cwd, input=inp, capture_output=True, text=True, timeout=timeout)
+        return r.returncode, (r.stdout or "") + (r.stderr or "")
+    except Exception as e:
+        return 1, "%s: %s" % (e.__class__.__name__, e)
+
+
+def pick(label, options):
+    """Ask which one of a short list (number or name). Returns the chosen value or None."""
+    if not options:
+        return None
+    if len(options) == 1:
+        if yes("    %s: \"%s\" - use this one? (y/N): " % (label, options[0])):
+            return options[0]
+        return None
+    for i, o in enumerate(options, 1):
+        say("      %d) %s" % (i, o))
+    try:
+        a = input("    %s - type its number (or Enter to skip): " % label).strip()
+    except EOFError:
+        return None
+    if a.isdigit() and 1 <= int(a) <= len(options):
+        return options[int(a) - 1]
+    return None
+
+
+def remember_reset(pw, app, user, password, shown_name):
+    pw.setdefault("reset", {})[app] = [user, password]
+    save_json(os.path.join(ACC, "passwords.json"), pw)
+    path = os.path.join(ACC, "new-admin-passwords.txt")
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    with os.fdopen(fd, "a", encoding="utf-8") as f:
+        f.write("%-14s %-30s %s\n" % (NAMES[app], shown_name, password))
+    say("    NEW PASSWORD for %s in %s:   %s" % (shown_name, NAMES[app], password))
+
+
+def reset_jellyfin(pw):
+    import glob, shutil, sqlite3, tempfile
+    dbs = glob.glob(os.path.join(jf_flatpak_dir(), "**", "jellyfin.db"), recursive=True)
+    names = []
+    if dbs:
+        tmp = tempfile.mkdtemp()
+        for ext in ("", "-wal", "-shm"):
+            if os.path.exists(dbs[0] + ext):
+                shutil.copy2(dbs[0] + ext, os.path.join(tmp, "j.db" + ext))
+        try:
+            con = sqlite3.connect(os.path.join(tmp, "j.db"))
+            names = [r[0] for r in con.execute(
+                "SELECT u.Username FROM Users u JOIN Permissions p ON p.UserId = u.Id WHERE p.Kind = 0 AND p.Value = 1")]
+            locked = {r[0] for r in con.execute(
+                "SELECT u.Username FROM Users u JOIN Permissions p ON p.UserId = u.Id WHERE p.Kind = 2 AND p.Value = 1")}
+            con.close()
+        except Exception as e:
+            say("    Could not read the CaciqueFlix account list (%s)." % e)
+            locked = set()
+        shutil.rmtree(tmp, ignore_errors=True)
+    else:
+        locked = set()
+    if not names:
+        try:
+            names = [input("    Type the CaciqueFlix admin name (as it shows on its login screen): ").strip()]
+        except EOFError:
+            return
+    say("    CaciqueFlix admin accounts: " + ", ".join(names))
+    user = pick("Which admin should get a new password", names)
+    if not user:
+        say("    Skipped.")
+        return
+    if user in locked:
+        say("    \"%s\" is locked (too many wrong passwords). Unlocking it first..." % user)
+        jf_unlock(user)
+    pin = jf_pin_reset(user)
+    if pin and jf_login(user, pin)[0]:
+        remember_reset(pw, "jellyfin", user, pin, user)
+    else:
+        say("    It didn't work: " + JF_LAST["why"])
+
+
+def reset_immich(pw):
+    rc, out = sh(["docker", "exec", "immich_server", "immich-admin", "list-users"], timeout=120)
+    say("    " + "\n    ".join(l for l in out.splitlines() if "@" in l or "isAdmin" in l)[:600] if out else "")
+    new = friendly_password()
+    rc, out = sh(["docker", "exec", "-i", "immich_server", "immich-admin", "reset-admin-password"],
+                 inp=new + "\ny\n", timeout=180)
+    email = (re.search(r"Email=(\S+)", out) or [None, None])[1]
+    if "has been updated" not in out or not email:
+        rc, out = sh(["docker", "exec", "-i", "immich_server", "immich-admin", "reset-admin-password"],
+                     inp="\n\n", timeout=180)        # let Immich make the password itself
+        email = (re.search(r"Email=(\S+)", out) or [None, None])[1]
+        m = re.search(r"updated to:\s*\n?(\S+)", out)
+        new = m.group(1) if m else None
+    if email and new and im_login(email, new)[0]:
+        remember_reset(pw, "immich", email, new, email)
+    else:
+        say("    It didn't work. What immich-admin said: " + short(out, 400))
+
+
+def reset_paperless(pw):
+    if pl_make_elcacique(pw["elcacique"]["paperless"]):
+        say("    El Cacique is ready in CaciqueDocs (your own account was not touched).")
+
+
+def romm_sql(query):
+    return sh(["docker", "exec", "caciquearcade-db", "sh", "-c",
+               'mariadb -N -B -uroot -p"$MARIADB_ROOT_PASSWORD" romm -e "%s"' % query.replace('"', '\\"')], timeout=60)
+
+
+def romm_hash(password):
+    for py in ("python3", "python", "/backend/.venv/bin/python", "/src/.venv/bin/python", "/.venv/bin/python"):
+        rc, out = sh(["docker", "exec", "-e", "CQ_PW=" + password, "caciquearcade", py, "-c",
+                      "import os,bcrypt;print(bcrypt.hashpw(os.environ['CQ_PW'].encode(),bcrypt.gensalt()).decode())"],
+                     timeout=60)
+        m = re.search(r"(\$2[aby]\$\d\d\$[./A-Za-z0-9]{53})", out)
+        if m:
+            return m.group(1)
+    return None
+
+
+def reset_romm(pw):
+    rc, out = romm_sql("SELECT username FROM users WHERE role = 'admin' OR role = 'ADMIN'")
+    names = [l.strip() for l in out.splitlines() if l.strip() and "Warning" not in l]
+    if rc != 0 or not names:
+        say("    Could not read the CaciqueArcade accounts: " + short(out, 300))
+        return
+    user = pick("Which CaciqueArcade admin should get a new password", names)
+    if not user:
+        say("    Skipped.")
+        return
+    new = friendly_password()
+    h = romm_hash(new)
+    if not h:
+        say("    Could not make the password code inside CaciqueArcade.")
+        return
+    rc, out = romm_sql("UPDATE users SET hashed_password = '%s' WHERE username = '%s'" % (h, user.replace("'", "")))
+    if rc == 0 and rm_token(user, new):
+        remember_reset(pw, "romm", user, new, user)
+    else:
+        say("    It didn't work: " + short(out, 300))
+
+
+def reset_homeassistant(pw):
+    d = os.path.join(REPO_DIR, "homeassistant")
+    base = ["docker", "compose", "run", "--rm", "--no-deps", "--entrypoint", "python", "homeassistant",
+            "-m", "homeassistant", "--script", "auth", "--config", "/config"]
+    say("    Stopping CaciqueHome for a moment...")
+    sh(["docker", "compose", "stop"], cwd=d, timeout=120)
+    try:
+        rc, out = sh(base + ["list"], cwd=d, timeout=600)
+        if rc != 0:
+            say("    Could not read the CaciqueHome logins: " + short(out, 300))
+            return
+        names = [l.strip() for l in out.splitlines()
+                 if l.strip() and not re.search(r"(?i)total|users|warning|error|creating|pulling|^\W", l)]
+        user = pick("Which CaciqueHome login should get a new password", names)
+        if not user:
+            say("    Skipped." if names else "    Could not read the CaciqueHome logins: " + short(out, 300))
+            return
+        new = friendly_password()
+        rc, out = sh(base + ["change_password", user, new], cwd=d, timeout=600)
+        if "changed" in out.lower() or rc == 0:
+            pw.setdefault("reset", {})["homeassistant"] = [user, new]
+            save_json(os.path.join(ACC, "passwords.json"), pw)
+            remember_reset(pw, "homeassistant", user, new, user)
+        else:
+            say("    It didn't work: " + short(out, 300))
+    finally:
+        say("    Starting CaciqueHome again...")
+        sh(["docker", "compose", "up", "-d"], cwd=d, timeout=300)
+        import time
+        for _ in range(120):
+            if is_up(PORTS["homeassistant"]):
+                break
+            time.sleep(2)
+
+
+def reset_admins(pw, only=None):
+    steps = [("jellyfin", reset_jellyfin), ("immich", reset_immich), ("paperless", reset_paperless),
+             ("romm", reset_romm), ("homeassistant", reset_homeassistant)]
+    for app, fn in steps:
+        if only and app not in only:
+            continue
+        say("")
+        say("== %s: admin access without the old password ==" % NAMES[app])
+        if not is_up(PORTS[app]):
+            say("    not running - skipped (start-all.sh first)")
+            continue
+        try:
+            fn(pw)
+        except Exception as e:
+            say("    FAILED: %s: %s" % (e.__class__.__name__, short(str(e))))
+    say("")
+    say("  The new admin passwords are also saved (private) in: %s" % os.path.join(ACC, "new-admin-passwords.txt"))
+
 # ================================================================ main
 def main():
     only = None
@@ -1107,6 +1332,10 @@ def main():
     pw = load_passwords(people)
     ip = laptop_ip()
     say("  People: " + ", ".join("%s (%s)" % (p["nick"], p["type"]) for p in people))
+    if "--reset-admins" in sys.argv:
+        reset_admins(pw, only)
+        say("")
+        say("  Now making El Cacique and everyone's accounts with that access...")
     if "--fix-owners" in sys.argv:
         fix_owners(people, pw)
         say("")

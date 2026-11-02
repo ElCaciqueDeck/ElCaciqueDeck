@@ -45,6 +45,9 @@
 - Starter passwords: one per adult (word-word-word-00), on a card in `~/elcaciquedeck-data/accounts/cards/`;
   El Cacique gets a different strong password per app, ready to import into CaciqueVault. Delete the files with
   `people.sh forget-passwords` once saved.
+- Don't know the old admin passwords: `accounts/reset-admins.sh` uses each app's own recovery tool on the laptop
+  (Jellyfin PIN + unlock, immich-admin, Paperless manage.py, RomM database, HA auth script), shows the new
+  passwords and saves them in `~/elcaciquedeck-data/accounts/new-admin-passwords.txt`, then makes all accounts.
 - Wrong answer to "whose account is this?": `accounts/fix-owners.sh` lists the older accounts in each app,
   lets you say whose each one is, and offers to delete an extra account made by mistake (only if it was
   never used, and only when you type y). Then it makes anything missing and rewrites the cards.
