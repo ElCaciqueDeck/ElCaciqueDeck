@@ -239,12 +239,13 @@ def jf_pin_reset(user):
         candidates += [os.path.join(root, f) for f in files if f.startswith("passwordreset") and f.endswith(".json")]
     for path in candidates:
         try:
-            pin = json.load(open(path, encoding="utf-8-sig"))["Pin"]
+            pin = json.load(open(path, encoding="utf-8-sig"))["Pin"].replace("-", "")
         except Exception:
             continue
+        # Jellyfin sets the new password to exactly the PIN text we send, so send it without dashes
         st, _, res = call(port, "POST", "/Users/ForgotPassword/Pin", {"Pin": pin}, jf_auth())
         if st == 200 and isinstance(res, dict) and res.get("Success"):
-            return pin.replace("-", "")
+            return pin
     say("    Could not find or use the reset PIN file (looked in %s)." % jf_flatpak_dir())
     return None
 
@@ -1204,19 +1205,56 @@ def reset_jellyfin(pw):
         say("    It didn't work: " + JF_LAST["why"])
 
 
+def run_with_terminal(args, answers, timeout=90):
+    """Run a program that insists on a real terminal; answer its questions in order.
+    answers = [(text the program shows, what to type), ...]. Gives up after `timeout` seconds."""
+    import pty, select, signal, time
+    pid, fd = pty.fork()
+    if pid == 0:
+        try:
+            os.execvp(args[0], args)
+        finally:
+            os._exit(127)
+    out, seen, todo, start = "", 0, list(answers), time.time()
+    try:
+        while time.time() - start < timeout:
+            ready, _, _ = select.select([fd], [], [], 1)
+            if not ready:
+                continue
+            try:
+                data = os.read(fd, 4096)
+            except OSError:
+                break
+            if not data:
+                break
+            out += data.decode(errors="replace")
+            if todo and re.search(todo[0][0], out[seen:], re.I):
+                seen = len(out)
+                time.sleep(0.4)
+                os.write(fd, (todo.pop(0)[1] + "\r").encode())
+        else:
+            out += "\n(gave up after %d seconds)" % timeout
+    finally:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+        try:
+            os.waitpid(pid, 0)
+        except Exception:
+            pass
+        os.close(fd)
+    return re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", out)
+
+
 def reset_immich(pw):
-    rc, out = sh(["docker", "exec", "immich_server", "immich-admin", "list-users"], timeout=120)
-    say("    " + "\n    ".join(l for l in out.splitlines() if "@" in l or "isAdmin" in l)[:600] if out else "")
     new = friendly_password()
-    rc, out = sh(["docker", "exec", "-i", "immich_server", "immich-admin", "reset-admin-password"],
-                 inp=new + "\ny\n", timeout=180)
+    say("    Asking CaciquePhotos' own admin tool for a new admin password (up to 90 seconds)...")
+    out = run_with_terminal(["docker", "exec", "-it", "immich_server", "immich-admin", "reset-admin-password"],
+                            [(r"new password", new), (r"Invalidate", "y")])
     email = (re.search(r"Email=(\S+)", out) or [None, None])[1]
-    if "has been updated" not in out or not email:
-        rc, out = sh(["docker", "exec", "-i", "immich_server", "immich-admin", "reset-admin-password"],
-                     inp="\n\n", timeout=180)        # let Immich make the password itself
-        email = (re.search(r"Email=(\S+)", out) or [None, None])[1]
-        m = re.search(r"updated to:\s*\n?(\S+)", out)
-        new = m.group(1) if m else None
+    if "has been updated" not in out:
+        say("    The tool didn't confirm the change.")
     if email and new and im_login(email, new)[0]:
         remember_reset(pw, "immich", email, new, email)
     else:
