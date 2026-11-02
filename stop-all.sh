@@ -6,7 +6,7 @@ REPO="$(cd "$(dirname "$0")" && pwd)"
 echo
 echo "  ELCACIQUEDECK · stopping servers"
 echo "  ---------------------------------"
-for d in homepage arcade homeassistant immich adguard paperless; do
+for d in homepage vaultwarden arcade homeassistant immich adguard paperless; do
     if [ -f "$REPO/$d/docker-compose.yml" ] && (cd "$REPO/$d" && docker compose ps -q 2>/dev/null | grep -q .); then
         (cd "$REPO/$d" && docker compose down >/dev/null 2>&1) && echo "  $d stopped"
     fi

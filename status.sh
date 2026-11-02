@@ -14,9 +14,10 @@ echo
 line "SERVER" "STATUS" "ADDRESS"
 line "------" "------" "-------"
 for s in "Cacique:80" "CaciqueLibrary:8080" "CaciqueFlix:8096" "CaciqueDocs:8000" "CaciquePhotos:2283" \
-         "CaciqueHome:8123" "CaciqueArcade:8090" "CaciqueAcademy:8095" "CaciqueDash:8888" "CaciqueGuard:3000"; do
+         "CaciqueHome:8123" "CaciqueArcade:8090" "CaciqueAcademy:8095" "CaciqueDash:8888" "CaciqueGuard:3000" "CaciqueVault:8222"; do
     name="${s%%:*}"; port="${s#*:}"
     addr="http://${IP:-<laptop>}"; [ "$port" != "80" ] && addr="$addr:$port"
+    [ "$port" = "8222" ] && addr="https://${IP:-<laptop>}:8443"   # the safe is only reachable through the secure door
     c="$(code "$port")"
     if [ "$c" = "000" ]; then line "$name" "--" "not running (or not set up yet)"
     elif [ "$c" -ge 500 ]; then line "$name" "ERROR" "on but failing (code $c) - see the Field Manual, Troubleshooting"

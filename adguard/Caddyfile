@@ -2,6 +2,12 @@
 # Each name on the left is sent to the server on the right.
 # All servers run on this same laptop, so "localhost" is correct here.
 
+{
+	# Caddy makes its own "Cacique certificate" for the secure door of CaciqueVault.
+	# Don't try to install it inside the container; the setup script installs it on the laptop.
+	skip_install_trust
+}
+
 http://caciquelibrary.home {
 	reverse_proxy localhost:8080
 }
@@ -53,10 +59,28 @@ http://caciqueacademy.home, :8095 {
 # can open it without changing any settings.
 # If the Homepage isn't running, the simple backup page in ./site is shown instead.
 http://cacique.home, :80 {
-	reverse_proxy 127.0.0.1:3001
+	# The Cacique certificate, for adults' phones and computers (CaciqueVault):
+	#   http://<laptop number>/cacique-ca.crt
+	handle /cacique-ca.crt {
+		root * /data/caddy/pki/authorities/local
+		rewrite * /root.crt
+		header Content-Type application/x-x509-ca-cert
+		file_server
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3001
+	}
 	handle_errors {
 		root * /srv
 		rewrite * /index.html
 		file_server
 	}
+}
+
+# CaciqueVault (password safe): only through a secure (https) door.
+# CACIQUE_IP comes from adguard/.env, written by vaultwarden/setup-vault.sh.
+# "tls internal" = Caddy's own Cacique certificate (no internet needed).
+https://caciquevault.home, https://{$CACIQUE_IP:127.0.0.1}:8443 {
+	tls internal
+	reverse_proxy 127.0.0.1:8222
 }

@@ -17,7 +17,7 @@
 source "$(dirname "$0")/../lib/common.sh"
 start_report "update"
 RUN="$REPO/reports/run"; mkdir -p "$RUN"
-NAMES="cacique.home caciquelibrary.home caciqueflix.home caciquedocs.home caciquedash.home caciqueguard.home caciquephotos.home caciquehome.home caciquearcade.home caciqueacademy.home"
+NAMES="cacique.home caciquelibrary.home caciqueflix.home caciquedocs.home caciquedash.home caciqueguard.home caciquephotos.home caciquehome.home caciquearcade.home caciqueacademy.home caciquevault.home"
 
 step "1/7  Field Manual -> CaciqueLibrary"
 need_library

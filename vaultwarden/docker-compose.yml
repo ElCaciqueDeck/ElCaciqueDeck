@@ -1,0 +1,31 @@
+# ElCaciqueDeck - CaciqueVault (Vaultwarden): the family password safe
+#
+# First time:  bash ~/elcaciquedeck/vaultwarden/setup-vault.sh
+# Start:       cd ~/elcaciquedeck/vaultwarden && docker compose up -d
+# Stop:        cd ~/elcaciquedeck/vaultwarden && docker compose down
+# Open:        https://<laptop number>:8443   (adults only; needs the Cacique certificate once per device)
+#
+# Vaultwarden is a small, self-hosted server for the Bitwarden apps (phone, computer, browser).
+# Each adult has their own private vault, locked with a master password only they know.
+# The vaults live on the Vault drive (VAULTWARDEN_DIR in .env), never on the internet.
+# It listens only inside this laptop (127.0.0.1:8222); Caddy adds the secure https door on 8443.
+# Nothing here starts by itself at boot (restart: "no").
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: caciquevault
+    network_mode: host
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      ROCKET_ADDRESS: 127.0.0.1
+      ROCKET_PORT: "8222"
+      SIGNUPS_ALLOWED: "false"         # only people invited by setup (accounts tool) can make a vault
+      INVITATIONS_ALLOWED: "true"
+      INVITATION_ORG_NAME: El Cacique
+      SHOW_PASSWORD_HINT: "false"
+      TZ: America/Puerto_Rico
+    volumes:
+      - ${VAULTWARDEN_DIR}:/data

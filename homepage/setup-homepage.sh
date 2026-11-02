@@ -25,6 +25,7 @@ step "2/6  Settings (.env)"
 cat > "$DIR/.env" <<ENV
 # Cacique Homepage settings - written by setup-homepage.sh, stays on this laptop
 HOMEPAGE_VAR_IP=$IP
+HOMEPAGE_VAR_OPENPHOTOS=$(cat "$DATA/accounts/open-photos-link.txt" 2>/dev/null || echo "http://$IP:2283")
 HOMEPAGE_ALLOWED_HOSTS=$IP,$IP:80,$IP:3001,cacique.home,localhost,localhost:3001,127.0.0.1:3001
 LIBRARY_PATH=$LIBRARY
 $(mountpoint -q "$VAULT" && echo "VAULT_PATH=$VAULT")

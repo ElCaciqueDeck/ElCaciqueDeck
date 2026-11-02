@@ -1,6 +1,6 @@
 # 👨‍👩‍👧 ElCaciqueDeck — Family Accounts Plan
 
-> **Status: DECIDED, NOT BUILT YET.** *Decidido, todavía no construido.*
+> **Status: BUILT (Nov 2026).** `accounts/` + `vaultwarden/`. *Construido.*
 
 ## Decisions / Decisiones
 | Decision | Choice |
@@ -8,7 +8,9 @@
 | Shared account | **Familia** — tap to enter, **no password**, **view only** |
 | Movie limit for Familia | **PG** (blocks PG-13 and up) |
 | Personal accounts | One per adult: private photos/documents, can **upload** from their phone, can share albums |
-| Admin | One (the owner) |
+| Admin | **El Cacique** — an independent admin account in every app; whoever manages the Home Lab uses it. Every person (the owner included) is a regular adult |
+| Guest account | **Invitado** — movies up to **PG-13**, the **Familia Abierta** photo slideshow, the Arcade (no login) |
+| Passwords | **CaciqueVault** (Vaultwarden, self-hosted Bitwarden): each adult's own vault, + El Cacique's vault for the server logins |
 | Language | Bilingual (Spanish + English) |
 | Single sign-on (one login for all apps) | Later, on the rig (**Pocket ID** simple, or **Authentik** powerful) |
 
@@ -27,5 +29,23 @@
 - Names and passwords are entered **on the laptop** by a setup script; they are **never** stored on GitHub.
 - Each adult's photos and documents are private unless they share them.
 
+## As built / Cómo quedó
+| App | El Cacique | Adults | Familia | Invitado |
+|---|---|---|---|---|
+| CaciqueFlix | admin, hidden from the TV picker | own profile | tap, no password, **PG**, unrated movies hidden | tap, no password, **PG-13**, unrated hidden |
+| CaciquePhotos | admin, owns **Familia Abierta** | own private library, can add to Familia Abierta | slideshow link (no login) | slideshow link (no login) |
+| CaciqueDocs | superuser | own private documents (group **Adultos**) | — | — |
+| CaciqueArcade | admin | own login | play, no login (**kiosk mode**) | play, no login (kiosk mode) |
+| CaciqueHome | admin | regular user, home network only | — | — |
+| CaciqueVault | own vault (server logins) | own vault | — | — |
+
+- People list: `~/elcaciquedeck-data/accounts/people.txt` (on the laptop only) — `accounts/people.sh add <login> <nickname>`.
+- Create/refresh: `accounts/create-accounts.sh` (safe to re-run; asks "whose account is this?" for the admin logins
+  used today so nobody gets a duplicate; never deletes, resets or demotes).
+- Starter passwords: one per adult (word-word-word-00), on a card in `~/elcaciquedeck-data/accounts/cards/`;
+  El Cacique gets a different strong password per app, ready to import into CaciqueVault. Delete the files with
+  `people.sh forget-passwords` once saved.
+- Removing admin rights from today's admin accounts is done by hand, after El Cacique is tested.
+
 ## ▶️ Pick up here
-Tell Claude: *"Let's build the family accounts from docs/accounts-plan.md"* and give the list of adults' first names.
+Single sign-on (Pocket ID / Authentik) on the rig; kid-friendly Kiwix books for Familia.

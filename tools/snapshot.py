@@ -42,6 +42,7 @@ SERVICES = [  # key, name, port, address name
     ("academy", "CaciqueAcademy", 8095, "caciqueacademy.home"),
     ("dash", "CaciqueDash", 8888, "caciquedash.home"),
     ("guard", "CaciqueGuard", 3000, "caciqueguard.home"),
+    ("vault", "CaciqueVault", 8222, "caciquevault.home"),
 ]
 SECRET_KEY = re.compile(r"(PASS|SECRET|KEY|TOKEN|PWD|SALT|CREDENTIAL)", re.I)
 SECRET_INLINE = re.compile(r"(?i)\b([\w.-]*(?:password|passwd|secret|token|api[_-]?key)[\w.-]*)(\s*[=:]\s*)(\S+)")

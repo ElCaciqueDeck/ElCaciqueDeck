@@ -34,6 +34,12 @@
         description: Documentos importantes · Documents
         siteMonitor: http://127.0.0.1:8000
 
+    - Familia Abierta:
+        icon: /icons/immich.png
+        href: "{{HOMEPAGE_VAR_OPENPHOTOS}}"
+        description: Fotos para visitas, en presentación · Family Open photos slideshow
+        siteMonitor: http://127.0.0.1:2283
+
 - Aprender · Learn:
     - CaciqueAcademy:
         icon: /icons/academy.svg
@@ -66,3 +72,9 @@
         href: http://{{HOMEPAGE_VAR_IP}}:3000
         description: Anuncios y nombres · Ad blocking & names
         siteMonitor: http://127.0.0.1:3000
+
+    - CaciqueVault:
+        icon: /icons/vault.svg
+        href: https://{{HOMEPAGE_VAR_IP}}:8443
+        description: Contraseñas de los adultos · Adults' password safe
+        siteMonitor: http://127.0.0.1:8222/alive

@@ -226,6 +226,14 @@ for El Cacique Admin.
     `~/elcaciquedeck-data/twin/`: passwords masked, Vault shows only folder sizes, no file contents.
     Without a snapshot it shows a made-up demo deck (`academy/twin-demo/`).
 
+## 👨‍👩‍👧 Accounts + 🔐 CaciqueVault (passwords)
+- **El Cacique** is the Home Lab's own admin account in every app. Every person is a regular adult.
+  **Familia** (PG, no password) and **Invitado** (PG-13, Familia Abierta slideshow, Arcade) are for kids and visitors.
+- **CaciqueVault** = Vaultwarden (self-hosted Bitwarden) at `https://<laptop number>:8443`, vaults on the Vault drive.
+  Adults trust the Cacique certificate once per device (`http://<laptop number>/cacique-ca.crt`).
+- Setup: `vaultwarden/setup-vault.sh`, then `accounts/people.sh add <login> <nickname>` for each adult,
+  then `accounts/create-accounts.sh`. Details: `docs/accounts-plan.md`. Names and passwords never go to GitHub.
+
 ## 🗺️ Plans waiting for hardware
 - `docs/network-plan.md`: VLANs (Management, Servers, Familia, Adultos, IoT), firewall rules, fiber to the house, shed, power.
 - `docs/accounts-plan.md`: Familia account (tap, no password, PG), personal accounts, single sign-on later.

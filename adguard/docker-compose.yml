@@ -25,6 +25,8 @@ services:
     container_name: caciquenames
     network_mode: host
     restart: "no"
+    environment:
+      CACIQUE_IP: ${CACIQUE_IP:-127.0.0.1}   # from adguard/.env (setup-vault.sh), for the CaciqueVault certificate
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./site:/srv:ro

@@ -25,6 +25,7 @@ SERVICES = {
     "FRONT": 3001,     # Cacique front page (Homepage)
     "ARCADE": 8090,    # CaciqueArcade (RomM)
     "ACADEMY": 8095,   # CaciqueAcademy (game)
+    "VAULT": 8222,     # CaciqueVault (password safe, inside the laptop)
 }
 LOG_DIR = os.path.expanduser("~/deck-logs")
 LOG_EVERY = 60  # seconds between log lines
