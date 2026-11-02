@@ -211,6 +211,8 @@ restarts CaciqueLibrary and CaciqueDash, and shows the status of everything.
 ## 🗺️ Plans waiting for hardware
 - `docs/network-plan.md`: VLANs (Management, Servers, Familia, Adultos, IoT), firewall rules, fiber to the house, shed, power.
 - `docs/accounts-plan.md`: Familia account (tap, no password, PG), personal accounts, single sign-on later.
+- `docs/rig-shopping-list.md`: everything to buy for the closet rig (3× M720q, NAS, Omada network, rack, UPS, cabling, closet cooling).
+- `docs/academy-twin-plan.md`: CaciqueAcademy 2.0, "El Cacique Admin", a practice copy of the real desktop refreshed at every update.
 
 ## 🧰 Tools
 

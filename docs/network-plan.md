@@ -15,6 +15,10 @@ adults have full internet, and the rig lives in a protected shed.
 
 ---
 
+> **Update 2026-11-01:** the rig goes in a **dry, cool closet inside the house** (no shed, no fiber, no Faraday cage),
+> and the network brand is **TP-Link Omada**. The Omada gateway (ER707-M2) takes the firewall role below;
+> OPNsense stays an option. Full parts list: `docs/rig-shopping-list.md`.
+
 ## 2. Physical layout / Recorrido físico
 
 ```
@@ -24,20 +28,18 @@ adults have full internet, and the rig lives in a protected shed.
       │
  [Deeper Connect Mini]           ← ad blocking for the internet path
       │
- [Firewall: OPNsense]  ─────────── in the rack (shed)
+ [Gateway/firewall: Omada ER707-M2]  ── in the rack (closet)
       │  (one cable carries all VLANs = "trunk")
  [Managed switch, VLAN + SFP]  ─── in the rack
       │            │
       │            └── Home Lab servers (3× ThinkCentre M720q), gaming node, UPS mgmt
       │
-   FIBER (shed → house)  ← no electricity on fiber = no lightning path between buildings
+   Cat6 runs inside the walls (closet → each room)
       │
- [Small managed switch, SFP + PoE]  ── in the house
-      │
- [Wi-Fi access points, wired backhaul]  ── one per area; each broadcasts all SSIDs
+ [Omada ceiling access points, PoE]  ── one per area; each broadcasts all SSIDs
 ```
 
-**No Wi-Fi in the shed.** Everything there is wired.
+**No Wi-Fi in the closet.** Everything there is wired. The switch powers the access points over the same cable (PoE).
 
 ---
 
