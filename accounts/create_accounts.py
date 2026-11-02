@@ -817,7 +817,7 @@ def do_vaultwarden(people):
         note(app, "-", "skipped (run vaultwarden/setup-vault.sh first)")
         return {}
     token = open(tpath).read().strip()
-    st, hdrs, _ = call(PORTS[app], "POST", "/admin", form={"token": token})
+    st, hdrs, _ = call(PORTS[app], "POST", "/admin", form={"token": token}, timeout=60)
     cookie = None
     for c in hdrs.get("set-cookie", []):
         m = re.match(r"\s*(VW_ADMIN=[^;]+)", c)
@@ -1269,8 +1269,9 @@ def reset_paperless(pw):
 
 
 def romm_sql(query):
-    return sh(["docker", "exec", "caciquearcade-db", "sh", "-c",
-               'mariadb -N -B -uroot -p"$MARIADB_ROOT_PASSWORD" romm -e "%s"' % query.replace('"', '\\"')], timeout=60)
+    # the query goes in through stdin: password codes contain "$", which the shell would otherwise eat
+    return sh(["docker", "exec", "-i", "caciquearcade-db", "sh", "-c",
+               'mariadb -N -B -uroot -p"$MARIADB_ROOT_PASSWORD" romm'], inp=query + ";\n", timeout=60)
 
 
 def romm_hash(password):
@@ -1299,11 +1300,15 @@ def reset_romm(pw):
     if not h:
         say("    Could not make the password code inside CaciqueArcade.")
         return
-    rc, out = romm_sql("UPDATE users SET hashed_password = '%s' WHERE username = '%s'" % (h, user.replace("'", "")))
-    if rc == 0 and rm_token(user, new):
+    rc, out = romm_sql("UPDATE users SET hashed_password = '%s', enabled = 1 WHERE username = '%s'" % (h, user.replace("'", "")))
+    if rc != 0:
+        say("    It didn't work (database): " + short(out, 300))
+    elif rm_token(user, new):
         remember_reset(pw, "romm", user, new, user)
     else:
-        say("    It didn't work: " + short(out, 300))
+        st, _, d = call(PORTS["romm"], "POST", "/api/token", form={
+            "grant_type": "password", "username": user, "password": new, "scope": "users.read users.write"})
+        say("    The new password is set, but CaciqueArcade said %s: %s" % (st, short(d, 200)))
 
 
 def reset_homeassistant(pw):
