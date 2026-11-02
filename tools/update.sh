@@ -11,6 +11,7 @@
 #   4. Refreshes the Cacique front page (buttons, icons, drives)
 #   5. Restarts CaciqueLibrary and CaciqueDash so they use the new files
 #   6. Shows the status of everything and saves a report
+#   7. Takes a snapshot for El Cacique Admin (the practice copy of this desktop)
 
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
@@ -18,7 +19,7 @@ start_report "update"
 RUN="$REPO/reports/run"; mkdir -p "$RUN"
 NAMES="cacique.home caciquelibrary.home caciqueflix.home caciquedocs.home caciquedash.home caciqueguard.home caciquephotos.home caciquehome.home caciquearcade.home caciqueacademy.home"
 
-step "1/6  Field Manual -> CaciqueLibrary"
+step "1/7  Field Manual -> CaciqueLibrary"
 need_library
 ZIM="$REPO/manual/dist/elcaciquedeck-manual.zim"
 DEST="$LIBRARY/Kiwix/elcaciquedeck-manual.zim"
@@ -30,7 +31,7 @@ else
     cp -f "$ZIM" "$DEST" && ok "Manual installed: $DEST" || warn "Could not copy the manual to Library/Kiwix"
 fi
 
-step "2/6  Firewall and names"
+step "2/7  Firewall and names"
 sudo -v || fail "This needs your password."
 open_port 8095 "CaciqueAcademy"
 if grep -q '# >>> elcaciquedeck names >>>' /etc/hosts; then
@@ -44,7 +45,8 @@ else
     info "Names not set up yet on this laptop (run adguard/setup-adguard.sh once)"
 fi
 
-step "3/6  Name helper (Caddy) + CaciqueAcademy"
+step "3/7  Name helper (Caddy) + CaciqueAcademy"
+mkdir -p "$DATA/twin"
 if [ -d "$REPO/adguard/conf" ] || docker ps -a --format '{{.Names}}' | grep -qx caciquenames; then
     (cd "$REPO/adguard" && docker compose up -d --force-recreate caddy >"$RUN/caddy.log" 2>&1) \
         && ok "Caddy reloaded" || warn "Caddy reload failed - see $RUN/caddy.log"
@@ -52,7 +54,7 @@ else
     warn "CaciqueGuard isn't set up yet - run adguard/setup-adguard.sh first"
 fi
 
-step "4/6  Cacique front page"
+step "4/7  Cacique front page"
 if [ -f "$REPO/homepage/.env" ]; then
     bash "$REPO/homepage/setup-homepage.sh" >"$RUN/homepage-refresh.log" 2>&1 \
         && ok "Front page refreshed (buttons, icons, drives)" || warn "Front page refresh had problems - see $RUN/homepage-refresh.log"
@@ -60,7 +62,7 @@ else
     info "Front page not set up yet (homepage/setup-homepage.sh)"
 fi
 
-step "5/6  Restarting CaciqueLibrary and CaciqueDash"
+step "5/7  Restarting CaciqueLibrary and CaciqueDash"
 pkill -x kiwix-serve 2>/dev/null; sleep 1
 if ls "$LIBRARY"/Kiwix/*.zim >/dev/null 2>&1; then
     nohup kiwix-serve --port 8080 "$LIBRARY"/Kiwix/*.zim >"$RUN/kiwix.log" 2>&1 &
@@ -70,9 +72,14 @@ pkill -f "[c]aciquedash.py" 2>/dev/null; sleep 1
 nohup python3 "$REPO/caciquedash.py" >"$RUN/dash.log" 2>&1 &
 ok "CaciqueDash restarted (new health checks)"
 
-step "6/6  Status (waiting 15 seconds for everything to answer)"
+step "6/7  Status (waiting 15 seconds for everything to answer)"
 sleep 15
 bash "$REPO/status.sh"
+
+step "7/7  Snapshot for El Cacique Admin (about a minute)"
+export REPO LIBRARY VAULT TWIN_DIR="$DATA/twin"
+if python3 "$REPO/tools/snapshot.py"; then ok "El Cacique Admin is up to date"
+else warn "The snapshot had problems (the real deck is fine) - try: bash ~/elcaciquedeck/tools/snapshot.sh"; fi
 
 finish
 IP="$(laptop_ip)"
@@ -80,6 +87,7 @@ cat <<EOT
 
  NEW:
   🎓 CaciqueAcademy:   http://${IP:-<laptop number>}:8095
+  🖥️  El Cacique Admin:  http://${IP:-<laptop number>}:8095/admin.html
   📘 Field Manual:     http://${IP:-<laptop number>}:8080/content/elcaciquedeck-manual/
      (also on the Cacique front page, under "Aprender · Learn")
 

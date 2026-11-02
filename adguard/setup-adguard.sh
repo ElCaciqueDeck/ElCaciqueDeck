@@ -102,7 +102,7 @@ fi
 
 # ---------------------------------------------------------------- 5
 step "5/6  Downloading and starting AdGuard Home + Caddy (first time takes a few minutes)"
-mkdir -p "$DIR/work" "$DIR/conf"
+mkdir -p "$DIR/work" "$DIR/conf" "$HOME/elcaciquedeck-data/twin"
 cd "$DIR" || fail "Can't open $DIR"
 docker compose pull || fail "Download failed. Check the internet connection and run the script again."
 docker compose up -d || fail "Could not start the containers."

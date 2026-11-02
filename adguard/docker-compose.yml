@@ -29,6 +29,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./site:/srv:ro
       - ../academy:/academy:ro
+      - ${HOME}/elcaciquedeck-data/twin:/twin:ro
       - caddy_data:/data
 
 volumes:

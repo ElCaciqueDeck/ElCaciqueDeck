@@ -1,0 +1,745 @@
+{
+"version": 1,
+"demo": true,
+"taken": "2026-11-01T21:14:03",
+"stamp": "2026-11-01_2114",
+"meta": {
+"host": "elcaciquedeck-00",
+"user": "cacique",
+"os": "Ubuntu 24.04.1 LTS",
+"kernel": "6.8.0-48-generic",
+"ip": "192.168.1.50",
+"ram_gb": 7.5,
+"commit": "ec24adf Plans: closet rig shopping list (Omada), network plan update, Academy digital twin design"
+},
+"services": [
+{
+"key": "front",
+"name": "Cacique",
+"port": 80,
+"host": "cacique.home",
+"code": 200,
+"up": true
+},
+{
+"key": "library",
+"name": "CaciqueLibrary",
+"port": 8080,
+"host": "caciquelibrary.home",
+"code": 200,
+"up": true
+},
+{
+"key": "flix",
+"name": "CaciqueFlix",
+"port": 8096,
+"host": "caciqueflix.home",
+"code": 302,
+"up": true
+},
+{
+"key": "docs",
+"name": "CaciqueDocs",
+"port": 8000,
+"host": "caciquedocs.home",
+"code": 302,
+"up": true
+},
+{
+"key": "photos",
+"name": "CaciquePhotos",
+"port": 2283,
+"host": "caciquephotos.home",
+"code": 200,
+"up": true
+},
+{
+"key": "home",
+"name": "CaciqueHome",
+"port": 8123,
+"host": "caciquehome.home",
+"code": 302,
+"up": true
+},
+{
+"key": "arcade",
+"name": "CaciqueArcade",
+"port": 8090,
+"host": "caciquearcade.home",
+"code": 200,
+"up": true
+},
+{
+"key": "academy",
+"name": "CaciqueAcademy",
+"port": 8095,
+"host": "caciqueacademy.home",
+"code": 200,
+"up": true
+},
+{
+"key": "dash",
+"name": "CaciqueDash",
+"port": 8888,
+"host": "caciquedash.home",
+"code": 200,
+"up": true
+},
+{
+"key": "guard",
+"name": "CaciqueGuard",
+"port": 3000,
+"host": "caciqueguard.home",
+"code": 302,
+"up": true
+}
+],
+"drives": [
+{
+"device": "/dev/sda2",
+"label": "",
+"fstype": "ext4",
+"size": 498967825612,
+"mount": "/",
+"usb": false,
+"used": 34359738368,
+"avail": 431644213248,
+"total": 490700013568
+},
+{
+"device": "/dev/sdb1",
+"label": "Library",
+"fstype": "ext4",
+"size": 2001111162552,
+"mount": "/media/cacique/Library",
+"usb": true,
+"used": 871878361088,
+"avail": 1000727379968,
+"total": 1979120929996
+},
+{
+"device": "/dev/sdc1",
+"label": "Vault",
+"fstype": "ext4",
+"size": 1000190509056,
+"mount": "/media/cacique/Vault",
+"usb": true,
+"used": 111669149696,
+"avail": 822486237184,
+"total": 983547510784
+}
+],
+"outputs": {
+"hostname": "elcaciquedeck-00",
+"whoami": "cacique",
+"uname -a": "Linux elcaciquedeck-00 6.8.0-48-generic #48-Ubuntu SMP PREEMPT_DYNAMIC x86_64 x86_64 x86_64 GNU/Linux",
+"uptime": " 21:14:03 up  2:37,  1 user,  load average: 0.84, 0.92, 0.88",
+"date": "Sun Nov  1 21:14:03 AST 2026",
+"os-release": "PRETTY_NAME=\"Ubuntu 24.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.1 LTS (Noble Numbat)\"\nID=ubuntu",
+"lsblk": "NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS\nsda      8:0    0 465.8G  0 disk \n├─sda1   8:1    0     1G  0 part /boot/efi\n└─sda2   8:2    0 464.7G  0 part /\nsdb      8:16   0   1.8T  0 disk \n└─sdb1   8:17   0   1.8T  0 part /media/cacique/Library\nsdc      8:32   0 931.5G  0 disk \n└─sdc1   8:33   0 931.5G  0 part /media/cacique/Vault",
+"lsblk -f": "NAME   FSTYPE FSVER LABEL   UUID                                 FSAVAIL FSUSE% MOUNTPOINTS\nsda                                                                         \n├─sda1 vfat   FAT32         5C1A-22B4                             1G     1% /boot/efi\n└─sda2 ext4   1.0           3f0e2a1c-7d1b-4a55-9b7e-1c2d3e4f5a6b  402G     8% /\nsdb                                                                         \n└─sdb1 ext4   1.0   Library 8a7b6c5d-4e3f-4a1b-9c8d-7e6f5a4b3c2d  932G    45% /media/cacique/Library\nsdc                                                                         \n└─sdc1 ext4   1.0   Vault   1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e  766G    11% /media/cacique/Vault",
+"df -h": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda2       457G   32G  402G   8% /\n/dev/sda1       1.1G  6.2M  1.1G   1% /boot/efi\n/dev/sdb1       1.8T  812G  932G  47% /media/cacique/Library\n/dev/sdc1       916G  104G  766G  12% /media/cacique/Vault",
+"free -h": "               total        used        free      shared  buff/cache   available\nMem:           7.5Gi       4.9Gi       312Mi       214Mi       2.6Gi       2.6Gi\nSwap:          4.0Gi       1.1Gi       2.9Gi",
+"ip -4 -br a": "lo               UNKNOWN        127.0.0.1/8 \nenp0s25          UP             192.168.1.50/24 \ndocker0          DOWN           172.17.0.1/16 ",
+"ip route get 1.1.1.1": "1.1.1.1 via 192.168.1.1 dev enp0s25 src 192.168.1.50 uid 1000 \n    cache ",
+"groups": "cacique adm cdrom sudo dip plugdev lpadmin docker",
+"docker ps": "NAMES                     STATUS        PORTS\ncaciquehomepage           Up 2 hours    0.0.0.0:3001->3000/tcp\ncaciquearcade             Up 2 hours    0.0.0.0:8090->8080/tcp\ncaciquearcade-db          Up 2 hours    3306/tcp\nhomeassistant             Up 2 hours    \nimmich_server             Up 2 hours    0.0.0.0:2283->2283/tcp\nimmich_postgres           Up 2 hours    5432/tcp\nimmich_redis              Up 2 hours    6379/tcp\ncaciquenames              Up 2 hours    \ncaciqueguard              Up 2 hours    \npaperless-webserver-1     Up 2 hours    0.0.0.0:8000->8000/tcp\npaperless-db-1            Up 2 hours    5432/tcp\npaperless-broker-1        Up 2 hours    6379/tcp",
+"status.sh": "\n  SERVER           STATUS ADDRESS\n  ------           ------ -------\n  Cacique          UP     http://192.168.1.50\n  CaciqueLibrary   UP     http://192.168.1.50:8080\n  CaciqueFlix      UP     http://192.168.1.50:8096\n  CaciqueDocs      UP     http://192.168.1.50:8000\n  CaciquePhotos    UP     http://192.168.1.50:2283\n  CaciqueHome      UP     http://192.168.1.50:8123\n  CaciqueArcade    UP     http://192.168.1.50:8090\n  CaciqueAcademy   UP     http://192.168.1.50:8095\n  CaciqueDash      UP     http://192.168.1.50:8888\n  CaciqueGuard     UP     http://192.168.1.50:3000\n\n  Library drive    OK     812G used of 1.8T, 932G free\n  Vault drive      OK     104G used of 916G, 766G free\n\n  Family front door:  http://192.168.1.50\n",
+"git log": "ec24adf Plans: closet rig shopping list (Omada), network plan update, Academy digital twin design\n7ba899a Field Manual, CaciqueAcademy, network/accounts plans, honest health checks\n9342fb9 Two drives: Library (media, games) + Vault (documents, photos, backups)\n5d1e0aa CaciqueArcade (RomM) - legal games only\n3c9f1b2 Cacique front page (Homepage) for the whole family\n2b7e4d1 CaciquePhotos (Immich) and CaciqueHome (Home Assistant)\n1f0c9a3 CaciqueGuard + easy .home names\n0e8b7c2 CaciqueDocs (Paperless-ngx) with Docker\n9d7a6b1 CaciqueDash JDM gauges\n8c6f5e0 First steps: Kiwix library and Jellyfin",
+"ss -ltn": "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port\nLISTEN 0      4096         0.0.0.0:53         0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:80         0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:2283       0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:3000       0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:3001       0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:8000       0.0.0.0:*\nLISTEN 0      10           0.0.0.0:8080       0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:8090       0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:8095       0.0.0.0:*\nLISTEN 0      512          0.0.0.0:8096       0.0.0.0:*\nLISTEN 0      4096         0.0.0.0:8123       0.0.0.0:*\nLISTEN 0      5            0.0.0.0:8888       0.0.0.0:*",
+"ps": "   1123 dockerd         /usr/bin/dockerd -H fd://\n   2210 kiwix-serve     kiwix-serve --port 8080 /media/cacique/Library/Kiwix/elcaciquedeck-manual.zim /media/cacique/Library/Kiwix/wikipedia_es_all_maxi.zim\n   2231 jellyfin        /app/bin/jellyfin\n   2245 python3         python3 /home/cacique/elcaciquedeck/caciquedash.py",
+"flatpak list": "org.jellyfin.JellyfinServer",
+"ufw": "Status: active\n\nTo                         Action      From\n--                         ------      ----\n53                         ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere\n8080/tcp                   ALLOW       Anywhere\n8096/tcp                   ALLOW       Anywhere\n8095/tcp                   ALLOW       Anywhere"
+},
+"env": {
+"paperless/.env": "PAPERLESS_DIR=/media/cacique/Vault/paperless\nPAPERLESS_SECRET_KEY=••••••\nPAPERLESS_ADMIN_USER=cacique\nPAPERLESS_ADMIN_PASSWORD=••••••\nUSERMAP_UID=1000\nPAPERLESS_TIME_ZONE=America/Puerto_Rico",
+"immich/.env": "UPLOAD_LOCATION=/media/cacique/Vault/Photos/immich\nDB_DATA_LOCATION=/home/cacique/elcaciquedeck-data/immich/postgres\nDB_PASSWORD=••••••\nCOMPOSE_PROFILES=ml\nTZ=America/Puerto_Rico",
+"homepage/.env": "HOMEPAGE_VAR_IP=192.168.1.50\nHOMEPAGE_ALLOWED_HOSTS=192.168.1.50,cacique.home\nVAULT_PATH=/media/cacique/Vault",
+"arcade/.env": "ROMM_LIBRARY=/media/cacique/Library/Arcade/library\nROMM_AUTH_SECRET_KEY=••••••\nDB_PASSWD=••••••",
+"homeassistant/.env": "TZ=America/Puerto_Rico"
+},
+"trees": {
+"repo": {
+"n": "elcaciquedeck",
+"d": 1,
+"c": [
+{
+"n": "academy",
+"d": 1,
+"c": [
+{
+"n": "index.html",
+"s": 39417
+},
+{
+"n": "admin.html",
+"s": 90000
+}
+]
+},
+{
+"n": "adguard",
+"d": 1,
+"c": [
+{
+"n": "conf",
+"d": 1,
+"c": [],
+"p": 1,
+"k": 1,
+"s": 4210
+},
+{
+"n": "site",
+"d": 1,
+"c": [
+{
+"n": "index.html",
+"s": 5200
+}
+]
+},
+{
+"n": "Caddyfile",
+"s": 1500
+},
+{
+"n": "docker-compose.yml",
+"s": 900
+},
+{
+"n": "setup-adguard.sh",
+"s": 6400
+}
+]
+},
+{
+"n": "arcade",
+"d": 1,
+"c": [
+{
+"n": ".env",
+"s": 310
+},
+{
+"n": "docker-compose.yml",
+"s": 1400
+},
+{
+"n": "setup-arcade.sh",
+"s": 5200
+}
+]
+},
+{
+"n": "docs",
+"d": 1,
+"c": [
+{
+"n": "academy-twin-plan.md",
+"s": 6000
+},
+{
+"n": "accounts-plan.md",
+"s": 3200
+},
+{
+"n": "network-plan.md",
+"s": 5400
+},
+{
+"n": "rig-shopping-list.md",
+"s": 7000
+}
+]
+},
+{
+"n": "homeassistant",
+"d": 1,
+"c": [
+{
+"n": ".env",
+"s": 90
+},
+{
+"n": "docker-compose.yml",
+"s": 700
+},
+{
+"n": "setup-homeassistant.sh",
+"s": 4100
+}
+]
+},
+{
+"n": "homepage",
+"d": 1,
+"c": [
+{
+"n": "config",
+"d": 1,
+"c": [
+{
+"n": "services.yaml",
+"s": 3900
+},
+{
+"n": "settings.yaml",
+"s": 800
+},
+{
+"n": "widgets.yaml",
+"s": 600
+}
+]
+},
+{
+"n": "custom-icons",
+"d": 1,
+"c": [
+{
+"n": "academy.svg",
+"s": 900
+},
+{
+"n": "manual.svg",
+"s": 880
+}
+]
+},
+{
+"n": ".env",
+"s": 160
+},
+{
+"n": "docker-compose.yml",
+"s": 800
+},
+{
+"n": "setup-homepage.sh",
+"s": 4600
+}
+]
+},
+{
+"n": "immich",
+"d": 1,
+"c": [
+{
+"n": ".env",
+"s": 420
+},
+{
+"n": "docker-compose.yml",
+"s": 2900
+},
+{
+"n": "setup-immich.sh",
+"s": 5600
+}
+]
+},
+{
+"n": "lib",
+"d": 1,
+"c": [
+{
+"n": "common.sh",
+"s": 3300
+}
+]
+},
+{
+"n": "manual",
+"d": 1,
+"c": [
+{
+"n": "dist",
+"d": 1,
+"c": [
+{
+"n": "elcaciquedeck-manual.zim",
+"s": 98000
+}
+]
+},
+{
+"n": "src",
+"d": 1,
+"c": [
+{
+"n": "01-bienvenida.md",
+"s": 4000
+},
+{
+"n": "02-la-terminal.md",
+"s": 4000
+},
+{
+"n": "03-los-discos.md",
+"s": 4000
+},
+{
+"n": "04-los-servidores.md",
+"s": 4000
+},
+{
+"n": "05-docker.md",
+"s": 4000
+},
+{
+"n": "06-nombres.md",
+"s": 4000
+},
+{
+"n": "07-la-familia.md",
+"s": 4000
+},
+{
+"n": "08-el-arcade.md",
+"s": 4000
+},
+{
+"n": "09-problemas.md",
+"s": 4000
+},
+{
+"n": "10-glosario.md",
+"s": 4000
+}
+]
+},
+{
+"n": "build_manual.py",
+"s": 5100
+}
+]
+},
+{
+"n": "paperless",
+"d": 1,
+"c": [
+{
+"n": ".env",
+"s": 380
+},
+{
+"n": "docker-compose.yml",
+"s": 1500
+},
+{
+"n": "setup-paperless.sh",
+"s": 5600
+}
+]
+},
+{
+"n": "tools",
+"d": 1,
+"c": [
+{
+"n": "arweave-backup.sh",
+"s": 7600
+},
+{
+"n": "drives.sh",
+"s": 3900
+},
+{
+"n": "move-to-vault.sh",
+"s": 6900
+},
+{
+"n": "snapshot.py",
+"s": 14000
+},
+{
+"n": "snapshot.sh",
+"s": 900
+},
+{
+"n": "update.sh",
+"s": 3800
+}
+]
+},
+{
+"n": ".gitignore",
+"s": 180
+},
+{
+"n": "README.md",
+"s": 21000
+},
+{
+"n": "caciquedash.py",
+"s": 19000
+},
+{
+"n": "start-all.sh",
+"s": 3100
+},
+{
+"n": "status.sh",
+"s": 1500
+},
+{
+"n": "stop-all.sh",
+"s": 1300
+}
+]
+},
+"library": {
+"n": "Library",
+"d": 1,
+"c": [
+{
+"n": "Arcade",
+"d": 1,
+"c": [
+{
+"n": "library",
+"d": 1,
+"c": [
+{
+"n": "roms",
+"d": 1,
+"c": [
+{
+"n": "nes",
+"d": 1,
+"c": [
+{
+"n": "Homebrew Adventure (demo).nes",
+"s": 262160
+}
+]
+},
+{
+"n": "snes",
+"d": 1,
+"c": []
+},
+{
+"n": "gba",
+"d": 1,
+"c": [
+{
+"n": "Puerto Pixel (homebrew).gba",
+"s": 4194304
+}
+]
+}
+]
+}
+]
+},
+{
+"n": "resources",
+"d": 1,
+"c": []
+}
+]
+},
+{
+"n": "Kiwix",
+"d": 1,
+"c": [
+{
+"n": "wikipedia_es_all_maxi.zim",
+"s": 128849018880
+},
+{
+"n": "wiktionary_es_all.zim",
+"s": 3221225472
+},
+{
+"n": "gutenberg_es_all.zim",
+"s": 8589934592
+},
+{
+"n": "elcaciquedeck-manual.zim",
+"s": 98000
+}
+]
+},
+{
+"n": "Movies",
+"d": 1,
+"c": [
+{
+"n": "Coco (2017)",
+"d": 1,
+"c": [
+{
+"n": "Coco.mkv",
+"s": 2254857830
+}
+]
+},
+{
+"n": "Encanto (2021)",
+"d": 1,
+"c": [
+{
+"n": "Encanto.mkv",
+"s": 2254857830
+}
+]
+},
+{
+"n": "Moana (2016)",
+"d": 1,
+"c": [
+{
+"n": "Moana.mkv",
+"s": 2254857830
+}
+]
+},
+{
+"n": "Up (2009)",
+"d": 1,
+"c": [
+{
+"n": "Up.mkv",
+"s": 2254857830
+}
+]
+},
+{
+"n": "Toy Story (1995)",
+"d": 1,
+"c": [
+{
+"n": "Toy Story.mkv",
+"s": 2254857830
+}
+]
+}
+]
+},
+{
+"n": "Music",
+"d": 1,
+"c": [
+{
+"n": "Salsa",
+"d": 1,
+"c": []
+},
+{
+"n": "Plena y Bomba",
+"d": 1,
+"c": []
+}
+]
+},
+{
+"n": "Shows",
+"d": 1,
+"c": [
+{
+"n": "Cartoons",
+"d": 1,
+"c": []
+}
+]
+},
+{
+"n": "Maps",
+"d": 1,
+"c": [
+{
+"n": "puerto-rico.mwm",
+"s": 120000000
+}
+]
+}
+]
+},
+"vault": {
+"n": "Vault",
+"d": 1,
+"c": [
+{
+"n": "Backups",
+"d": 1,
+"p": 1,
+"k": 12,
+"s": 42949672960
+},
+{
+"n": "paperless",
+"d": 1,
+"p": 1,
+"k": 318,
+"s": 2469606195
+},
+{
+"n": "Photos",
+"d": 1,
+"p": 1,
+"k": 5421,
+"s": 65498251264
+}
+]
+},
+"home": {
+"n": "cacique",
+"d": 1,
+"c": [
+{
+"n": "Desktop",
+"d": 1,
+"c": [],
+"p": 1
+},
+{
+"n": "Documents",
+"d": 1,
+"c": [],
+"p": 1
+},
+{
+"n": "Downloads",
+"d": 1,
+"c": [],
+"p": 1
+},
+{
+"n": "Music",
+"d": 1,
+"c": [],
+"p": 1
+},
+{
+"n": "Pictures",
+"d": 1,
+"c": [],
+"p": 1
+},
+{
+"n": "Videos",
+"d": 1,
+"c": [],
+"p": 1
+},
+{
+"n": "deck-logs",
+"d": 1,
+"c": [],
+"p": 1
+},
+{
+"n": "elcaciquedeck-data",
+"d": 1,
+"c": [],
+"p": 1
+}
+]
+}
+},
+"screenshots": {},
+"warnings": []
+}

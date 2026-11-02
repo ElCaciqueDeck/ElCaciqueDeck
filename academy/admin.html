@@ -1,0 +1,1241 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El Cacique Admin</title>
+<!--
+  CaciqueAcademy 2.0 - "El Cacique Admin": a practice copy (digital twin) of the ElCaciqueDeck desktop.
+  It reads the snapshot that tools/snapshot.sh saves on every update (served by Caddy at /twin/latest/).
+  If there is no snapshot (or you open it from GitHub), it uses the made-up demo in twin-demo/.
+  Nothing here can touch the real deck: it is a frozen photo, practice only.
+  Story Mode chapters live in STORY below: add one chapter per real update.
+-->
+<style>
+:root{
+  --top:#0d0d0f;--bg:#1b1714;--win:#242022;--win2:#2e292b;--line:#3b3537;--txt:#f3eee6;--muted:#a49c90;
+  --amber:#ffb35c;--glow:#ff8a1c;--green:#46e06a;--red:#ff4f45;--blue:#5aa9ff;--term:#140f14;--termtxt:#e9e3dc;
+  --sel:#e95420;--radius:12px
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:15px/1.45 Ubuntu,"DejaVu Sans",system-ui,sans-serif}
+button{font:inherit;cursor:pointer;color:inherit}
+[hidden]{display:none!important}
+code,.mono{font-family:"Ubuntu Mono","DejaVu Sans Mono",Menlo,Consolas,monospace}
+code{background:#00000055;border:1px solid var(--line);border-radius:4px;padding:0 5px}
+
+/* ---------- login ---------- */
+#login{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;
+  background:radial-gradient(1200px 700px at 50% 120%,#5a2a12 0%,#2a1610 45%,#120d0c 100%)}
+#login .clock{font-size:clamp(48px,12vw,84px);font-weight:300;letter-spacing:.02em}
+#login .date{color:var(--muted);margin-top:-12px}
+.avatar{width:96px;height:96px;border-radius:50%;background:#2b211c;border:2px solid var(--amber);display:grid;place-items:center;box-shadow:0 0 24px rgba(255,138,28,.35)}
+.avatar svg{width:64px;height:64px}
+#login h1{margin:0;font-size:22px;font-weight:500}
+.loginbox{display:flex;gap:8px;width:min(340px,100%)}
+.loginbox input{flex:1;min-width:0;background:#00000066;border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:10px 12px;font:inherit}
+.loginbox button,.bigbtn{background:var(--sel);border:0;border-radius:10px;padding:10px 16px;font-weight:600;color:#fff}
+.seg{display:flex;background:#00000055;border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{background:none;border:0;border-radius:999px;padding:5px 12px;color:var(--muted);font-size:13px}
+.seg button[aria-pressed=true]{background:var(--amber);color:#1a1206;font-weight:600}
+.loginopts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.snapnote{color:var(--muted);font-size:13px;text-align:center;max-width:460px}
+.snapnote b{color:var(--amber)}
+#login select{background:#00000066;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font:inherit;font-size:13px}
+
+/* ---------- mode picker ---------- */
+#picker{position:fixed;inset:0;background:#000000aa;display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.pickcard{background:var(--win);border:1px solid var(--line);border-radius:16px;padding:18px;width:min(760px,100%);max-height:100%;overflow:auto}
+.pickcard h2{margin:0 0 4px;color:var(--amber)}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}
+.mode{text-align:left;background:var(--win2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;min-height:150px}
+.mode:hover{border-color:var(--glow);box-shadow:0 0 14px rgba(255,138,28,.25)}
+.mode .ico{font-size:28px}
+.mode b{color:var(--amber);font-size:17px}
+.mode span{color:var(--muted);font-size:13px;flex:1}
+.mode small{color:var(--green);font-size:12px}
+
+/* ---------- desktop ---------- */
+#desk{position:fixed;inset:0}
+.topbar{position:absolute;top:0;left:0;right:0;height:32px;background:var(--top);display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:14px;z-index:40}
+.topbar .l,.topbar .r{display:flex;align-items:center;gap:10px;min-width:0}
+.topbar button{background:none;border:0;padding:3px 8px;border-radius:999px}
+.topbar button:hover{background:#ffffff1a}
+.badge{background:var(--amber);color:#1a1206;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.badge.demo{background:#5aa9ff}
+.wall{position:absolute;top:32px;left:0;right:0;bottom:0;background:
+  radial-gradient(900px 500px at 70% 110%,#e95420aa 0%,transparent 60%),
+  radial-gradient(700px 500px at 0% 0%,#5a1f4a 0%,transparent 60%),
+  linear-gradient(160deg,#2c0f22,#3b1424 40%,#5b1d18)}
+.wall svg.sun{position:absolute;right:6%;bottom:10%;width:min(38vw,320px);opacity:.16}
+.dock{position:absolute;left:8px;top:44px;bottom:12px;width:62px;background:#0d0d0fcc;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0;z-index:30}
+.dock button{position:relative;width:48px;height:48px;border-radius:12px;border:0;background:none;display:grid;place-items:center;font-size:26px}
+.dock button:hover{background:#ffffff1a}
+.dock button.running::before{content:"";position:absolute;left:-6px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:var(--amber)}
+.dock .sp{flex:1}
+.dock button .tip{position:absolute;left:58px;white-space:nowrap;background:#000;padding:3px 8px;border-radius:6px;font-size:12px;display:none}
+.dock button:hover .tip{display:block}
+
+/* ---------- windows ---------- */
+.win{position:absolute;background:var(--win);border:1px solid #000;border-radius:var(--radius);box-shadow:0 18px 50px #000a;display:flex;flex-direction:column;overflow:hidden;min-width:300px;min-height:200px;z-index:10}
+.win.focus{box-shadow:0 18px 60px #000c,0 0 0 1px #ffffff22}
+.hb{height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;background:var(--win2);cursor:move;user-select:none;touch-action:none}
+.hb .t{flex:1;text-align:center;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb .x{width:26px;height:26px;border-radius:50%;border:0;background:#ffffff1a;font-size:14px;line-height:1}
+.hb .x:hover{background:var(--sel)}
+.wbody{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* files */
+.files{flex:1;display:flex;min-height:0}
+.side{width:170px;flex:none;background:#1f1b1d;padding:8px;overflow:auto;border-right:1px solid var(--line)}
+.side button{display:flex;width:100%;gap:8px;align-items:center;text-align:left;background:none;border:0;border-radius:8px;padding:6px 8px;font-size:14px}
+.side button:hover{background:#ffffff12}
+.side button.on{background:#ffffff22}
+.side .off{color:var(--muted);font-style:italic}
+.side hr{border:0;border-top:1px solid var(--line);margin:6px 0}
+.fmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.crumbs{display:flex;gap:4px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line);flex-wrap:wrap;font-size:13px}
+.crumbs button{background:#ffffff10;border:0;border-radius:6px;padding:2px 8px}
+.ftool{display:flex;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap}
+.ftool select,.ftool button{background:#ffffff14;border:1px solid var(--line);border-radius:6px;padding:3px 8px;color:var(--txt);font:inherit;font-size:13px}
+.grid{flex:1;overflow:auto;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;align-content:start}
+.item{background:none;border:1px solid transparent;border-radius:10px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;text-align:center;word-break:break-word}
+.item:hover{background:#ffffff10}
+.item.sel{background:#e9542033;border-color:var(--sel)}
+.item .i{font-size:34px;line-height:1}
+.item .s{color:var(--muted);font-size:11px}
+.private{margin:10px;padding:14px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.private b{color:var(--amber)}
+
+/* terminal */
+.term{flex:1;display:flex;flex-direction:column;background:var(--term);min-height:0}
+.out{flex:1;overflow:auto;padding:8px 10px;white-space:pre-wrap;word-break:break-word;font-size:14px;color:var(--termtxt)}
+.out .ps,.pl .ps{color:#8ae234;font-weight:700}.out .ps i,.pl .ps i{color:#729fcf;font-style:normal}
+.out .err{color:#ff8f87}.out .note{color:var(--amber)}.out .good{color:#8ae234}
+.pl{display:flex;gap:6px;padding:6px 10px 10px;font-size:14px;align-items:center}
+.pl input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:inherit;caret-color:#fff}
+
+/* firefox */
+.ff{flex:1;display:flex;flex-direction:column;min-height:0;background:#fff;color:#15141a}
+.ffbar{display:flex;gap:6px;padding:6px;background:#2b2a33;align-items:center}
+.ffbar button{background:none;border:0;color:#fbfbfe;font-size:16px;padding:2px 8px;border-radius:6px}
+.ffbar button:hover{background:#ffffff1a}
+.ffbar input{flex:1;min-width:0;background:#1c1b22;color:#fbfbfe;border:1px solid #52525e;border-radius:6px;padding:5px 10px;font:inherit;font-size:13px}
+.page{flex:1;overflow:auto}
+.page img{width:100%;display:block}
+.pg{padding:20px;max-width:900px;margin:0 auto}
+.pg h1{margin:.2em 0;font-size:26px}
+.err500{padding:40px 24px;font-family:"DejaVu Sans",sans-serif}
+.err500 h1{font-size:32px}
+.ffoff{padding:50px 24px;max-width:640px;margin:0 auto;color:#15141a}
+.ffoff h1{font-size:24px}
+.home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}
+.svc{display:flex;gap:10px;align-items:center;text-align:left;background:#f4f1ec;border:1px solid #ddd5c8;border-radius:12px;padding:10px;color:#15141a}
+.svc:hover{border-color:var(--sel)}
+.svc .e{font-size:26px}
+.svc small{display:block;color:#6b655c}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;margin-left:auto}
+.dot.up{background:#22a447}.dot.bad{background:#d7372c}.dot.off{background:#aaa}
+.drawn{border:2px dashed #d9cfbf;border-radius:14px;padding:18px;background:#faf7f2}
+.drawn .e{font-size:44px}
+.movies{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
+.poster{aspect-ratio:2/3;border-radius:10px;background:linear-gradient(160deg,#3b1424,#e95420);color:#fff;display:flex;align-items:flex-end;padding:8px;font-weight:700;font-size:13px}
+.shotnote{background:#fff4e0;color:#5a3a00;font-size:12px;padding:4px 10px}
+
+/* disks */
+.disks{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.disk{background:var(--win2);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.disk .e{font-size:34px}
+.disk .info{flex:1;min-width:180px}
+.bar{height:10px;border-radius:999px;background:#00000066;overflow:hidden;margin:6px 0 2px}
+.bar i{display:block;height:100%;background:var(--amber)}
+.disk button{background:#ffffff14;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.disk button.go{background:var(--sel);border-color:var(--sel);color:#fff}
+
+/* mission HUD */
+#hud{position:absolute;right:12px;top:44px;width:min(340px,calc(100% - 24px));background:#141012ee;border:1px solid var(--amber);border-radius:14px;padding:12px 14px;z-index:35;box-shadow:0 10px 40px #000a;max-height:calc(100% - 60px);overflow:auto}
+#hud.min .body{display:none}
+#hud .head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#hud .head b{color:var(--amber)}
+#hud .head button{background:#ffffff14;border:0;border-radius:6px;padding:2px 8px;font-size:12px}
+#hud .story{color:#e8dfd2;font-size:14px;margin:8px 0}
+#hud ol{padding-left:20px;margin:8px 0}
+#hud li{margin:4px 0;color:var(--muted)}
+#hud li.cur{color:var(--txt);font-weight:600}
+#hud li.done{color:var(--green);text-decoration:line-through}
+#hud .hint{background:#ffffff0d;border:1px dashed var(--line);border-radius:8px;padding:8px;font-size:13px;margin-top:6px}
+#hud .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+#hud .row button,#hud .row a{background:#ffffff14;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:13px;color:var(--txt);text-decoration:none}
+#hud .row .go{background:var(--sel);border-color:var(--sel);color:#fff}
+#hud .win-msg{background:#0f2a14;border:1px solid var(--green);border-radius:10px;padding:10px;margin-top:8px}
+#hud .lesson{color:var(--amber);font-size:13px;margin-top:6px}
+
+/* notifications + modal */
+#toast{position:absolute;top:40px;left:50%;transform:translateX(-50%);background:#000e;border:1px solid var(--line);border-radius:12px;padding:10px 14px;z-index:60;max-width:min(520px,calc(100% - 24px));font-size:14px}
+#modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:16px;z-index:70}
+.mcard{background:var(--win);border:1px solid var(--amber);border-radius:16px;padding:18px 20px;width:min(560px,100%);max-height:100%;overflow:auto}
+.mcard .era{color:var(--muted);font-size:12px;letter-spacing:.2em;text-transform:uppercase}
+.mcard h2{margin:4px 0 8px;color:var(--amber)}
+.mcard p{margin:.5em 0;color:#e8dfd2}
+.chapters{display:grid;gap:6px;margin-top:10px}
+.chapters button{text-align:left;background:var(--win2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;gap:8px;align-items:center}
+.chapters button[disabled]{opacity:.4;cursor:not-allowed}
+.chapters .n{color:var(--muted);font-size:12px;width:22px}
+
+@media(max-width:760px){
+  .dock{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:60px;flex-direction:row;justify-content:space-around;padding:0 6px}
+  .dock .sp{display:none}
+  .dock button .tip{display:none!important}
+  .win{left:0!important;top:32px!important;width:100%!important;height:calc(100% - 32px - 76px)!important;border-radius:0}
+  .side{width:120px}
+  #hud{top:auto;bottom:80px;max-height:45%}
+  .topbar .hide-s{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================= LOGIN ======================= -->
+<section id="login">
+  <div class="clock" id="lclock">--:--</div>
+  <div class="date" id="ldate"></div>
+  <div class="avatar" aria-hidden="true">
+    <svg viewBox="0 0 64 64" fill="none" stroke="#ffb35c" stroke-width="3" stroke-linecap="round">
+      <circle cx="32" cy="32" r="9"/><circle cx="32" cy="32" r="3" fill="#ffb35c"/>
+      <path d="M32 6v10M32 48v10M6 32h10M48 32h10M13.6 13.6l7 7M43.4 43.4l7 7M13.6 50.4l7-7M43.4 20.6l7-7"/>
+    </svg>
+  </div>
+  <h1>El Cacique Admin</h1>
+  <form class="loginbox" id="loginForm">
+    <input id="pw" type="password" autocomplete="off" aria-label="password">
+    <button type="submit" id="loginBtn"></button>
+  </form>
+  <div class="loginopts">
+    <div class="seg" id="langSeg"><button data-v="es">Español</button><button data-v="en">English</button></div>
+    <div class="seg" id="ageSeg"><button data-v="kid">🧒 <span data-t="kid"></span></button><button data-v="adult">🧑 <span data-t="adult"></span></button></div>
+  </div>
+  <div class="snapnote" id="snapnote"></div>
+  <div id="timeMachine" hidden><label class="snapnote"><span data-t="tm"></span> <select id="tmSel"></select></label></div>
+</section>
+
+<!-- ======================= MODE PICKER ======================= -->
+<section id="picker" hidden>
+  <div class="pickcard">
+    <h2 data-t="pickTitle"></h2>
+    <div class="snapnote" style="text-align:left" data-t="pickSub"></div>
+    <div class="modes">
+      <button class="mode" data-mode="story"><span class="ico">📖</span><b data-t="mStory"></b><span data-t="mStoryD"></span><small id="storyProg"></small></button>
+      <button class="mode" data-mode="free"><span class="ico">🎲</span><b data-t="mFree"></b><span data-t="mFreeD"></span><small id="freeProg"></small></button>
+      <button class="mode" data-mode="explore"><span class="ico">🧭</span><b data-t="mExplore"></b><span data-t="mExploreD"></span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= DESKTOP ======================= -->
+<section id="desk" hidden>
+  <div class="topbar">
+    <div class="l"><button id="actBtn" data-t="activities"></button><span class="badge" id="modeBadge"></span></div>
+    <div class="c hide-s" id="tclock"></div>
+    <div class="r"><span class="badge demo hide-s" id="snapBadge"></span><button id="langBtn">ES/EN</button><button id="offBtn" title="Log out">⏻</button></div>
+  </div>
+  <div class="wall">
+    <svg class="sun" viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" aria-hidden="true">
+      <circle cx="100" cy="100" r="34"/><path d="M100 82a18 18 0 1 1-18 18 9 9 0 1 1 9 9"/>
+      <path d="M100 20v30M100 150v30M20 100h30M150 100h30M43 43l21 21M136 136l21 21M43 157l21-21M136 64l21-21"/>
+    </svg>
+  </div>
+  <nav class="dock" id="dock"></nav>
+  <div id="hud" hidden></div>
+  <div id="toast" hidden></div>
+</section>
+
+<section id="modal" hidden><div class="mcard" id="mcard"></div></section>
+
+<script>
+"use strict";
+/* =====================================================================
+   Words (ES / EN)
+   ===================================================================== */
+const W = {
+  enter:{es:"Entrar",en:"Sign in"}, kid:{es:"Niños",en:"Kids"}, adult:{es:"Adultos",en:"Adults"},
+  pwHint:{es:"Contraseña de práctica: cacique",en:"Practice password: cacique"},
+  pwKid:{es:"Toca Entrar (los niños no necesitan contraseña)",en:"Tap Sign in (kids don't need a password)"},
+  pwBad:{es:"Contraseña incorrecta. Pista: cacique (todo en minúsculas)",en:"Wrong password. Hint: cacique (all lowercase)"},
+  snapReal:{es:"Foto real de tu deck (<b>{d}</b>). Es una copia de práctica: nada aquí toca el servidor real.",en:"Real photo of your deck (<b>{d}</b>). It's a practice copy: nothing here touches the real server."},
+  snapDemo:{es:"<b>Modo demo</b>: este deck es inventado. En la ThinkPad, corre <code>update.sh</code> y verás tu deck real.",en:"<b>Demo mode</b>: this deck is made up. On the ThinkPad, run <code>update.sh</code> to see your real deck."},
+  tm:{es:"Máquina del tiempo:",en:"Time machine:"},
+  pickTitle:{es:"¿Cómo quieres jugar?",en:"How do you want to play?"},
+  pickSub:{es:"Todo pasa en la copia de práctica. Puedes romper lo que quieras.",en:"Everything happens in the practice copy. Break whatever you like."},
+  mStory:{es:"Modo Historia",en:"Story Mode"}, mStoryD:{es:"Revive cómo se construyó El Cacique HomeLab, capítulo por capítulo, hasta esta actualización.",en:"Relive how El Cacique HomeLab was built, chapter by chapter, up to this update."},
+  mFree:{es:"Modo Libre",en:"Free Mode"}, mFreeD:{es:"Entras y algo se rompió. Descubre qué pasó y arréglalo.",en:"You log in and something broke. Find out what happened and fix it."},
+  mExplore:{es:"Explorar",en:"Explore"}, mExploreD:{es:"Mira tu deck tal como estaba en la última actualización. Sin misiones.",en:"Look around your deck as it was at the last update. No missions."},
+  activities:{es:"Actividades",en:"Activities"},
+  files:{es:"Archivos",en:"Files"}, terminal:{es:"Terminal",en:"Terminal"}, firefox:{es:"Firefox",en:"Firefox"}, disks:{es:"Discos",en:"Disks"},
+  manual:{es:"Manual de Campo",en:"Field Manual"}, mission:{es:"Misión",en:"Mission"}, modes:{es:"Cambiar modo",en:"Change mode"},
+  home:{es:"Carpeta personal",en:"Home"}, notConnected:{es:"no conectado",en:"not connected"},
+  privTitle:{es:"🔒 Carpeta privada",en:"🔒 Private folder"},
+  privVault:{es:"La copia de práctica no guarda nombres de documentos ni fotos de la Bóveda. Solo sabe que aquí hay <b>{k} archivos</b> ({s}).",en:"The practice copy doesn't save document or photo names from the Vault. It only knows there are <b>{k} files</b> here ({s})."},
+  privHome:{es:"Esta carpeta es privada: la copia de práctica solo guardó su nombre.",en:"This folder is private: the practice copy only saved its name."},
+  notCaptured:{es:"(no se guardó en la foto)",en:"(not saved in the photo)"},
+  moreInside:{es:"Hay más adentro, pero la foto solo bajó hasta aquí.",en:"There's more inside, but the photo only went this deep."},
+  empty:{es:"Carpeta vacía",en:"Empty folder"},
+  moveTo:{es:"Mover a…",en:"Move to…"}, move:{es:"Mover",en:"Move"},
+  selectFirst:{es:"Toca una carpeta o archivo para seleccionarlo.",en:"Tap a folder or file to select it."},
+  mount:{es:"Conectar",en:"Mount"}, unmount:{es:"Desconectar",en:"Unmount"},
+  mounted:{es:"conectado en",en:"mounted at"}, plugged:{es:"enchufado pero no conectado",en:"plugged in but not mounted"},
+  used:{es:"usado",en:"used"}, free:{es:"libre",en:"free"},
+  hint:{es:"💡 Pista",en:"💡 Hint"}, minimize:{es:"–",en:"–"},
+  next:{es:"Siguiente capítulo ▶",en:"Next chapter ▶"}, again:{es:"Otro problema 🎲",en:"Another problem 🎲"},
+  begin:{es:"¡Vamos!",en:"Let's go!"}, chapters:{es:"Capítulos",en:"Chapters"}, close:{es:"Cerrar",en:"Close"},
+  solved:{es:"✅ ¡Arreglado! Buen trabajo, Cacique.",en:"✅ Fixed! Good job, Cacique."},
+  chapterDone:{es:"✅ ¡Capítulo completado!",en:"✅ Chapter complete!"},
+  storyEnd:{es:"🏁 ¡Llegaste al presente! La historia sigue con la próxima actualización.",en:"🏁 You reached the present! The story continues with the next update."},
+  lesson:{es:"Lección",en:"Lesson"}, step:{es:"Paso",en:"Step"},
+  explore:{es:"Explorar",en:"Explore"}, story:{es:"Historia",en:"Story"}, freeM:{es:"Libre",en:"Free"},
+  storyProg:{es:"{n} de {t} capítulos",en:"{n} of {t} chapters"}, freeProg:{es:"{n} problemas arreglados",en:"{n} problems fixed"},
+  practice:{es:"(práctica: en la copia no pasa nada real)",en:"(practice: nothing real happens in the copy)"},
+  incoming:{es:"⚠️ Algo pasó en el deck…",en:"⚠️ Something happened on the deck…"},
+  startPage:{es:"Página de inicio Cacique",en:"Cacique start page"},
+  shotOf:{es:"Foto real tomada en la actualización",en:"Real picture taken at the update"},
+  drawnNote:{es:"Dibujo de práctica (no hay foto real de esta página todavía)",en:"Practice drawing (no real picture of this page yet)"},
+  noMovies:{es:"No se encontraron películas. ¿Está conectado el disco Library?",en:"No movies found. Is the Library drive connected?"},
+  cantConnect:{es:"No se puede conectar",en:"Unable to connect"},
+  cantConnectD:{es:"Firefox no puede establecer una conexión con el servidor en {a}. Puede que el servidor esté apagado.",en:"Firefox can't establish a connection to the server at {a}. The server may be off."},
+  manualAt:{es:"Abre el Manual de Campo real en CaciqueLibrary:",en:"Open the real Field Manual in CaciqueLibrary:"},
+  toMenu:{es:"Elegir modo",en:"Choose mode"}
+};
+const SVC_INFO = {
+  front:{e:"🏠",es:"La página de la familia: todos los botones",en:"The family page: every button"},
+  library:{e:"📚",es:"Enciclopedia y libros sin internet (Kiwix)",en:"Encyclopedia and books, no internet needed (Kiwix)"},
+  flix:{e:"🎬",es:"Películas y series de la casa (Jellyfin)",en:"The family's movies and shows (Jellyfin)"},
+  docs:{e:"🗂️",es:"Documentos escaneados (Paperless)",en:"Scanned documents (Paperless)"},
+  photos:{e:"📷",es:"Fotos de la familia (Immich)",en:"Family photos (Immich)"},
+  home:{e:"💡",es:"La casa inteligente (Home Assistant)",en:"The smart home (Home Assistant)"},
+  arcade:{e:"🕹️",es:"Juegos legales (RomM)",en:"Legal games (RomM)"},
+  academy:{e:"🎓",es:"Este juego de práctica",en:"This practice game"},
+  dash:{e:"🏎️",es:"Relojes JDM del servidor",en:"The server's JDM gauges"},
+  guard:{e:"🛡️",es:"Bloquea anuncios y da nombres .home (AdGuard)",en:"Blocks ads and gives .home names (AdGuard)"}
+};
+/* which Docker folder (stack) runs which server, and the container names */
+const STACKS = {paperless:["docs"],immich:["photos"],arcade:["arcade"],homeassistant:["home"],homepage:["front"],adguard:["guard","academy"]};
+const CONTAINERS = {"paperless-webserver-1":"docs",immich_server:"photos",caciquearcade:"arcade",homeassistant:"home",caciquehomepage:"front",caciqueguard:"guard",caciquenames:"academy"};
+
+/* =====================================================================
+   App state
+   ===================================================================== */
+const S = {lang:"es", age:"adult", mode:"explore", snap:null, base:"", demo:true, world:null,
+           cwd:"", hist:[], hpos:0, mission:null, step:0, done:false, z:20, wins:{}, lastIncident:null};
+const store = {
+  get(){ try{ return JSON.parse(localStorage.getItem("caciqueadmin-progress")) || {}; }catch(e){ return {}; } },
+  set(v){ try{ localStorage.setItem("caciqueadmin-progress", JSON.stringify(v)); }catch(e){} }
+};
+let P = store.get();
+P.story = P.story || {kid:0, adult:0}; P.free = P.free || {kid:0, adult:0};
+if (P.lang) S.lang = P.lang; if (P.age) S.age = P.age;
+
+const $ = (s, r=document) => r.querySelector(s);
+const el = (tag, attrs={}, ...kids) => { const n=document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)) { if (k==="class") n.className=v; else if (k==="html") n.innerHTML=v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k,v); }
+  for (const k of kids) if (k!=null) n.append(k); return n; };
+const L = o => (o && (o[S.lang] ?? o.es)) ?? "";
+const T = (k, vars={}) => L(W[k]).replace(/\{(\w+)\}/g, (_,v)=> vars[v] ?? "");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const human = b => { if (b==null) return ""; const u=["B","KB","MB","GB","TB"]; let i=0; b=+b; while(b>=1024&&i<4){b/=1024;i++;} return (b>=10||i===0?Math.round(b):b.toFixed(1))+" "+u[i]; };
+const save = () => { P.lang=S.lang; P.age=S.age; store.set(P); };
+
+/* =====================================================================
+   Snapshot loading (real -> demo)
+   ===================================================================== */
+async function getJSON(u){ const r = await fetch(u, {cache:"no-store"}); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function loadSnapshot(stamp){
+  const tries = stamp ? [["twin/"+stamp+"/", false]] : [["twin/latest/", false], ["twin-demo/", true]];
+  for (const [base, demo] of tries){
+    try { const s = await getJSON(base+"snapshot.json"); S.snap=s; S.base=base; S.demo = demo || !!s.demo; return; } catch(e){}
+  }
+  throw new Error("no snapshot");
+}
+async function loadIndex(){
+  try { const ix = await getJSON("twin/index.json"); if (ix.snapshots && ix.snapshots.length>1){
+      const sel=$("#tmSel"); sel.innerHTML="";
+      for (const st of ix.snapshots.slice().reverse()) sel.append(el("option",{value:st}, st.replace("_"," ")));
+      $("#timeMachine").hidden=false;
+      sel.onchange = async ()=>{ await loadSnapshot(sel.value); renderLogin(); };
+  } } catch(e){}
+}
+const U = () => S.snap.meta.user || "cacique";
+const HOMEP = () => "/home/"+U();
+const MEDIA = () => "/media/"+U();
+const IP = () => (S.snap.meta.ip || "192.168.1.50").trim();
+const fmtDate = iso => { try { return new Date(iso).toLocaleString(S.lang==="es"?"es-PR":"en-US",{dateStyle:"long",timeStyle:"short"}); } catch(e){ return iso; } };
+
+/* =====================================================================
+   The world: the snapshot plus whatever the current problem changed
+   ===================================================================== */
+function freshWorld(){
+  const s = S.snap, t = s.trees || {};
+  const w = {mounted:{Library:!!t.library, Vault:!!t.vault}, plugged:{Library:true, Vault:true}, svc:{}, base:{},
+             dockerGroup: / docker\b/.test(" "+(s.outputs.groups||"docker")), ghostKiwix:false, paperOwner:U(),
+             moved:[], loggedOutSinceGroup:true, changed:false};
+  for (const v of s.services){ w.base[v.key] = v.code>0 && v.code<500 ? v.code : 200; w.svc[v.key] = v.code; }
+  return w;
+}
+/* what a server WOULD answer if restarted now */
+function expected(key){
+  const w=S.world;
+  if (key==="docs") return (!w.mounted.Vault || w.paperOwner==="root") ? 500 : w.base.docs;
+  if (key==="photos") return !w.mounted.Vault ? 500 : w.base.photos;
+  if (key==="library") return !w.mounted.Library ? 0 : w.base.library;
+  return w.base[key] ?? 200;
+}
+const code = k => S.world.svc[k] ?? 0;
+const svcList = () => S.snap.services;
+
+/* =====================================================================
+   Virtual folders
+   ===================================================================== */
+function D(n, c=[], extra={}){ return Object.assign({n, d:1, c}, extra); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function buildFS(){
+  const t = S.snap.trees || {}, w = S.world;
+  const home = clone(t.home || D(U())); home.n = U();
+  const repo = clone(t.repo || D("elcaciquedeck")); repo.n = "elcaciquedeck";
+  home.c = (home.c||[]).filter(x=>x.n!=="elcaciquedeck"); home.c.unshift(repo);
+  const media = D(U());
+  for (const lab of ["Library","Vault"]){
+    if (!w.mounted[lab]) continue;
+    const key = lab.toLowerCase();
+    const node = t[key] ? clone(t[key]) : D(lab, [], {nc:1}); node.n = lab;
+    if (lab==="Library") applyMoves(node);
+    if (lab==="Vault" && w.paperOwner==="root") for (const c of node.c||[]) if (c.n==="paperless") c.owner="root";
+    media.c.push(node);
+  }
+  const etc = D("etc", [{n:"os-release", s:400, txt:S.snap.outputs["os-release"]||""}, {n:"hosts", s:300, txt:"127.0.0.1 localhost\n127.0.1.1 "+(S.snap.meta.host||"elcaciquedeck-00")+"\n\n# >>> elcaciquedeck names >>>\n127.0.0.1 cacique.home caciquelibrary.home caciqueflix.home caciquedocs.home caciquedash.home caciqueguard.home caciquephotos.home caciquehome.home caciquearcade.home caciqueacademy.home\n# <<< elcaciquedeck names <<<"}]);
+  return D("", [D("home",[home]), D("media",[media]), etc, D("tmp")]);
+}
+function applyMoves(lib){
+  for (const m of S.world.moved){
+    const from = findChild(lib, m.from), to = findChild(lib, m.to);
+    if (!from || !to || !from.c) continue;
+    const i = from.c.findIndex(x=>x.n===m.name); if (i<0) continue;
+    const [it] = from.c.splice(i,1); to.c = to.c||[]; to.c.push(it); to.c.sort((a,b)=>a.n.localeCompare(b.n));
+  }
+}
+function findChild(node, rel){ let n=node; for (const p of rel.split("/").filter(Boolean)){ n=(n.c||[]).find(x=>x.n===p); if(!n) return null; } return n; }
+function norm(path, cwd){
+  path = path.replace(/^~(?=\/|$)/, HOMEP()).replace(/\$HOME|\$\{HOME\}/g, HOMEP()).replace(/\$USER|\$\{USER\}/g, U());
+  const parts = (path.startsWith("/") ? path : cwd+"/"+path).split("/");
+  const out=[]; for (const p of parts){ if(!p||p===".") continue; if(p==="..") out.pop(); else out.push(p); }
+  return "/"+out.join("/");
+}
+function lookup(path){ const fs=buildFS(); if (path==="/") return fs; let n=fs;
+  for (const p of path.split("/").filter(Boolean)){ if (!n.d || !n.c) return null; n = n.c.find(x=>x.n===p); if(!n) return null; } return n; }
+const prettyPath = p => p.startsWith(HOMEP()) ? "~"+p.slice(HOMEP().length) : p;
+const REPOP = () => HOMEP()+"/elcaciquedeck";
+
+/* =====================================================================
+   Events: every click and command is reported here; missions listen
+   ===================================================================== */
+function emit(e){
+  if (!S.mission || S.done) return;
+  const steps = curSteps();
+  let moved = false;
+  while (S.step < steps.length && steps[S.step].ok(e, S.world)){ S.step++; moved = true; e = {type:"tick"}; }
+  if (moved){ if (S.step >= steps.length) finishMission(); renderHUD(); }
+}
+const isCmd = (e, re) => e.type==="cmd" && re.test(e.line);
+
+/* =====================================================================
+   STORY MODE - the creation of El Cacique HomeLab, up to this update.
+   Add a chapter here each time a real update is pushed.
+   ===================================================================== */
+const STORY = [
+ {era:{es:"El comienzo",en:"The beginning"}, t:{es:"Un sueño y una ThinkPad",en:"A dream and a ThinkPad"},
+  p:{es:"Todo empezó con una idea: un Home Lab puertorriqueño para la familia. Tres metas: aprender sin internet, guardar lo importante y divertirse. El equipo: una ThinkPad vieja y un disco de 2 TB. El dueño: un principiante total.",
+     en:"It started with an idea: a Puerto Rican Home Lab for the family. Three goals: learn without internet, keep what matters safe, and have fun. The gear: an old ThinkPad and a 2 TB drive. The owner: a total beginner."},
+  lesson:{es:"No necesitas equipo caro para empezar. Empieza con lo que tienes.",en:"You don't need expensive gear to start. Start with what you have."},
+  kid:[{t:{es:"Abre la app Archivos (📁 en la barra)",en:"Open the Files app (📁 in the dock)"}, ok:e=>e.type==="app"&&e.app==="files"}],
+  adult:[{t:{es:"Abre la Terminal y escribe: hostname",en:"Open the Terminal and type: hostname"}, h:"hostname", ok:e=>isCmd(e,/^hostname\b/)}]},
+ {era:{es:"El USB rebelde",en:"The rebel USB"}, t:{es:"«invalid magic number»",en:"\"invalid magic number\""},
+  p:{es:"El plan era instalar Linux Mint. Pero el USB contestó «invalid magic number» y no arrancó. En vez de pelear, se tomó una gran decisión: trabajar con lo que ya funcionaba. Ubuntu se quedó.",
+     en:"The plan was to install Linux Mint. But the USB answered \"invalid magic number\" and wouldn't boot. Instead of fighting it, a big decision was made: work with what already works. Ubuntu stayed."},
+  lesson:{es:"Si algo funciona, no hay que cambiarlo solo porque sí.",en:"If something works, you don't have to change it just because."},
+  kid:[{t:{es:"Abre Discos (💽) y mira el disco de la computadora",en:"Open Disks (💽) and look at the computer's own drive"}, ok:e=>e.type==="app"&&e.app==="disks"}],
+  adult:[{t:{es:"Averigua qué sistema tiene el deck: cat /etc/os-release",en:"Find out the deck's system: cat /etc/os-release"}, h:"cat /etc/os-release", ok:e=>isCmd(e,/^(cat \/etc\/os-release|lsb_release)/)}]},
+ {era:{es:"CaciqueLibrary",en:"CaciqueLibrary"}, t:{es:"La biblioteca sin internet y el muro de 4 GB",en:"The offline library and the 4 GB wall"},
+  p:{es:"Primer servidor: Kiwix, una Wikipedia entera sin internet. Pero el disco estaba en FAT32, y FAT32 no acepta archivos de más de 4 GB. Solución: formatear el disco como ext4 y llamarlo «Library».",
+     en:"First server: Kiwix, a whole Wikipedia without internet. But the drive was FAT32, and FAT32 refuses files bigger than 4 GB. Fix: format the drive as ext4 and name it \"Library\"."},
+  lesson:{es:"FAT32 = máximo 4 GB por archivo. Para Linux, usa ext4.",en:"FAT32 = 4 GB max per file. For Linux, use ext4."},
+  kid:[{t:{es:"En Archivos, entra a Library y luego a Kiwix",en:"In Files, go into Library and then Kiwix"}, ok:e=>e.type==="folder"&&/\/Library\/Kiwix$/.test(e.path)}],
+  adult:[{t:{es:"Mira el tipo de cada disco: lsblk -f",en:"See each drive's type: lsblk -f"}, h:"lsblk -f", ok:e=>isCmd(e,/^lsblk\b.*-f/)},
+         {t:{es:"Lista los libros: ls /media/$USER/Library/Kiwix",en:"List the books: ls /media/$USER/Library/Kiwix"}, h:"ls /media/$USER/Library/Kiwix", ok:e=>e.type==="ls"&&/\/Library\/Kiwix$/.test(e.path)}]},
+ {era:{es:"Primeros errores",en:"First errors"}, t:{es:"El puerto ocupado y el misterioso «>»",en:"The busy port and the mysterious \">\""},
+  p:{es:"Kiwix dijo «HTTP Daemon» error: el puerto 8080 ya estaba ocupado por un Kiwix viejo. Se arregló con pkill. Y cuando la Terminal mostró un «>» raro, era porque faltaba la palabra done. También: wc -l es con L, no con el número 1.",
+     en:"Kiwix said \"HTTP Daemon\" error: port 8080 was already taken by an old Kiwix. Fixed with pkill. And when the Terminal showed a strange \">\", a done was missing. Also: wc -l uses the letter L, not the number 1."},
+  lesson:{es:"Un puerto es una puerta. Solo un programa puede usar cada puerta.",en:"A port is a door. Only one program can use each door."},
+  kid:[{t:{es:"Abre Firefox (🦊) y entra a CaciqueLibrary",en:"Open Firefox (🦊) and go to CaciqueLibrary"}, ok:e=>e.type==="url"&&e.key==="library"}],
+  adult:[{t:{es:"Mira qué puertos están abiertos: ss -ltn",en:"See which ports are open: ss -ltn"}, h:"ss -ltn", ok:e=>isCmd(e,/^ss\b/)},
+         {t:{es:"Busca a Kiwix entre los programas: pgrep -a kiwix",en:"Find Kiwix among the programs: pgrep -a kiwix"}, h:"pgrep -a kiwix", ok:e=>isCmd(e,/^(pgrep|ps)\b/)}]},
+ {era:{es:"CaciqueFlix",en:"CaciqueFlix"}, t:{es:"El cine de la casa y el nombre del deck",en:"The home cinema and the deck's name"},
+  p:{es:"Jellyfin (instalado con Flatpak) convirtió el disco en un cine para el televisor Samsung. La máquina recibió su nombre oficial: elcaciquedeck-00. Y se aprendió qué es la IP: el número de la laptop en la red de la casa.",
+     en:"Jellyfin (installed with Flatpak) turned the drive into a cinema for the Samsung TV. The machine got its official name: elcaciquedeck-00. And we learned what the IP is: the laptop's number on the home network."},
+  lesson:{es:"La IP es el «número de la casa» de la laptop dentro de la red.",en:"The IP is the laptop's \"house number\" inside the network."},
+  kid:[{t:{es:"En Firefox, abre CaciqueFlix y mira las películas",en:"In Firefox, open CaciqueFlix and look at the movies"}, ok:e=>e.type==="url"&&e.key==="flix"}],
+  adult:[{t:{es:"Encuentra el número (IP) de la laptop: ip -4 -br a",en:"Find the laptop's number (IP): ip -4 -br a"}, h:"ip -4 -br a", ok:e=>isCmd(e,/^(ip\b|hostname -I)/)}]},
+ {era:{es:"CaciqueDash",en:"CaciqueDash"}, t:{es:"Relojes JDM",en:"JDM gauges"},
+  p:{es:"Un panel estilo carro japonés: CPU, RAM, temperatura y una luz por servidor. Guarda una línea por minuto en un archivo CSV, para ver la historia del deck.",
+     en:"A Japanese-car style panel: CPU, RAM, temperature and a light per server. It saves one line per minute to a CSV file, to see the deck's history."},
+  lesson:{es:"Medir antes de comprar: los registros mostraron que la ThinkPad se queda corta para todo.",en:"Measure before you buy: the logs showed the ThinkPad is too small for everything."},
+  kid:[{t:{es:"En Firefox, abre CaciqueDash",en:"In Firefox, open CaciqueDash"}, ok:e=>e.type==="url"&&e.key==="dash"}],
+  adult:[{t:{es:"Mira la memoria RAM: free -h",en:"Check the RAM: free -h"}, h:"free -h", ok:e=>isCmd(e,/^free\b/)}]},
+ {era:{es:"GitHub",en:"GitHub"}, t:{es:"80/20: Claude construye, El Cacique supervisa",en:"80/20: Claude builds, El Cacique supervises"},
+  p:{es:"El proyecto se mudó a GitHub. Desde entonces, cada mejora llega con un solo comando: git pull. Los secretos (.env) nunca se suben.",
+     en:"The project moved to GitHub. Since then, every improvement arrives with one command: git pull. Secrets (.env) are never uploaded."},
+  lesson:{es:"Los archivos .env guardan contraseñas: se quedan en la laptop.",en:".env files hold passwords: they stay on the laptop."},
+  kid:[{t:{es:"En Archivos, abre la carpeta elcaciquedeck",en:"In Files, open the elcaciquedeck folder"}, ok:e=>e.type==="folder"&&/\/elcaciquedeck$/.test(e.path)}],
+  adult:[{t:{es:"Entra a la carpeta: cd ~/elcaciquedeck",en:"Go into the folder: cd ~/elcaciquedeck"}, h:"cd ~/elcaciquedeck", ok:e=>e.type==="cd"&&/\/elcaciquedeck$/.test(e.path)},
+         {t:{es:"Mira la historia de cambios: git log --oneline",en:"See the change history: git log --oneline"}, h:"git log --oneline", ok:e=>isCmd(e,/^git log/)}]},
+ {era:{es:"Docker",en:"Docker"}, t:{es:"CaciqueDocs y «Docker dice que no»",en:"CaciqueDocs and \"Docker says no\""},
+  p:{es:"Llegó Docker: cada servidor en su propia cajita. El primero, Paperless, para los documentos. Docker dijo «permission denied» hasta que el usuario entró al grupo docker y reinició. Y la contraseña falló… por una mayúscula.",
+     en:"Docker arrived: each server in its own little box. The first one, Paperless, for documents. Docker said \"permission denied\" until the user joined the docker group and rebooted. And the password failed… because of one capital letter."},
+  lesson:{es:"Linux distingue mayúsculas: Cacique y cacique son diferentes.",en:"Linux is case-sensitive: Cacique and cacique are different."},
+  kid:[{t:{es:"En Firefox, abre CaciqueDocs",en:"In Firefox, open CaciqueDocs"}, ok:e=>e.type==="url"&&e.key==="docs"}],
+  adult:[{t:{es:"Confirma que estás en el grupo docker: groups",en:"Confirm you're in the docker group: groups"}, h:"groups", ok:e=>isCmd(e,/^groups\b/)},
+         {t:{es:"Mira las cajitas que están corriendo: docker ps",en:"See the boxes that are running: docker ps"}, h:"docker ps", ok:e=>isCmd(e,/^docker ps/)}]},
+ {era:{es:"Nombres fáciles",en:"Easy names"}, t:{es:"CaciqueGuard y la puerta de la familia",en:"CaciqueGuard and the family's front door"},
+  p:{es:"AdGuard bloquea anuncios y Caddy da nombres fáciles como caciqueflix.home. Regla de oro: los equipos de la familia no se tocan. Por eso la página de inicio abre con solo escribir el número de la laptop.",
+     en:"AdGuard blocks ads and Caddy gives easy names like caciqueflix.home. Golden rule: the family's devices are never changed. That's why the front page opens just by typing the laptop's number."},
+  lesson:{es:"Si la familia tiene que cambiar ajustes, el diseño está mal.",en:"If the family has to change settings, the design is wrong."},
+  kid:[{t:{es:"En Firefox, abre la página de inicio Cacique (🏠)",en:"In Firefox, open the Cacique front page (🏠)"}, ok:e=>e.type==="url"&&e.key==="front"}],
+  adult:[{t:{es:"Mira los nombres .home de la laptop: cat /etc/hosts",en:"See the laptop's .home names: cat /etc/hosts"}, h:"cat /etc/hosts", ok:e=>isCmd(e,/^cat \/etc\/hosts/)}]},
+ {era:{es:"Fotos, Hogar y Arcade",en:"Photos, Home and Arcade"}, t:{es:"Immich, Home Assistant y CaciqueArcade",en:"Immich, Home Assistant and CaciqueArcade"},
+  p:{es:"Llegaron las fotos de la familia (Immich), la casa inteligente (Home Assistant) y el arcade con juegos legales (RomM). Solo juegos propios o gratuitos: nada pirata.",
+     en:"The family photos (Immich), the smart home (Home Assistant) and the arcade with legal games (RomM) arrived. Only owned or free games: nothing pirated."},
+  lesson:{es:"Legal o nada: juegos caseros, gratuitos o copias de lo que ya compraste.",en:"Legal or nothing: homebrew, free, or copies of what you already bought."},
+  kid:[{t:{es:"En Archivos, busca la carpeta Arcade dentro de Library",en:"In Files, find the Arcade folder inside Library"}, ok:e=>e.type==="folder"&&/\/Library\/Arcade/.test(e.path)}],
+  adult:[{t:{es:"Mira el estado de todos los servidores: bash ~/elcaciquedeck/status.sh",en:"Check every server: bash ~/elcaciquedeck/status.sh"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>isCmd(e,/status\.sh/)}]},
+ {era:{es:"La Bóveda",en:"The Vault"}, t:{es:"Dos discos y el Error 500",en:"Two drives and Error 500"},
+  p:{es:"Un segundo disco, «Vault», para lo que no se puede perder: documentos, fotos y copias. La mudanza se hizo con rsync y verificación. Después, CaciqueDocs dio Error 500: los archivos tenían el dueño equivocado. Se arregló con chown.",
+     en:"A second drive, \"Vault\", for what can't be lost: documents, photos and backups. The move was done with rsync and checks. Then CaciqueDocs gave Error 500: the files had the wrong owner. Fixed with chown."},
+  lesson:{es:"Library = lo que se puede reemplazar. Vault = lo que NO.",en:"Library = what can be replaced. Vault = what can NOT."},
+  kid:[{t:{es:"Abre Discos (💽) y encuentra la Bóveda (Vault)",en:"Open Disks (💽) and find the Vault"}, ok:e=>e.type==="app"&&e.app==="disks"},
+       {t:{es:"En Archivos, toca Vault en la barra de la izquierda",en:"In Files, tap Vault in the left bar"}, ok:e=>e.type==="folder"&&/\/Vault$/.test(e.path)}],
+  adult:[{t:{es:"Mira cuánto espacio queda: df -h",en:"See how much space is left: df -h"}, h:"df -h", ok:e=>isCmd(e,/^df\b/)},
+         {t:{es:"Mira los dueños en la Bóveda: ls -l /media/$USER/Vault",en:"See the owners in the Vault: ls -l /media/$USER/Vault"}, h:"ls -l /media/$USER/Vault", ok:e=>e.type==="ls"&&e.long&&/\/Vault$/.test(e.path)}]},
+ {era:{es:"Aprender",en:"Learn"}, t:{es:"El Manual de Campo y CaciqueAcademy",en:"The Field Manual and CaciqueAcademy"},
+  p:{es:"Se escribió un manual «para principiantes» dentro de CaciqueLibrary y un juego, CaciqueAcademy, con 7 misiones. La mamá probó la página de la familia: ¡aprobada!",
+     en:"A \"for beginners\" manual was written inside CaciqueLibrary, plus a game, CaciqueAcademy, with 7 missions. Mom tested the family page: approved!"},
+  lesson:{es:"Lo que no está escrito, se olvida. Documenta todo.",en:"What isn't written down gets forgotten. Document everything."},
+  kid:[{t:{es:"En Firefox, abre CaciqueAcademy",en:"In Firefox, open CaciqueAcademy"}, ok:e=>e.type==="url"&&e.key==="academy"}],
+  adult:[{t:{es:"Encuentra el manual: ls ~/elcaciquedeck/manual/dist",en:"Find the manual: ls ~/elcaciquedeck/manual/dist"}, h:"ls ~/elcaciquedeck/manual/dist", ok:e=>e.type==="ls"&&/manual\/dist$/.test(e.path)}]},
+ {era:{es:"Hoy",en:"Today"}, t:{es:"El Cacique Admin",en:"El Cacique Admin"}, now:true,
+  p:{es:"Y aquí estás: dentro de una copia de práctica del deck, sacada en la última actualización ({d}). Desde aquí se planifica lo que viene: el rack con las M720q, la red Omada con VLANs y las cuentas de la familia.",
+     en:"And here you are: inside a practice copy of the deck, taken at the last update ({d}). From here we plan what's next: the rack with the M720q's, the Omada network with VLANs and the family accounts."},
+  lesson:{es:"Practica en la copia, trabaja en el real.",en:"Practice on the copy, work on the real one."},
+  kid:[{t:{es:"Abre Archivos, Firefox y Discos (las tres apps)",en:"Open Files, Firefox and Disks (all three apps)"}, ok:(e,w)=>["files","firefox","disks"].every(a=>S.wins[a])}],
+  adult:[{t:{es:"¿Cuánto tiempo llevaba prendido el deck en la foto? uptime",en:"How long had the deck been on in the photo? uptime"}, h:"uptime", ok:e=>isCmd(e,/^uptime\b/)},
+         {t:{es:"Mira la última actualización: git log -1",en:"See the latest update: git log -1"}, h:"git log -1", ok:e=>isCmd(e,/^git log/)}]}
+];
+
+/* =====================================================================
+   FREE MODE - random problems based on real ones
+   ===================================================================== */
+const statusOk = (e, keys) => (isCmd(e,/status\.sh/) || (e.type==="url" && keys.includes(e.key))) && keys.every(k=>code(k)>0&&code(k)<500);
+const INCIDENTS = [
+ {id:"vault-off", ages:["adult","kid"], t:{es:"La Bóveda desapareció",en:"The Vault disappeared"},
+  p:{es:"Anoche alguien tropezó con el cable del dock. Esta mañana CaciqueDocs y CaciquePhotos están en rojo.",en:"Last night someone tripped on the dock cable. This morning CaciqueDocs and CaciquePhotos are red."},
+  lesson:{es:"Después de conectar un disco, reinicia los servidores que viven en él.",en:"After mounting a drive, restart the servers that live on it."},
+  apply:w=>{ w.mounted.Vault=false; w.svc.docs=500; w.svc.photos=500; },
+  kid:[{t:{es:"En Firefox, abre CaciqueDocs: ¿qué ves?",en:"In Firefox, open CaciqueDocs: what do you see?"}, ok:e=>e.type==="url"&&e.key==="docs"},
+       {t:{es:"En Archivos, toca Vault para conectarla",en:"In Files, tap Vault to connect it"}, ok:(e,w)=>w.mounted.Vault},
+       {t:{es:"Vuelve a abrir CaciqueDocs en Firefox",en:"Open CaciqueDocs in Firefox again"}, ok:e=>e.type==="url"&&e.key==="docs"&&code("docs")<500}],
+  adult:[{t:{es:"Confirma qué está mal: bash ~/elcaciquedeck/status.sh",en:"Confirm what's wrong: bash ~/elcaciquedeck/status.sh"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>isCmd(e,/status\.sh/)},
+         {t:{es:"Busca la Bóveda: lsblk o df -h",en:"Look for the Vault: lsblk or df -h"}, h:"lsblk", ok:e=>isCmd(e,/^(lsblk|df|ls .*\/media)/)||e.type==="app"&&e.app==="disks"},
+         {t:{es:"Conecta la Bóveda (Archivos → Vault, o Discos → Conectar)",en:"Mount the Vault (Files → Vault, or Disks → Mount)"}, h:"udisksctl mount -b /dev/sdc1", ok:(e,w)=>w.mounted.Vault},
+         {t:{es:"Reinicia los servidores de la Bóveda",en:"Restart the Vault's servers"}, h:"bash ~/elcaciquedeck/stop-all.sh && bash ~/elcaciquedeck/start-all.sh", ok:()=>code("docs")>0&&code("docs")<500&&code("photos")>0&&code("photos")<500},
+         {t:{es:"Verifica: todo en UP",en:"Verify: everything UP"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>statusOk(e,["docs","photos"])}]},
+ {id:"docs-500", ages:["adult"], t:{es:"Error 500 en CaciqueDocs",en:"Error 500 on CaciqueDocs"},
+  p:{es:"Después de mudar los documentos a la Bóveda, CaciqueDocs contesta «500 Server Error». El disco está conectado… entonces, ¿qué pasa?",en:"After moving the documents to the Vault, CaciqueDocs answers \"500 Server Error\". The drive is connected… so what's going on?"},
+  lesson:{es:"Paperless trabaja como el usuario 1000. Si los archivos son de root, no puede escribir.",en:"Paperless works as user 1000. If the files belong to root, it can't write."},
+  apply:w=>{ w.paperOwner="root"; w.svc.docs=500; },
+  adult:[{t:{es:"Mira el error: abre CaciqueDocs en Firefox o corre status.sh",en:"See the error: open CaciqueDocs in Firefox or run status.sh"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>isCmd(e,/status\.sh/)||e.type==="url"&&e.key==="docs"},
+         {t:{es:"Mira quién es el dueño: ls -l /media/$USER/Vault",en:"Check who owns it: ls -l /media/$USER/Vault"}, h:"ls -l /media/$USER/Vault", ok:e=>e.type==="ls"&&e.long&&/\/Vault$/.test(e.path)},
+         {t:{es:"Devuélvele los archivos al usuario 1000",en:"Give the files back to user 1000"}, h:"sudo chown -R 1000:1000 /media/$USER/Vault/paperless", ok:(e,w)=>w.paperOwner!=="root"},
+         {t:{es:"Reinicia CaciqueDocs",en:"Restart CaciqueDocs"}, h:"cd ~/elcaciquedeck/paperless && docker compose restart", ok:()=>code("docs")>0&&code("docs")<500},
+         {t:{es:"Verifica que CaciqueDocs está UP",en:"Verify CaciqueDocs is UP"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>statusOk(e,["docs"])}]},
+ {id:"port-busy", ages:["adult"], t:{es:"«HTTP Daemon»: el puerto 8080 está ocupado",en:"\"HTTP Daemon\": port 8080 is busy"},
+  p:{es:"CaciqueLibrary no abre. Al tratar de prenderla, Kiwix dice: «Unable to instantiate the HTTP Daemon. The port 8080 may already be in use». Un Kiwix viejo se quedó trabado.",en:"CaciqueLibrary won't open. When starting it, Kiwix says: \"Unable to instantiate the HTTP Daemon. The port 8080 may already be in use\". An old Kiwix got stuck."},
+  lesson:{es:"pkill apaga un programa por su nombre. Luego la puerta queda libre.",en:"pkill stops a program by its name. Then the door is free."},
+  apply:w=>{ w.ghostKiwix=true; w.svc.library=0; },
+  adult:[{t:{es:"¿Quién usa el puerto 8080? ss -ltnp | grep 8080",en:"Who's using port 8080? ss -ltnp | grep 8080"}, h:"ss -ltnp | grep 8080", ok:e=>isCmd(e,/^(ss|pgrep|ps)\b/)},
+         {t:{es:"Apaga el Kiwix trabado",en:"Stop the stuck Kiwix"}, h:"pkill kiwix-serve", ok:(e,w)=>!w.ghostKiwix},
+         {t:{es:"Prende CaciqueLibrary otra vez",en:"Start CaciqueLibrary again"}, h:"bash ~/elcaciquedeck/start-all.sh", ok:()=>code("library")>0&&code("library")<500},
+         {t:{es:"Verifica: abre CaciqueLibrary en Firefox o corre status.sh",en:"Verify: open CaciqueLibrary in Firefox or run status.sh"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>statusOk(e,["library"])}]},
+ {id:"docker-no", ages:["adult"], t:{es:"Docker dice que no",en:"Docker says no"},
+  p:{es:"Hoy probaste una cuenta nueva y docker ps contesta «permission denied». Sin Docker no se pueden revisar los servidores.",en:"Today you tried a new account and docker ps answers \"permission denied\". Without Docker you can't check the servers."},
+  lesson:{es:"Los grupos se leen al entrar: después de usermod hay que salir y entrar (o reiniciar).",en:"Groups are read at login: after usermod you must log out and in (or reboot)."},
+  apply:w=>{ w.dockerGroup=false; w.loggedOutSinceGroup=false; },
+  adult:[{t:{es:"Mira el error: docker ps",en:"See the error: docker ps"}, h:"docker ps", ok:e=>isCmd(e,/^docker\b/)},
+         {t:{es:"¿En qué grupos estás? groups",en:"Which groups are you in? groups"}, h:"groups", ok:e=>isCmd(e,/^groups\b/)},
+         {t:{es:"Únete al grupo docker",en:"Join the docker group"}, h:"sudo usermod -aG docker $USER", ok:(e,w)=>w.dockerGroup},
+         {t:{es:"Reinicia para que el grupo cuente",en:"Reboot so the group counts"}, h:"reboot", ok:(e,w)=>w.loggedOutSinceGroup},
+         {t:{es:"Prueba otra vez: docker ps",en:"Try again: docker ps"}, h:"docker ps", ok:(e,w)=>isCmd(e,/^docker ps/)&&w.dockerGroup&&w.loggedOutSinceGroup}]},
+ {id:"library-off", ages:["adult","kid"], t:{es:"¿Dónde están las películas?",en:"Where did the movies go?"},
+  p:{es:"Tu hermanito dice que CaciqueFlix no tiene películas y que la biblioteca no abre. Parece que el disco Library no está conectado.",en:"Your little brother says CaciqueFlix has no movies and the library won't open. Looks like the Library drive isn't mounted."},
+  lesson:{es:"Si los servidores del disco se apagan, conecta el disco y vuelve a prenderlos.",en:"If a drive's servers go down, mount the drive and start them again."},
+  apply:w=>{ w.mounted.Library=false; w.svc.library=0; },
+  kid:[{t:{es:"En Firefox, abre CaciqueFlix",en:"In Firefox, open CaciqueFlix"}, ok:e=>e.type==="url"&&e.key==="flix"},
+       {t:{es:"Abre Discos (💽) y conecta Library",en:"Open Disks (💽) and mount Library"}, ok:(e,w)=>w.mounted.Library},
+       {t:{es:"Vuelve a CaciqueFlix: ¡películas de vuelta!",en:"Back to CaciqueFlix: movies are back!"}, ok:e=>e.type==="url"&&e.key==="flix"&&S.world.mounted.Library}],
+  adult:[{t:{es:"Revisa los servidores: status.sh",en:"Check the servers: status.sh"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>isCmd(e,/status\.sh/)},
+         {t:{es:"Busca el disco: lsblk",en:"Look for the drive: lsblk"}, h:"lsblk", ok:e=>isCmd(e,/^(lsblk|df|ls .*\/media)/)||e.type==="app"&&e.app==="disks"},
+         {t:{es:"Conecta Library",en:"Mount Library"}, h:"udisksctl mount -b /dev/sdb1", ok:(e,w)=>w.mounted.Library},
+         {t:{es:"Prende lo que falta",en:"Start what's missing"}, h:"bash ~/elcaciquedeck/start-all.sh", ok:()=>code("library")>0&&code("library")<500},
+         {t:{es:"Verifica con status.sh",en:"Verify with status.sh"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>statusOk(e,["library"])}]},
+ {id:"dash-off", ages:["adult"], t:{es:"Los relojes se apagaron",en:"The gauges went dark"},
+  p:{es:"CaciqueDash no contesta. Alguien cerró la Terminal donde corría… ¿o no?",en:"CaciqueDash doesn't answer. Someone closed the Terminal it was running in… or did they?"},
+  lesson:{es:"start-all.sh solo prende lo que está apagado. Es seguro correrlo otra vez.",en:"start-all.sh only starts what's off. It's safe to run again."},
+  apply:w=>{ w.svc.dash=0; },
+  adult:[{t:{es:"Confirma: status.sh",en:"Confirm: status.sh"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>isCmd(e,/status\.sh/)},
+         {t:{es:"¿Está corriendo? pgrep -a python3",en:"Is it running? pgrep -a python3"}, h:"pgrep -a python3", ok:e=>isCmd(e,/^(pgrep|ps)\b/)},
+         {t:{es:"Préndelo sin miedo: start-all.sh",en:"Start it safely: start-all.sh"}, h:"bash ~/elcaciquedeck/start-all.sh", ok:()=>code("dash")>0},
+         {t:{es:"Verifica en Firefox: CaciqueDash",en:"Verify in Firefox: CaciqueDash"}, h:"bash ~/elcaciquedeck/status.sh", ok:e=>statusOk(e,["dash"])}]},
+ {id:"lost-movie", ages:["kid"], t:{es:"La película perdida",en:"The lost movie"},
+  p:{es:"¡Alguien guardó una película en la carpeta de Música! CaciqueFlix solo busca en Movies, así que no aparece.",en:"Someone saved a movie in the Music folder! CaciqueFlix only looks in Movies, so it doesn't show up."},
+  lesson:{es:"Cada cosa en su carpeta: así los servidores la encuentran.",en:"Everything in its folder: that's how the servers find it."},
+  apply:w=>{ const lib=S.snap.trees.library; const mv=lib&&findChild(lib,"Movies"); const mu=lib&&findChild(lib,"Music");
+             if (mv&&mu&&mv.c&&mv.c.length) w.moved.push({name:mv.c[0].n, from:"Movies", to:"Music"}); w.lost=mv&&mv.c&&mv.c[0]&&mv.c[0].n; },
+  can:()=>{ const lib=S.snap.trees.library; const mv=lib&&findChild(lib,"Movies"); return !!(mv&&mv.c&&mv.c.length&&findChild(lib,"Music")); },
+  kid:[{t:{es:"En Archivos, busca en Library → Music",en:"In Files, look in Library → Music"}, ok:e=>e.type==="folder"&&/\/Library\/Music$/.test(e.path)},
+       {t:{es:"Selecciona la película y muévela a Movies",en:"Select the movie and move it to Movies"}, ok:(e,w)=>e.type==="move"&&e.to==="Movies"},
+       {t:{es:"Abre CaciqueFlix en Firefox: ¿ya aparece?",en:"Open CaciqueFlix in Firefox: is it there now?"}, ok:e=>e.type==="url"&&e.key==="flix"}]}
+];
+
+/* =====================================================================
+   Missions (Story chapter or Free incident)
+   ===================================================================== */
+function curSteps(){ const m=S.mission; return m ? (m[S.age] || m.adult) : []; }
+function startStory(i){
+  S.world = freshWorld(); S.mission = STORY[i]; S.mission.idx = i; S.step=0; S.done=false; S.mode="story";
+  closeAll(); renderTop();
+  const date = fmtDate(S.snap.taken);
+  showModal(`<div class="era">${esc(T("story"))} · ${i+1}/${STORY.length} · ${esc(L(STORY[i].era))}</div>
+    <h2>${esc(L(STORY[i].t))}</h2><p>${esc(L(STORY[i].p).replace("{d}",date))}</p>
+    <div class="row" style="display:flex;gap:8px;margin-top:12px"><button class="bigbtn" id="mGo">${esc(T("begin"))}</button><button class="bigbtn" style="background:#ffffff1a" id="mList">${esc(T("chapters"))}</button></div>`);
+  $("#mGo").onclick = ()=>{ hideModal(); renderHUD(); };
+  $("#mList").onclick = chapterList;
+}
+function chapterList(){
+  const reached = P.story[S.age]||0;
+  const list = STORY.map((c,i)=>`<button data-i="${i}" ${i>reached?"disabled":""}><span class="n">${i+1}</span>${i<reached?"✅":i===reached?"▶️":"🔒"} ${esc(L(c.t))}</button>`).join("");
+  showModal(`<h2>📖 ${esc(T("chapters"))}</h2><div class="chapters">${list}</div><div style="margin-top:12px"><button class="bigbtn" style="background:#ffffff1a" id="mClose">${esc(T("close"))}</button></div>`);
+  document.querySelectorAll(".chapters button").forEach(b=> b.onclick=()=>{ hideModal(); startStory(+b.dataset.i); });
+  $("#mClose").onclick = ()=>{ hideModal(); renderHUD(); };
+}
+function startFree(){
+  const pool = INCIDENTS.filter(x=>x.ages.includes(S.age) && (!x.can || x.can()) && x.id!==S.lastIncident);
+  const inc = pool[Math.floor(Math.random()*pool.length)] || INCIDENTS[0];
+  S.lastIncident = inc.id; S.world = freshWorld(); inc.apply(S.world); S.world.changed=true;
+  S.mission = inc; S.step=0; S.done=false; S.mode="free"; closeAll(); renderTop();
+  toast(T("incoming")+" "+L(inc.t), 5000);
+  if (inc.id==="port-busy" && S.age==="adult") setTimeout(()=>{ openApp("terminal");
+    termPrint(`<span class="err">[kiwix-serve] Unable to instantiate the HTTP Daemon. The port 8080 may already be in use or you may not have the right to open it.</span>`); }, 400);
+  renderHUD();
+}
+function finishMission(){
+  S.done = true;
+  if (S.mode==="story"){ const i=S.mission.idx; if ((P.story[S.age]||0) <= i) P.story[S.age]=i+1; }
+  else P.free[S.age]=(P.free[S.age]||0)+1;
+  save();
+}
+function renderHUD(){
+  const h=$("#hud");
+  if (!S.mission){ h.hidden=true; return; }
+  h.hidden=false;
+  const steps=curSteps(), m=S.mission, story=S.mode==="story";
+  const head = story ? `📖 ${S.mission.idx+1}/${STORY.length} · ${esc(L(m.t))}` : `🎲 ${esc(L(m.t))}`;
+  const li = steps.map((s,i)=>`<li class="${i<S.step?"done":i===S.step?"cur":""}">${esc(L(s.t))}</li>`).join("");
+  let end = "";
+  if (S.done){
+    const last = story && S.mission.idx===STORY.length-1;
+    end = `<div class="win-msg">${esc(story?T("chapterDone"):T("solved"))}<div class="lesson">🎓 ${esc(T("lesson"))}: ${esc(L(m.lesson))}</div>${last?`<p>${esc(T("storyEnd"))}</p>`:""}</div>
+      <div class="row">${story ? (last?"":`<button class="go" id="hNext">${esc(T("next"))}</button>`) : `<button class="go" id="hAgain">${esc(T("again"))}</button>`}
+      <button id="hMenu">${esc(T("toMenu"))}</button></div>`;
+  }
+  const cur = steps[S.step];
+  const hint = (!S.done && cur && (cur.h || S.age==="kid")) ? `<div class="hint" id="hHint" hidden>${cur.h?`<code>${esc(cur.h)}</code>`:esc(L(cur.t))}</div>` : "";
+  h.innerHTML = `<div class="head"><b>${head}</b><button id="hMin">${h.classList.contains("min")?"+":"–"}</button></div>
+    <div class="body"><div class="story">${esc(L(m.p).replace("{d}",fmtDate(S.snap.taken)))}</div><ol>${li}</ol>${hint}
+    ${S.done?end:`<div class="row">${cur&&cur.h?`<button id="hHintB">${esc(T("hint"))}</button>`:""}${story?`<button id="hList">${esc(T("chapters"))}</button>`:""}<a href="${manualURL()}" target="_blank" rel="noopener">📘 ${esc(T("manual"))}</a></div>`}</div>`;
+  $("#hMin").onclick = ()=>{ h.classList.toggle("min"); renderHUD(); };
+  const hb=$("#hHintB"); if (hb) hb.onclick=()=>{ $("#hHint").hidden=false; };
+  const hl=$("#hList"); if (hl) hl.onclick=chapterList;
+  const hn=$("#hNext"); if (hn) hn.onclick=()=>startStory(S.mission.idx+1);
+  const ha=$("#hAgain"); if (ha) ha.onclick=startFree;
+  const hm=$("#hMenu"); if (hm) hm.onclick=showPicker;
+}
+const manualURL = () => S.demo ? "index.html" : `http://${IP()}:8080/content/elcaciquedeck-manual/`;
+
+/* =====================================================================
+   Windows
+   ===================================================================== */
+const APPS = {
+  files:{e:"📁", w:760, h:480, x:90, y:60, build:buildFiles},
+  terminal:{e:"🖥️", w:720, h:440, x:140, y:90, build:buildTerminal, adult:true},
+  firefox:{e:"🦊", w:860, h:560, x:120, y:50, build:buildFirefox},
+  disks:{e:"💽", w:600, h:440, x:200, y:110, build:buildDisks}
+};
+function renderDock(){
+  const d=$("#dock"); d.innerHTML="";
+  for (const [k,a] of Object.entries(APPS)){
+    if (a.adult && S.age==="kid") continue;
+    d.append(el("button",{class:S.wins[k]?"running":"", "aria-label":T(k), onclick:()=>openApp(k)}, a.e, el("span",{class:"tip"},T(k))));
+  }
+  d.append(el("div",{class:"sp"}));
+  d.append(el("button",{"aria-label":T("manual"), onclick:()=>window.open(manualURL(),"_blank","noopener")}, "📘", el("span",{class:"tip"},T("manual"))));
+  d.append(el("button",{"aria-label":T("modes"), onclick:showPicker}, "🧩", el("span",{class:"tip"},T("modes"))));
+}
+function openApp(k, arg){
+  if (S.wins[k]){ focusWin(S.wins[k].el); if (arg && S.wins[k].go) S.wins[k].go(arg); emit({type:"app", app:k}); return S.wins[k]; }
+  const a=APPS[k], n=Object.keys(S.wins).length;
+  const win = el("div",{class:"win", role:"dialog", "aria-label":T(k)});
+  const W0 = Math.min(a.w, innerWidth-90), H0 = Math.min(a.h, innerHeight-60);
+  Object.assign(win.style,{left:Math.max(76,Math.min(a.x+n*24, innerWidth-W0-10))+"px", top:Math.min(a.y+n*20, innerHeight-H0-10)+"px", width:W0+"px", height:H0+"px"});
+  const hb = el("div",{class:"hb"}, el("span",{style:"width:26px"}), el("span",{class:"t"}, T(k)), el("button",{class:"x","aria-label":"close", onclick:()=>closeWin(k)}, "✕"));
+  const body = el("div",{class:"wbody"});
+  win.append(hb, body); $("#desk").append(win);
+  const inst = {el:win, body, title:hb.querySelector(".t")}; S.wins[k]=inst;
+  drag(win, hb); win.addEventListener("pointerdown", ()=>focusWin(win));
+  a.build(inst, arg); focusWin(win); renderDock();
+  emit({type:"app", app:k});
+  return inst;
+}
+function closeWin(k){ const w=S.wins[k]; if(!w) return; w.el.remove(); delete S.wins[k]; renderDock(); }
+function closeAll(){ for (const k of Object.keys(S.wins)) closeWin(k); }
+function focusWin(w){ document.querySelectorAll(".win").forEach(x=>x.classList.remove("focus")); w.classList.add("focus"); w.style.zIndex=++S.z; }
+function drag(win, handle){
+  let sx, sy, ox, oy, on=false;
+  handle.addEventListener("pointerdown", e=>{ if (e.target.closest("button") || innerWidth<=760) return; on=true; sx=e.clientX; sy=e.clientY; ox=win.offsetLeft; oy=win.offsetTop; handle.setPointerCapture(e.pointerId); });
+  handle.addEventListener("pointermove", e=>{ if(!on) return; win.style.left=Math.max(0,Math.min(innerWidth-80, ox+e.clientX-sx))+"px"; win.style.top=Math.max(32,Math.min(innerHeight-42, oy+e.clientY-sy))+"px"; });
+  handle.addEventListener("pointerup", ()=>{ on=false; });
+}
+function refreshApps(){ if (S.world) S.world.changed=true; for (const k of Object.keys(S.wins)) if (S.wins[k].refresh) S.wins[k].refresh(); }
+
+/* =====================================================================
+   Files app
+   ===================================================================== */
+function buildFiles(inst, start){
+  let path = start || HOMEP(), sel = null;
+  const side = el("div",{class:"side"}), crumbs=el("div",{class:"crumbs"}), tool=el("div",{class:"ftool"}), grid=el("div",{class:"grid"});
+  inst.body.append(el("div",{class:"files"}, side, el("div",{class:"fmain"}, crumbs, tool, grid)));
+  function go(p){ path=p; sel=null; draw(); emit({type:"folder", path:p}); }
+  inst.go = go;
+  function mountFromSide(lab){ S.world.mounted[lab]=true; if (S.age==="kid") autoRestart(); emit({type:"mount", label:lab}); refreshApps(); go(MEDIA()+"/"+lab); }
+  function draw(){
+    side.innerHTML="";
+    const sb=(icon,label,p,cls="")=>side.append(el("button",{class:(path===p?"on ":"")+cls, onclick:()=>go(p)}, icon+" ", label));
+    sb("🏠", T("home"), HOMEP()); sb("⚙️", "elcaciquedeck", REPOP());
+    side.append(el("hr"));
+    for (const lab of ["Library","Vault"]){
+      if (S.world.mounted[lab]) sb(lab==="Vault"?"🔐":"💾", lab, MEDIA()+"/"+lab);
+      else if (S.world.plugged[lab]) side.append(el("button",{class:"off", title:T("plugged"), onclick:()=>mountFromSide(lab)}, "⏏️ "+lab+" ("+T("notConnected")+")"));
+    }
+    side.append(el("hr")); sb("💻", "/", "/");
+    crumbs.innerHTML="";
+    const parts = path.split("/").filter(Boolean); let acc="";
+    crumbs.append(el("button",{onclick:()=>go("/")},"/"));
+    for (const p of parts){ acc+="/"+p; const here=acc; crumbs.append(el("button",{onclick:()=>go(here)}, p)); }
+    const node = lookup(path);
+    inst.title.textContent = node ? (node.n || "/") : T("files");
+    drawTool(node);
+    grid.innerHTML="";
+    if (!node){ grid.append(el("div",{class:"private"}, T("notCaptured"))); return; }
+    if (node.p){ grid.append(el("div",{class:"private", html:`<b>${esc(T("privTitle"))}</b><br>${node.k!=null?T("privVault",{k:node.k, s:human(node.s)}):esc(T("privHome"))}`})); return; }
+    if (node.nc){ grid.append(el("div",{class:"private"}, T("notCaptured"))); return; }
+    if (node.more || node.e){ grid.append(el("div",{class:"private"}, T("moreInside"))); return; }
+    const kids = node.c || [];
+    if (!kids.length) grid.append(el("div",{class:"private"}, T("empty")));
+    for (const c of kids){
+      const icon = c.p ? "🔒" : c.d ? "📁" : fileIcon(c.n);
+      const b = el("button",{class:"item"+(sel===c.n?" sel":""), title:c.n}, el("span",{class:"i"},icon), el("span",{},c.n), el("span",{class:"s"}, c.d ? (c.p&&c.k!=null? c.k+" · "+human(c.s) : "") : human(c.s)));
+      b.onclick = ()=>{ if (sel===c.n && c.d) go(path+"/"+c.n); else { sel=c.n; draw(); } };
+      b.ondblclick = ()=>{ if (c.d) go(path+"/"+c.n); };
+      grid.append(b);
+    }
+  }
+  function drawTool(node){
+    tool.innerHTML="";
+    const inLib = path.startsWith(MEDIA()+"/Library");
+    tool.append(el("span",{style:"color:var(--muted)"}, prettyPath(path)));
+    if (!inLib || !node || !node.c) return;
+    const top = lookup(MEDIA()+"/Library");
+    const dest = el("select",{"aria-label":T("moveTo")}, el("option",{value:""}, T("moveTo")));
+    for (const c of (top.c||[])) if (c.d) dest.append(el("option",{value:c.n}, c.n));
+    const btn = el("button",{onclick:()=>{
+      if (!sel){ toast(T("selectFirst")); return; }
+      if (!dest.value) return;
+      const from = path.slice((MEDIA()+"/Library/").length);
+      if (from===dest.value) return;
+      S.world.moved.push({name:sel, from, to:dest.value});
+      emit({type:"move", name:sel, from, to:dest.value}); go(MEDIA()+"/Library/"+dest.value);
+    }}, T("move"));
+    tool.append(el("span",{style:"flex:1"}), dest, btn);
+  }
+  inst.refresh = ()=>{ if (!lookup(path)) path=HOMEP(); draw(); };
+  draw(); emit({type:"folder", path});
+}
+function fileIcon(n){ n=n.toLowerCase();
+  if (/\.(mkv|mp4|avi)$/.test(n)) return "🎞️"; if (/\.zim$/.test(n)) return "📚"; if (/\.(sh|py)$/.test(n)) return "⚙️";
+  if (/\.(md|txt)$/.test(n)) return "📄"; if (/\.(yml|yaml|json|env)$|^\.env|caddyfile/.test(n)) return "🧾";
+  if (/\.(nes|gba|sfc|smc|gb|gbc)$/.test(n)) return "🕹️"; if (/\.(png|jpg|svg)$/.test(n)) return "🖼️"; if (/\.html$/.test(n)) return "🌐"; return "📄"; }
+function autoRestart(){ for (const k of Object.keys(S.world.svc)) if (code(k)===0 || code(k)>=500) S.world.svc[k]=expected(k)||S.world.svc[k]; }
+
+/* =====================================================================
+   Disks app
+   ===================================================================== */
+function buildDisks(inst){
+  const box=el("div",{class:"disks"}); inst.body.append(box);
+  function draw(){
+    box.innerHTML="";
+    const drives = (S.snap.drives||[]).filter(d=>d.mount || d.label);
+    for (const lab of ["Library","Vault"]) if (!drives.some(d=>d.label===lab)) drives.push({label:lab, fstype:"ext4", device:"/dev/sd?", usb:true, size:0, mount:MEDIA()+"/"+lab, missing:!S.snap.trees[lab.toLowerCase()]});
+    for (const d of drives){
+      const lab = d.label, isData = lab==="Library"||lab==="Vault";
+      const on = isData ? S.world.mounted[lab] : !!d.mount;
+      const name = lab || (d.mount==="/" ? (S.lang==="es"?"Disco de la laptop":"Laptop's own drive") : d.device);
+      const pct = d.total ? Math.round(100*d.used/d.total) : 0;
+      const info = el("div",{class:"info", html:`<b>${esc(name)}</b> <span style="color:var(--muted)">${esc(d.device||"")} · ${esc(d.fstype||"?")}${d.size?" · "+human(d.size):""}</span><br>
+        <span style="color:${on?"var(--green)":"var(--amber)"}">${on? esc(T("mounted"))+" "+esc(d.mount||MEDIA()+"/"+lab) : esc(T("plugged"))}</span>
+        ${on&&d.total?`<div class="bar"><i style="width:${pct}%"></i></div><small>${human(d.used)} ${esc(T("used"))} · ${human(d.avail)} ${esc(T("free"))}</small>`:""}`});
+      const row = el("div",{class:"disk"}, el("span",{class:"e"}, d.usb?"🔌":"💻"), info);
+      if (isData){
+        row.append(el("button",{class:on?"":"go", onclick:()=>{ S.world.mounted[lab]=!on; if(!on && S.age==="kid") autoRestart();
+          if(!on) emit({type:"mount", label:lab}); else { if(lab==="Vault"){S.world.svc.docs=500;S.world.svc.photos=500;} else {S.world.svc.library=0;} toast(T("practice")); }
+          refreshApps(); }}, on?T("unmount"):T("mount")));
+      }
+      box.append(row);
+    }
+  }
+  inst.refresh=draw; draw();
+}
+
+/* =====================================================================
+   Firefox app
+   ===================================================================== */
+function buildFirefox(inst, start){
+  const addr = el("input",{"aria-label":"address", spellcheck:"false"});
+  const page = el("div",{class:"page"});
+  let cur = start || "start";
+  inst.body.append(el("div",{class:"ff"}, el("div",{class:"ffbar"},
+    el("button",{"aria-label":"home", onclick:()=>go("start")},"⌂"), el("button",{"aria-label":"reload", onclick:()=>go(cur)},"⟳"), addr), page));
+  addr.addEventListener("keydown", e=>{ if (e.key==="Enter") go(resolveURL(addr.value)); });
+  function go(key){ cur = key || "start"; draw(); if (cur!=="start") emit({type:"url", key:cur}); }
+  inst.go = go;
+  function draw(){
+    page.innerHTML=""; page.scrollTop=0;
+    if (cur==="start"){ addr.value = "http://"+IP()+"/"; inst.title.textContent=T("startPage")+" — Mozilla Firefox"; page.append(startPage()); return; }
+    if (cur==="?"){ addr.value=addr.value; page.append(el("div",{class:"ffoff", html:`<h1>${esc(T("cantConnect"))}</h1><p>${esc(T("cantConnectD",{a:addr.value}))}</p>`})); return; }
+    const s = svcList().find(x=>x.key===cur); if (!s){ go("start"); return; }
+    addr.value = "http://"+s.host+"/"; inst.title.textContent = s.name+" — Mozilla Firefox";
+    const c = code(cur);
+    if (!c){ page.append(el("div",{class:"ffoff", html:`<h1>🦊 ${esc(T("cantConnect"))}</h1><p>${esc(T("cantConnectD",{a:IP()+":"+s.port}))}</p>`})); return; }
+    if (c>=500){ page.append(el("div",{class:"err500", html:`<h1>Server Error (500)</h1><p>${cur==="docs"?"Paperless-ngx":""}</p><hr><p style="color:#666">${esc(s.host)}</p>`})); return; }
+    const shot = S.snap.screenshots && S.snap.screenshots[cur];
+    const needsDraw = (cur==="flix" && (S.world.changed || !shot)) ;
+    if (shot && !needsDraw){ page.append(el("div",{class:"shotnote"}, "📸 "+T("shotOf")+" · "+fmtDate(S.snap.taken)), el("img",{src:S.base+shot, alt:s.name})); return; }
+    page.append(drawnPage(s));
+  }
+  inst.refresh = draw; draw(); if (cur!=="start") emit({type:"url", key:cur});
+}
+function resolveURL(v){
+  v = v.trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/.*$/,"");
+  for (const s of svcList()){
+    if (v===s.host || v===IP()+":"+s.port || v==="localhost:"+s.port || v==="127.0.0.1:"+s.port || (s.port===80 && (v===IP()||v==="localhost"))) return s.key;
+  }
+  return "?";
+}
+function startPage(){
+  const g = el("div",{class:"home-grid"});
+  for (const s of svcList()){
+    if (s.key==="front") continue;
+    const c=code(s.key), i=SVC_INFO[s.key]||{e:"🔷"};
+    g.append(el("button",{class:"svc", onclick:()=>S.wins.firefox.go(s.key)}, el("span",{class:"e"},i.e),
+      el("span",{html:`<b>${esc(s.name)}</b><small>${esc(L(i))}</small>`}), el("span",{class:"dot "+(!c?"off":c>=500?"bad":"up")})));
+  }
+  return el("div",{class:"pg"}, el("h1",{},"🏠 Cacique"), el("p",{style:"color:#6b655c"}, S.lang==="es"?"La página de la familia · Aprender · Hogar · Servidor":"The family page · Learn · Home · Server"), g);
+}
+function drawnPage(s){
+  const i=SVC_INFO[s.key]||{e:"🔷"};
+  const box = el("div",{class:"pg"}, el("div",{class:"shotnote", style:"margin:-20px -20px 14px"}, "✏️ "+T("drawnNote")));
+  const d = el("div",{class:"drawn"}, el("div",{class:"e"}, i.e), el("h1",{}, s.name), el("p",{}, L(i)));
+  if (s.key==="flix"){
+    const mv = S.world.mounted.Library ? lookup(MEDIA()+"/Library/Movies") : null;
+    const list = mv && mv.c ? mv.c.filter(x=>x.d) : [];
+    if (!list.length) d.append(el("p",{style:"color:#b3261e;font-weight:700"}, T("noMovies")));
+    else { const m=el("div",{class:"movies"}); for (const x of list) m.append(el("div",{class:"poster"}, x.n)); d.append(m); }
+  }
+  if (s.key==="dash") d.append(el("p",{class:"mono"}, "CPU ▮▮▮▯▯▯  RAM ▮▮▮▮▮▯  TEMP ▮▮▮▯▯▯"));
+  box.append(d); return box;
+}
+
+/* =====================================================================
+   Terminal app
+   ===================================================================== */
+let term = null;
+function buildTerminal(inst){
+  S.cwd = HOMEP();
+  const out=el("div",{class:"out mono", role:"log"}), input=el("input",{"aria-label":"command", autocomplete:"off", autocapitalize:"off", spellcheck:"false"});
+  const ps=el("span",{class:"ps mono"});
+  inst.body.append(el("div",{class:"term"}, out, el("div",{class:"pl mono"}, ps, input)));
+  term = {out, input, ps};
+  const setPS = ()=>{ ps.innerHTML = `${esc(U())}@${esc(S.snap.meta.host||"elcaciquedeck-00")}:<i>${esc(prettyPath(S.cwd))}</i>$`; };
+  term.setPS = setPS; setPS();
+  termPrint(`<span class="note">${esc(S.lang==="es"?"Copia de práctica del "+fmtDate(S.snap.taken)+". Escribe help para ver los comandos.":"Practice copy from "+fmtDate(S.snap.taken)+". Type help to see the commands.")}</span>`);
+  input.addEventListener("keydown", e=>{
+    if (e.key==="Enter"){ const line=input.value; input.value=""; S.hist.push(line); S.hpos=S.hist.length; runLine(line); }
+    else if (e.key==="ArrowUp"){ if (S.hpos>0){ S.hpos--; input.value=S.hist[S.hpos]||""; } e.preventDefault(); }
+    else if (e.key==="ArrowDown"){ if (S.hpos<S.hist.length){ S.hpos++; input.value=S.hist[S.hpos]||""; } }
+    else if (e.key==="Tab"){ e.preventDefault(); complete(); }
+  });
+  inst.body.addEventListener("click", ()=>input.focus());
+  setTimeout(()=>input.focus(), 50);
+  inst.refresh = ()=>{};
+}
+function termPrint(html){ if (!term) return; term.out.insertAdjacentHTML("beforeend", html+"\n"); term.out.scrollTop = term.out.scrollHeight; }
+function complete(){
+  const v=term.input.value, m=v.match(/(\S*)$/), word=m[1], dir=word.includes("/")?word.slice(0,word.lastIndexOf("/")+1):"", part=word.slice(dir.length);
+  const node=lookup(norm(dir||".", S.cwd)); if(!node||!node.c) return;
+  const hits=node.c.filter(c=>c.n.startsWith(part)); if (hits.length===1) term.input.value = v.slice(0,v.length-part.length)+hits[0].n+(hits[0].d?"/":"");
+  else if (hits.length>1) termPrint(hits.map(h=>h.n).join("  "));
+}
+function tokens(s){ const out=[]; let cur="", q=null, has=false;
+  for (const ch of s){ if (q){ if (ch===q) q=null; else cur+=ch; } else if (ch==='"'||ch==="'"){ q=ch; has=true; } else if (/\s/.test(ch)){ if (cur||has){ out.push(cur); cur=""; has=false; } } else cur+=ch; }
+  if (cur||has) out.push(cur); return out; }
+function runLine(raw){
+  const line = raw.trim();
+  termPrint(`<span class="ps">${esc(U())}@${esc(S.snap.meta.host||"elcaciquedeck-00")}:<i>${esc(prettyPath(S.cwd))}</i>$</span> ${esc(raw)}`);
+  if (!line) return;
+  for (const part of line.split(/\s*(?:&&|;)\s*/)){
+    if (!part) continue;
+    const [cmd, ...pipes] = part.split(/\s*\|\s*/);
+    let res = exec(cmd.trim());
+    for (const p of pipes){ const t=tokens(p); if (t[0]==="grep"){ const ci=t.includes("-i"); const pat=t.filter(x=>!x.startsWith("-"))[1]||""; res.text=res.text.split("\n").filter(l=> ci? l.toLowerCase().includes(pat.toLowerCase()) : l.includes(pat)).join("\n"); }
+      else if (t[0]==="head"||t[0]==="tail"||t[0]==="less"||t[0]==="more"){ /* show all */ } else if (t[0]==="wc"&&t.includes("-l")) res.text=String(res.text?res.text.split("\n").length:0); else if (t[0]==="wc") res={text:"wc: "+(S.lang==="es"?"¿quisiste decir wc -l (letra L)?":"did you mean wc -l (letter L)?"), cls:"err"}; }
+    if (res.text) termPrint(res.cls ? `<span class="${res.cls}">${esc(res.text)}</span>` : esc(res.text));
+    if (res.after) res.after();
+  }
+}
+/* the commands the twin knows */
+function exec(cmdline){
+  const t = tokens(cmdline).map(x=>x.replace(/\$USER|\$\{USER\}/g,U()).replace(/\$HOME/g,HOMEP()));
+  if (!t.length) return {text:""};
+  let sudo = false; if (t[0]==="sudo"){ sudo=true; t.shift(); }
+  if (!t.length) return {text:"usage: sudo command", cls:"err"};
+  const c = t[0], args=t.slice(1), flags=args.filter(a=>/^-/.test(a)).join(""), plain=args.filter(a=>!/^-/.test(a));
+  const line = (sudo?"sudo ":"")+t.join(" ");
+  const ev = {type:"cmd", line:t.join(" "), sudo};
+  const done = r => { emit(ev); return r; };
+  const O = S.snap.outputs, w = S.world, es = S.lang==="es";
+  const msg = (a,b)=> es?a:b;
+  if (c==="wc" && args.includes("-1")) return done({text:msg("wc: -1 no existe. ¿Quisiste decir wc -l (letra L de línea)?","wc: -1 doesn't exist. Did you mean wc -l (letter L for line)?"), cls:"err"});
+  if (/^\d+$/.test(c)) return done({text:msg(`${c}: no es un comando. ¿Escribiste un número 1 en vez de la letra l?`,`${c}: not a command. Did you type the number 1 instead of the letter l?`), cls:"err"});
+  switch (c){
+    case "help": return done({text: msg(
+`Comandos que la copia conoce:
+  ls [-l] [carpeta]   cd carpeta   pwd   cat archivo   clear   history
+  hostname  whoami  date  uptime  uname -a  free -h  groups
+  lsblk [-f]   df -h   ip -4 -br a   ip route get 1.1.1.1   ss -ltn
+  docker ps   bash ~/elcaciquedeck/status.sh   git log --oneline
+  pgrep -a nombre   pkill nombre   flatpak list   sudo ufw status
+  start-all.sh  stop-all.sh  docker compose restart (dentro de una carpeta)
+  udisksctl mount -b /dev/sdX1   sudo chown   sudo usermod   reboot   exit
+La copia solo sabe lo que el deck imprimió el día de la actualización.`,
+`Commands the copy knows:
+  ls [-l] [folder]   cd folder   pwd   cat file   clear   history
+  hostname  whoami  date  uptime  uname -a  free -h  groups
+  lsblk [-f]   df -h   ip -4 -br a   ip route get 1.1.1.1   ss -ltn
+  docker ps   bash ~/elcaciquedeck/status.sh   git log --oneline
+  pgrep -a name   pkill name   flatpak list   sudo ufw status
+  start-all.sh  stop-all.sh  docker compose restart (inside a folder)
+  udisksctl mount -b /dev/sdX1   sudo chown   sudo usermod   reboot   exit
+The copy only knows what the deck printed on update day.`)});
+    case "clear": term.out.innerHTML=""; return done({text:""});
+    case "history": return done({text:S.hist.map((h,i)=>String(i+1).padStart(5)+"  "+h).join("\n")});
+    case "pwd": return done({text:S.cwd});
+    case "cd": { const p = norm(plain[0]||"~", S.cwd), n=lookup(p);
+      if (!n) return done({text:`bash: cd: ${plain[0]}: No such file or directory`, cls:"err"});
+      if (!n.d) return done({text:`bash: cd: ${plain[0]}: Not a directory`, cls:"err"});
+      S.cwd=p; term.setPS(); emit({type:"cd", path:p}); return done({text:""}); }
+    case "ls": case "ll": case "dir": {
+      const long = c==="ll" || /l/.test(flags), all = /a/.test(flags);
+      const targets = plain.length ? plain : ["."];
+      const outs=[];
+      for (const a of targets){
+        const p = norm(a, S.cwd), n = lookup(p);
+        emit({type:"ls", path:p, long});
+        if (!n){ outs.push({t:`ls: cannot access '${a}': No such file or directory`, err:1}); continue; }
+        if (!n.d){ outs.push({t: long? lsLine(n) : n.n}); continue; }
+        if (n.p){ outs.push({t: n.k!=null ? msg(`(privado: ${n.k} archivos, ${human(n.s)} — la copia no guarda nombres de la Bóveda)`,`(private: ${n.k} files, ${human(n.s)} — the copy doesn't save Vault names)`) : msg("(carpeta privada: la copia solo guardó su nombre)","(private folder: the copy only saved its name)")}); continue; }
+        if (n.more || n.nc){ outs.push({t:msg("(la foto no bajó hasta esta carpeta)","(the photo didn't go this deep)")}); continue; }
+        let kids = (n.c||[]).filter(x=> all || !x.n.startsWith("."));
+        if (targets.length>1) outs.push({t:a+":"});
+        if (long){ outs.push({t:"total "+kids.length}); kids.forEach(k=>outs.push({t:lsLine(k)})); }
+        else outs.push({t:kids.map(k=> /\s/.test(k.n)?`'${k.n}'`:k.n).join("  ")});
+      }
+      emit(ev); return {text:outs.map(o=>o.t).join("\n"), cls: outs.length===1&&outs[0].err?"err":""}; }
+    case "cat": case "nano": case "less": {
+      if (!plain[0]) return done({text:""});
+      const p = norm(plain[0], S.cwd), n = lookup(p);
+      if (!n) return done({text:`${c}: ${plain[0]}: No such file or directory`, cls:"err"});
+      if (n.d) return done({text:`${c}: ${plain[0]}: Is a directory`, cls:"err"});
+      if (n.txt != null) return done({text:n.txt});
+      if (p.startsWith(REPOP()+"/") && /\.env$/.test(p)){ const rel=p.slice(REPOP().length+1); const v=(S.snap.env||{})[rel]; if (v!=null) return done({text:v+"\n"+msg("# (las contraseñas están tapadas con •••••• en la copia)","# (passwords are masked with •••••• in the copy)"), cls:""}); }
+      return done({text:msg("(la copia solo guardó el nombre de este archivo, no lo que tiene adentro)","(the copy only saved this file's name, not what's inside)"), cls:"note"}); }
+    case "echo": return done({text:args.join(" ")});
+    case "whoami": return done({text:U()});
+    case "hostname": return done({text: /I/.test(flags) ? IP() : (O.hostname||S.snap.meta.host)});
+    case "date": return done({text:O.date||S.snap.taken});
+    case "uptime": return done({text:O.uptime||""});
+    case "uname": return done({text: /a/.test(flags)? (O["uname -a"]||"") : /r/.test(flags) ? S.snap.meta.kernel : "Linux"});
+    case "lsb_release": return done({text:"Distributor ID:\tUbuntu\nDescription:\t"+(S.snap.meta.os||"Ubuntu")});
+    case "free": return done({text:O["free -h"]||""});
+    case "groups": case "id": return done({text: w.dockerGroup && w.loggedOutSinceGroup ? (O.groups||"") : (O.groups||U()).replace(/\s*\bdocker\b/,"")});
+    case "lsblk": return done({text:lsblkOut(/f/.test(flags))});
+    case "df": return done({text:dfOut(plain[0])});
+    case "ip": return done({text: args.join(" ").startsWith("route") ? (O["ip route get 1.1.1.1"]||"") : (O["ip -4 -br a"]||"")});
+    case "ifconfig": return done({text:msg("ifconfig es viejo. Usa: ip -4 -br a","ifconfig is old. Use: ip -4 -br a"), cls:"note"});
+    case "ss": case "netstat": return done({text:ssOut(/p/.test(flags))});
+    case "ps": return done({text:psOut()});
+    case "pgrep": { const name=plain[0]||""; const lines=psOut().split("\n").filter(l=>l.includes(name)); return done({text: lines.map(l=>/a/.test(flags)? l.trim().replace(/^(\d+)\s+\S+\s+/,"$1 ") : l.trim().split(/\s+/)[0]).join("\n")}); }
+    case "pkill": case "killall": case "kill": {
+      const name = plain[0]||"";
+      if (/kiwix|2199/.test(name)){ if (w.ghostKiwix){ w.ghostKiwix=false; w.svc.library=0; } else w.svc.library=0; refreshApps(); return done({text:""}); }
+      if (/caciquedash|python/.test(name)){ w.svc.dash=0; refreshApps(); return done({text:""}); }
+      if (/jellyfin/.test(name)){ w.svc.flix=0; refreshApps(); return done({text:""}); }
+      if (/firefox/.test(name)){ closeWin("firefox"); return done({text:""}); }
+      return done({text:""}); }
+    case "kiwix-serve": {
+      if (w.ghostKiwix) return done({text:"Unable to instantiate the HTTP Daemon. The port 8080 may already be in use or you may not have the right to open it.", cls:"err"});
+      if (!w.mounted.Library) return done({text:"No such file or directory: "+MEDIA()+"/Library/Kiwix/*.zim", cls:"err"});
+      w.svc.library=expected("library"); refreshApps(); return done({text:"The Kiwix server is running and can be accessed in the local network at:\n  - http://"+IP()+":8080"}); }
+    case "python3": case "python": case "nohup": {
+      if (args.join(" ").includes("caciquedash")){ w.svc.dash=w.base.dash||200; refreshApps(); return done({text:"[1] 4242"}); }
+      if (c==="nohup"){ return exec(args.join(" ")); }
+      return done({text:msg("(la copia no corre programas de Python)","(the copy doesn't run Python programs)"), cls:"note"}); }
+    case "docker": return done(dockerCmd(args));
+    case "flatpak": if (args[0]==="run" && /jellyfin/i.test(args[1]||"")){ w.svc.flix=w.base.flix; refreshApps(); return done({text:""}); } return done({text:O["flatpak list"]||""});
+    case "ufw": return done({text: sudo ? (O.ufw||"") : "ERROR: You need to be root to run this script", cls: sudo?"":"err"});
+    case "git": {
+      if (args[0]==="log"){ const lines=(O["git log"]||"").split("\n"); const n = args.includes("-1")?1:lines.length; return done({text:lines.slice(0,n).join("\n")}); }
+      if (args[0]==="pull") return done({text:"Already up to date."});
+      if (args[0]==="status") return done({text:"On branch main\nYour branch is up to date with 'origin/main'.\n\nnothing to commit, working tree clean"});
+      return done({text:msg("(la copia solo conoce git log, git pull y git status)","(the copy only knows git log, git pull and git status)"), cls:"note"}); }
+    case "bash": case "sh": case "./status.sh": case "./start-all.sh": case "./stop-all.sh": case "status.sh": case "start-all.sh": case "stop-all.sh": {
+      const script = (c.startsWith("./")||c.endsWith(".sh")) ? c : (plain[0]||"");
+      if (/status\.sh$/.test(script)) return done({text:statusOut()});
+      if (/start-all\.sh$/.test(script)) return done(startAll());
+      if (/stop-all\.sh$/.test(script)) return done(stopAll());
+      if (/update\.sh$/.test(script)) return done({text:msg("update.sh corre en el deck real (es el que toma esta foto). Aquí no hace falta.","update.sh runs on the real deck (it's what takes this photo). Not needed here."), cls:"note"});
+      if (/snapshot\.sh$/.test(script)) return done({text:msg("snapshot.sh toma la foto que estás viendo. Córrelo en el deck real.","snapshot.sh takes the photo you're looking at. Run it on the real deck."), cls:"note"});
+      return done({text:msg("(la copia no corre ese script)","(the copy doesn't run that script)"), cls:"note"}); }
+    case "udisksctl": case "mount": {
+      const dev = args.find(a=>a.startsWith("/dev/"))||"";
+      const drive = (S.snap.drives||[]).find(d=>d.device===dev);
+      const lab = drive ? drive.label : (/sdb/.test(dev)?"Library":/sdc/.test(dev)?"Vault":"");
+      if (!args.length && c==="mount") return done({text:dfOut()});
+      if (!lab || !(lab in w.mounted)) return done({text:msg("Usa: udisksctl mount -b /dev/sdX1 (mira lsblk para ver la letra)","Use: udisksctl mount -b /dev/sdX1 (check lsblk for the letter)"), cls:"err"});
+      if (w.mounted[lab]) return done({text:`Error mounting ${dev}: GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted: Device ${dev} is already mounted at \`${MEDIA()}/${lab}'.`, cls:"err"});
+      w.mounted[lab]=true; refreshApps(); emit({type:"mount", label:lab}); return done({text:`Mounted ${dev} at ${MEDIA()}/${lab}`}); }
+    case "chown": {
+      if (!sudo) return done({text:"chown: changing ownership: Operation not permitted", cls:"err"});
+      if (args.join(" ").includes("1000:1000") || args.join(" ").includes(U()+":"+U())){ if (args.some(a=>/Vault\/paperless/.test(a)) || norm(".",S.cwd).endsWith("/Vault/paperless")) { w.paperOwner=U(); refreshApps(); } return done({text:""}); }
+      return done({text:msg("Pista: sudo chown -R 1000:1000 /media/$USER/Vault/paperless","Hint: sudo chown -R 1000:1000 /media/$USER/Vault/paperless"), cls:"note"}); }
+    case "usermod": {
+      if (!sudo) return done({text:"usermod: Permission denied.\nusermod: cannot lock /etc/passwd; try again later.", cls:"err"});
+      if (args.includes("-aG") && args.includes("docker")){ if (!w.dockerGroup){ w.dockerGroup=true; w.loggedOutSinceGroup=false; } return done({text:msg("(listo — el grupo cuenta cuando vuelvas a entrar: reboot)","(done — the group counts after you log in again: reboot)"), cls:"note"}); }
+      if (args.includes("-G")) return done({text:msg("¡Cuidado! -G sin la a BORRA los otros grupos. Usa -aG.","Careful! -G without the a REMOVES your other groups. Use -aG."), cls:"err"});
+      return done({text:""}); }
+    case "newgrp": if (args[0]==="docker" && w.dockerGroup){ w.loggedOutSinceGroup=true; return done({text:""}); } return done({text:""});
+    case "reboot": case "shutdown": return done({text:msg("Reiniciando la copia…","Rebooting the copy…"), cls:"note", after:()=>setTimeout(rebootSim,700)});
+    case "exit": case "logout": return done({text:"logout", after:()=>setTimeout(()=>closeWin("terminal"),300)});
+    case "nautilus": case "xdg-open": openApp("files", plain[0]?norm(plain[0],S.cwd):undefined); return done({text:""});
+    case "firefox": openApp("firefox"); return done({text:""});
+    case "man": return done({text:msg("Abre el Manual de Campo (📘 en la barra).","Open the Field Manual (📘 in the dock)."), cls:"note"});
+    case "rm": case "rmdir": case "mkfs.ext4": case "mkfs": case "dd": return done({text:msg("🛑 En la copia de práctica no se borra ni se formatea nada. En el deck real, ¡piénsalo dos veces!","🛑 Nothing gets deleted or formatted in the practice copy. On the real deck, think twice!"), cls:"err"});
+    case "apt": case "apt-get": case "snap": return done({text:msg("(la copia no instala programas)","(the copy doesn't install programs)"), cls:"note"});
+    case "nmcli": return done({text:O["ip -4 -br a"]||""});
+    default:
+      return done({text:msg(`${c}: no está en la foto de esta actualización (escribe help)`,`${c}: not recorded in this update's snapshot (type help)`), cls:"err"});
+  }
+}
+function lsLine(n){
+  const own = n.owner || U();
+  const perm = n.d ? "drwxr-xr-x" : (/\.sh$|\.py$/.test(n.n) ? "-rwxr-xr-x" : "-rw-r--r--");
+  const size = n.d ? 4096 : (n.s||0);
+  const d = new Date(S.snap.taken); const mon=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()||0];
+  return `${perm} ${n.d?2:1} ${own.padEnd(8)} ${own.padEnd(8)} ${String(size).padStart(10)} ${mon} ${String(d.getDate()||1).padStart(2)} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} ${/\s/.test(n.n)?`'${n.n}'`:n.n}`;
+}
+function lsblkOut(f){
+  let txt = S.snap.outputs[f?"lsblk -f":"lsblk"] || "";
+  for (const lab of ["Library","Vault"]) if (!S.world.mounted[lab]) txt = txt.split("\n").map(l=> l.includes(MEDIA()+"/"+lab) ? l.replace(/\s*\d*[\d.]*[KMGT]?\s+\d+%\s+\/media\/\S+$/, "").replace(" "+MEDIA()+"/"+lab, "") : l).join("\n");
+  return txt;
+}
+function dfOut(path){
+  let lines = (S.snap.outputs["df -h"]||"").split("\n");
+  for (const lab of ["Library","Vault"]) if (!S.world.mounted[lab]) lines = lines.filter(l=>!l.includes(MEDIA()+"/"+lab));
+  if (path){ const p=norm(path,S.cwd); const hit = lines.slice(1).filter(l=>{ const mp=l.trim().split(/\s+/).pop(); return p===mp || p.startsWith(mp==="/"?"/":mp+"/"); }).sort((a,b)=>b.length-a.length)[0]; return lines[0]+"\n"+(hit||""); }
+  return lines.join("\n");
+}
+function ssOut(p){
+  let lines=(S.snap.outputs["ss -ltn"]||"").split("\n");
+  const ports = {library:8080, dash:8888, flix:8096};
+  for (const [k,port] of Object.entries(ports)) if (!code(k) && !(k==="library"&&S.world.ghostKiwix)) lines = lines.filter(l=>!new RegExp(":"+port+"\\s").test(l));
+  if (S.world.ghostKiwix && !lines.some(l=>/:8080\s/.test(l))) lines.push("LISTEN 0      10           0.0.0.0:8080       0.0.0.0:*");
+  if (p) lines = lines.map(l=>{ if (/:8080\s/.test(l)) return l+`    users:(("kiwix-serve",pid=${S.world.ghostKiwix?2199:2210},fd=3))`; if (/:8888\s/.test(l)) return l+'    users:(("python3",pid=2245,fd=3))'; return l; });
+  return lines.join("\n");
+}
+function psOut(){
+  let lines=(S.snap.outputs.ps||"").split("\n").filter(Boolean);
+  if (S.world.ghostKiwix) lines = lines.map(l=>l.includes("kiwix-serve") ? l.replace(/^\s*\d+/, "   2199") : l);
+  if (!code("library") && !S.world.ghostKiwix) lines=lines.filter(l=>!l.includes("kiwix"));
+  if (!code("dash")) lines=lines.filter(l=>!l.includes("caciquedash"));
+  if (!code("flix")) lines=lines.filter(l=>!l.includes("jellyfin"));
+  return lines.join("\n");
+}
+function statusOut(){
+  if (!S.world.changed && S.snap.outputs["status.sh"] && !/could not run/.test(S.snap.outputs["status.sh"])) return S.snap.outputs["status.sh"];
+  const ln=(a,b,c)=>"  "+a.padEnd(16)+" "+b.padEnd(6)+" "+c;
+  const out=["", ln("SERVER","STATUS","ADDRESS"), ln("------","------","-------")];
+  for (const s of svlist()){ const c=code(s.key);
+    out.push(ln(s.name, !c?"--":c>=500?"ERROR":"UP", !c?"not running (or not set up yet)":c>=500?`on but failing (code ${c}) - see the Field Manual, Troubleshooting`:"http://"+IP()+(s.port===80?"":":"+s.port))); }
+  out.push("");
+  for (const lab of ["Library","Vault"]){
+    const d=(S.snap.drives||[]).find(x=>x.label===lab);
+    out.push(S.world.mounted[lab] ? ln(lab+" drive","OK", d&&d.total? `${human(d.used)} used of ${human(d.total)}, ${human(d.avail)} free` : "") : ln(lab+" drive","--","not connected"));
+  }
+  out.push("", "  Family front door:  http://"+IP(), "");
+  return out.join("\n");
+}
+const svlist = svcList;
+function startAll(){
+  const w=S.world, out=["","  ELCACIQUEDECK · starting servers","  ---------------------------------"];
+  out.push(w.mounted.Library ? "  Library drive: connected   (media, games, encyclopedia)" : "  Library drive: NOT connected - click 'Library' in the Files app, then run this again.");
+  if (w.mounted.Vault) out.push("  Vault drive:   connected   (documents, photos, backups)");
+  else { out.push("  Vault drive:   NOT connected - click 'Vault' in the Files app, then run this again.","  (CaciqueDocs and CaciquePhotos live on Vault and won't start correctly without it.)","  Stopping here so they don't start with an empty drive."); return {text:out.join("\n")}; }
+  out.push("");
+  for (const s of svlist()){
+    if (code(s.key)===0){
+      if (s.key==="library" && w.ghostKiwix){ out.push("  CaciqueLibrary already running"); continue; }
+      const e=expected(s.key); w.svc[s.key]=e; if (e) out.push("  "+s.name+" starting...");
+    } else if (code(s.key)>=500) out.push("  "+s.name+" started");
+  }
+  out.push("", "  Waiting for everything to wake up...", statusOut());
+  refreshApps(); return {text:out.join("\n")};
+}
+function stopAll(){ for (const s of svlist()) S.world.svc[s.key]=0; S.world.ghostKiwix=false; S.world.changed=true; refreshApps();
+  return {text:"\n  Stopping CaciqueLibrary, CaciqueFlix, CaciqueDash...\n  Stopping Docker servers...\n  All stopped.\n"}; }
+function dockerCmd(a){
+  const w=S.world, es=S.lang==="es";
+  if (!(w.dockerGroup && w.loggedOutSinceGroup)) return {text:"permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get \"http://%2Fvar%2Frun%2Fdocker.sock/v1.47/containers/json\": dial unix /var/run/docker.sock: connect: permission denied", cls:"err"};
+  if (a[0]==="ps"){ let txt=S.snap.outputs["docker ps"]||""; return {text:txt}; }
+  if (a[0]==="compose"){
+    const folder = S.cwd.startsWith(REPOP()+"/") ? S.cwd.slice(REPOP().length+1).split("/")[0] : "";
+    const keys = STACKS[folder];
+    if (!keys) return {text:"no configuration file provided: not found\n"+(es?"(Pista: primero entra a la carpeta, por ejemplo: cd ~/elcaciquedeck/paperless)":"(Hint: go into the folder first, e.g. cd ~/elcaciquedeck/paperless)"), cls:"err"};
+    const sub=a[1]||"";
+    if (sub==="restart" || sub==="up" || (sub==="down")){
+      for (const k of keys){ if (sub==="down") w.svc[k]=0; else if (sub==="restart" || code(k)===0) w.svc[k]=expected(k); }
+      w.changed=true; refreshApps();
+      return {text: keys.map(k=>` ✔ Container ${folder}-${k}  ${sub==="down"?"Removed":sub==="restart"?"Started":"Running"}`).join("\n")};
+    }
+    if (sub==="logs"){ const k=keys[0]; return {text: code(k)>=500 ? (k==="docs"? "webserver-1  | PermissionError: [Errno 13] Permission denied: '/usr/src/paperless/media/documents'" : "server-1  | Error: ENOENT: no such file or directory, open '/usr/src/app/upload/.immich'") : "(…all good…)"}; }
+    if (sub==="ps") return {text:keys.map(k=>`${folder}-${k}   ${code(k)?"Up":"Exited"}`).join("\n")};
+    return {text:es?"(la copia conoce: docker compose up -d, restart, down, logs, ps)":"(the copy knows: docker compose up -d, restart, down, logs, ps)", cls:"note"};
+  }
+  if (a[0]==="restart" || a[0]==="start"){ const k=CONTAINERS[a[1]]; if (!k) return {text:`Error response from daemon: No such container: ${a[1]||""}`, cls:"err"}; w.svc[k]=expected(k); w.changed=true; refreshApps(); return {text:a[1]}; }
+  if (a[0]==="logs"){ const k=CONTAINERS[a[1]]; return {text: k&&code(k)>=500 && k==="docs" ? "PermissionError: [Errno 13] Permission denied: '/usr/src/paperless/media/documents'" : "(…)"}; }
+  return {text:es?"(la copia conoce: docker ps, docker compose …, docker restart nombre, docker logs nombre)":"(the copy knows: docker ps, docker compose …, docker restart name, docker logs name)", cls:"note"};
+}
+function rebootSim(){
+  const w=S.world; w.loggedOutSinceGroup = true; w.ghostKiwix=false;
+  for (const s of svlist()) if (!["front","guard","academy"].includes(s.key)) w.svc[s.key]=0;   // nothing starts by itself at boot
+  w.changed=true; closeAll(); $("#desk").hidden=true; $("#login").hidden=false; renderLogin();
+  $("#snapnote").innerHTML += `<br><span style="color:var(--green)">${esc(S.lang==="es"?"Reiniciado. Recuerda: nada se prende solo — usa start-all.sh.":"Rebooted. Remember: nothing starts by itself — use start-all.sh.")}</span>`;
+  S.rebooting = true; emit({type:"tick"});
+}
+
+/* =====================================================================
+   Screens
+   ===================================================================== */
+function applyWords(){
+  document.documentElement.lang=S.lang;
+  document.querySelectorAll("[data-t]").forEach(n=> n.textContent=T(n.dataset.t));
+  $("#loginBtn").textContent=T("enter");
+  $("#pw").placeholder = S.age==="kid" ? T("pwKid") : T("pwHint");
+  $("#pw").hidden = S.age==="kid";
+  for (const [seg,val] of [["#langSeg",S.lang],["#ageSeg",S.age]]) $(seg).querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===val));
+}
+function renderLogin(){
+  applyWords();
+  $("#snapnote").innerHTML = S.demo ? T("snapDemo") : T("snapReal",{d:esc(fmtDate(S.snap.taken))});
+}
+function tickClock(){
+  const d=new Date(), loc=S.lang==="es"?"es-PR":"en-US";
+  $("#lclock").textContent = d.toLocaleTimeString(loc,{hour:"numeric",minute:"2-digit"});
+  $("#ldate").textContent = d.toLocaleDateString(loc,{weekday:"long",day:"numeric",month:"long"});
+  $("#tclock").textContent = d.toLocaleString(loc,{weekday:"short",hour:"numeric",minute:"2-digit"});
+}
+function showPicker(){
+  hideModal();
+  $("#storyProg").textContent = T("storyProg",{n:Math.min(P.story[S.age]||0,STORY.length), t:STORY.length});
+  $("#freeProg").textContent = T("freeProg",{n:P.free[S.age]||0});
+  applyWords(); $("#picker").hidden=false;
+}
+function renderTop(){
+  $("#modeBadge").textContent = (S.age==="kid"?"🧒 ":"🧑 ")+T(S.mode==="story"?"story":S.mode==="free"?"freeM":"explore");
+  $("#snapBadge").textContent = S.demo ? "DEMO" : "📸 "+S.snap.stamp.replace("_"," ");
+  $("#snapBadge").className = "badge hide-s"+(S.demo?" demo":"");
+  renderDock();
+}
+function showModal(html){ $("#mcard").innerHTML=html; $("#modal").hidden=false; }
+function hideModal(){ $("#modal").hidden=true; }
+let toastT=null;
+function toast(m, ms=3200){ const t=$("#toast"); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true, ms); }
+
+function enterDesk(){
+  $("#login").hidden=true; $("#desk").hidden=false;
+  if (S.rebooting){ S.rebooting=false; renderTop(); renderHUD(); emit({type:"tick"}); return; }
+  showPicker();
+}
+
+/* =====================================================================
+   Wiring
+   ===================================================================== */
+$("#loginForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  if (S.age==="adult" && $("#pw").value.trim().toLowerCase()!=="cacique"){ $("#snapnote").textContent=T("pwBad"); return; }
+  $("#pw").value=""; enterDesk();
+});
+$("#langSeg").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; S.lang=b.dataset.v; save(); renderLogin(); tickClock(); });
+$("#ageSeg").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; S.age=b.dataset.v; save(); renderLogin(); });
+$("#picker").addEventListener("click", e=>{
+  const b=e.target.closest(".mode"); if(!b) return;
+  $("#picker").hidden=true; S.mission=null; S.done=false;
+  if (b.dataset.mode==="story") startStory(Math.min(P.story[S.age]||0, STORY.length-1));
+  else if (b.dataset.mode==="free") startFree();
+  else { S.mode="explore"; S.world=freshWorld(); closeAll(); renderTop(); renderHUD(); openApp("files"); }
+});
+$("#offBtn").onclick = ()=>{ closeAll(); S.mission=null; renderHUD(); $("#desk").hidden=true; $("#login").hidden=false; renderLogin(); };
+$("#langBtn").onclick = ()=>{ S.lang = S.lang==="es"?"en":"es"; save(); applyWords(); renderTop(); renderHUD(); tickClock();
+  for (const k of Object.keys(S.wins)){ S.wins[k].title.textContent=T(k); if (S.wins[k].refresh) S.wins[k].refresh(); } };
+$("#actBtn").onclick = showPicker;
+
+(async function init(){
+  tickClock(); setInterval(tickClock, 15000);
+  try { await loadSnapshot(); } catch(e){ $("#snapnote").textContent="No snapshot found (twin/latest or twin-demo)."; return; }
+  S.world = freshWorld();
+  renderLogin(); loadIndex();
+})();
+</script>
+</body>
+</html>

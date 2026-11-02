@@ -35,9 +35,17 @@ http://caciquearcade.home {
 }
 
 # CaciqueAcademy: the Home Lab training game (plain files from ../academy)
+# /twin/... = the snapshots for El Cacique Admin (~/elcaciquedeck-data/twin, read-only)
 http://caciqueacademy.home, :8095 {
-	root * /academy
-	file_server
+	handle_path /twin/* {
+		root * /twin
+		header Cache-Control no-store
+		file_server
+	}
+	handle {
+		root * /academy
+		file_server
+	}
 }
 
 # Front page: the Cacique Homepage, at http://cacique.home AND at the plain

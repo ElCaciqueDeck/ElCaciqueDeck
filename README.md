@@ -30,7 +30,7 @@ self-reliant home server that works **without the internet**:
 
 Also on the deck: offline maps of Puerto Rico (Organic Maps) and Meshtastic (LoRa mesh radio, in progress).
 
-**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs → ✅ CaciqueGuard → ✅ CaciquePhotos → ✅ CaciqueHome → ✅ Cacique Homepage → ✅ CaciqueArcade → ✅ Field Manual + CaciqueAcademy → ⏳ Family accounts → ⏳ VLANs (needs hardware)
+**Single-laptop roadmap:** ✅ Docker → ✅ CaciqueDocs → ✅ CaciqueGuard → ✅ CaciquePhotos → ✅ CaciqueHome → ✅ Cacique Homepage → ✅ CaciqueArcade → ✅ Field Manual + CaciqueAcademy → ✅ El Cacique Admin (Academy 2.0) → ⏳ Family accounts → ⏳ VLANs (needs hardware)
 
 **Road ahead:** RTL-SDR radio listening, Meshtastic node, and a 3-node mini-PC Proxmox cluster in a 10" rack.
 
@@ -200,19 +200,27 @@ cd ~/elcaciquedeck && git pull
 bash ~/elcaciquedeck/tools/update.sh
 ```
 Installs the newest Field Manual, reloads names and CaciqueAcademy, refreshes the front page,
-restarts CaciqueLibrary and CaciqueDash, and shows the status of everything.
+restarts CaciqueLibrary and CaciqueDash, shows the status of everything, and takes a new snapshot
+for El Cacique Admin.
 
 ## 📚 Learning: Field Manual + CaciqueAcademy
 - **Field Manual** (`manual/`): source in `manual/src/*.md` (Spanish + English halves), built into
   `manual/dist/elcaciquedeck-manual.zim` with `python3 manual/build_manual.py` (needs `pip install libzim markdown`).
 - **CaciqueAcademy** (`academy/index.html`): one offline page, served by Caddy on port 8095. Seven missions so far,
   each one a real problem from building this lab. Progress is saved in each player's browser.
+- **El Cacique Admin** (`academy/admin.html`, CaciqueAcademy 2.0): a practice copy of the ThinkPad desktop
+  (Files, Terminal, Firefox, Disks), frozen at the last update. Open `http://<laptop number>:8095/admin.html`.
+  - **Story Mode**: the creation of El Cacique HomeLab, chapter by chapter, up to the current update.
+  - **Free Mode**: you log in and a random real-world problem is waiting to be fixed.
+  - **Explore**: look around the deck as it was. Every mode has a **Kids** (point and click) and **Adults** (Terminal) version.
+  - The snapshot comes from `tools/snapshot.sh` (run by `update.sh`) and stays **only on the laptop** in
+    `~/elcaciquedeck-data/twin/`: passwords masked, Vault shows only folder sizes, no file contents.
+    Without a snapshot it shows a made-up demo deck (`academy/twin-demo/`).
 
 ## 🗺️ Plans waiting for hardware
 - `docs/network-plan.md`: VLANs (Management, Servers, Familia, Adultos, IoT), firewall rules, fiber to the house, shed, power.
 - `docs/accounts-plan.md`: Familia account (tap, no password, PG), personal accounts, single sign-on later.
 - `docs/rig-shopping-list.md`: everything to buy for the closet rig (3× M720q, NAS, Omada network, rack, UPS, cabling, closet cooling).
-- `docs/academy-twin-plan.md`: CaciqueAcademy 2.0, "El Cacique Admin", a practice copy of the real desktop refreshed at every update.
 
 ## 🧰 Tools
 
