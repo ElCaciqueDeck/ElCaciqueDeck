@@ -11,24 +11,48 @@
 | Network | Always on, many devices, easy names | **Silent by default**; transmits only when you choose |
 | Power | Wall + UPS | Its battery, a spare battery, the e-bike, solar |
 | Data | Shared with the family | **Encrypted**, private, synced home only when back |
-| Software | Docker apps | Kali Linux + a field toolkit, all offline |
+| Software | Docker apps | Base: Ubuntu + field toolkit · Overkill: Kali Live stick |
 
-## The kit (decided)
+## Two modes on one laptop (decided)
+| | 🟢 **The Base** | 🔴 **The Overkill** |
+|---|---|---|
+| What | The friendly **command station**: listen, map, plan, coordinate | A **full ethical-hacking + privacy system** in a pocket bag |
+| How it starts | Normal power-on (internal drive → SSD later) | Plug the Overkill stick, restart, pick it in the boot menu (F12) |
+| System | **Ubuntu** (stable, same family as the home lab) | **Kali Linux Live + encrypted persistence** (all tools and settings kept on the stick) |
+| Internal drive | In use | **Not mounted** — the Base is untouched and Kali leaves no trace on it |
+| Radios | EMCON modes (SILENT / MESH / LINK) | Same modes + only the links you choose |
+| Data | Encrypted home folder | Encrypted persistence; a small encrypted **"drop"** area to pass files to/from the Base |
+
+### 🟢 The Base (Ubuntu) — listen, don't judge
 | Piece | Choice | Role |
 |---|---|---|
-| Laptop | ThinkPad L540 | Brain: maps, TAK server, LoRa bridge, SDR, drone ground station, logbook |
-| OS | **Kali Linux, full-disk encryption** | Ethical-hacking tools ready; encrypted disk; optional emergency "nuke" passphrase |
-| Situational awareness | **ATAK-CIV on a cheap Android (no SIM)** + **OpenTAKServer** on the deck | Shared map: positions, markers, routes, photos, chat |
-| Off-grid mesh | **Meshtastic** LoRa nodes (915 MHz) | Encrypted text + positions between people, no towers, km range |
-| Drone | **ArduPilot / PX4 (MAVLink)** | QGroundControl on the deck; drone position shown on the TAK map |
-| Radio | **Not bought yet → GMRS** (see below) | Voice with the team |
-| Listening | **RTL-SDR (receive only)** | See the radio spectrum around you without transmitting anything |
+| Laptop | ThinkPad L540 (SSD + 16 GB later) | Maps, TAK server, LoRa bridge, SDR, drone ground station, logbook |
+| Situational awareness | **ATAK-CIV on a cheap Android (no SIM)** + **OpenTAKServer** | Shared map: positions, markers, routes, photos, chat |
+| Off-grid mesh | **Meshtastic** LoRa nodes (915 MHz) | Encrypted text + positions, no towers |
+| Drone | **ArduPilot / PX4 (MAVLink)** | QGroundControl; drone on the TAK map |
+| Radio | **GMRS** (not bought yet) | Team voice |
+| Listening | **RTL-SDR (receive only)** | Spectrum, aircraft, weather, sensors |
+| References | Kiwix: medical + survival | Offline |
+
+### 🔴 The Overkill — the pocket bag
+| Item | Role | Notes |
+|---|---|---|
+| **Overkill stick** (256 GB) | Kali Live + **LUKS-encrypted persistence** (boot option "USB Encrypted Persistence") | Prefer a fast **USB 3.2 stick or tiny USB SSD** (e.g. Samsung FIT Plus / Bar Plus, SanDisk Extreme Pro). A microSD in a reader works but is **slower and wears out** with a full OS on it — if used, pick an A2/V30 card and keep a backup image |
+| Optional **ghost stick** (16–32 GB) | **Tails** — anonymous internet through Tor, forgets everything at shutdown | Keep Tails on **its own stick**: Tails can't hold Kali's tools, and mixing them weakens Tails' protection |
+| **Deeper Connect Pico** | Small inline hardware firewall/VPN (Ethernet in → Ethernet/Wi-Fi out, USB-C powered, 1 W) | Use only in **LINK** mode: laptop → Pico **by cable**, Pico → the upstream (a router or travel router). **Turn off its bandwidth-sharing / mining** in the field, so your link doesn't carry strangers' traffic. A VPN gives privacy, **not** anonymity — that's Tails/Tor's job |
+| **Ledger Nano** | Crypto wallet **+ hardware security key** | Ledger's *Security Key* app (FIDO2/U2F) protects logins; its *OpenPGP* app holds signing/encryption keys. The 24 words live **only on paper/steel**, never typed into any computer |
+
+**The drop:** the Overkill stick also gets a small separate encrypted partition (LUKS) that **both** systems can open
+with its passphrase — the only bridge between the Base and the Overkill (field notes, captures, photos).
+
+**Emergency:** Kali's **nuke passphrase** destroys the encryption keys of an encrypted partition at boot
+(we test it on a copy before trusting it). Keep an encrypted backup of the stick's LUKS header at home.
 
 ## How it fits together
 ```
       [Drone]  --915 MHz telemetry-->  [SiK radio]--USB--+
                                                          |
-  [Team Meshtastic nodes] ~~LoRa~~ [Deck's LoRa node]--USB-+--> ThinkPad (Kali, encrypted)
+  [Team Meshtastic nodes] ~~LoRa~~ [Deck's LoRa node]--USB-+--> ThinkPad (Base: Ubuntu  ·  Overkill: Kali stick)
                                                          |      - OpenTAKServer  (the shared map)
       [Android with ATAK-CIV] ------- USB cable --------+      - TAK<->Meshtastic gateway
             (no SIM, Wi-Fi/BT off)                      |      - MAVLink -> TAK bridge (drone on the map)
@@ -73,7 +97,7 @@ With one **RTL-SDR v4** and a small antenna kit:
 - A small **MAVLink → TAK bridge** (we write it with PyTAK) puts the drone on everyone's ATAK map.
 - Photos/video come back to the deck's encrypted store and appear on the map where they were taken.
 
-## Ethical-hacking toolkit (own systems / with permission only)
+## Ethical-hacking toolkit (Overkill stick; own systems / with permission only)
 Kali covers it: Nmap, Wireshark, Kismet, Bettercap, Aircrack-ng suite, Metasploit, Burp, Hashcat… plus an
 **Alfa** USB Wi-Fi adapter for monitor mode. Practice targets: **our own home lab**, our own test router, and
 intentionally vulnerable practice machines. A "lab notebook" template records scope, permission and findings.
@@ -99,6 +123,8 @@ intentionally vulnerable practice machines. A "lab notebook" template records sc
 | 2×8 GB DDR3L SO-DIMM | 16 GB | 30 |
 | Spare L540 battery | Field hours | 40 |
 | Cheap Android (Android 10+, no SIM) | ATAK-CIV | 80–150 |
+| 256 GB fast USB stick / mini USB SSD | Overkill stick | 30–60 |
+| 32 GB USB stick | Tails ghost stick (optional) | 10 |
 | 3–4 Meshtastic nodes (e.g. RAK WisBlock or Heltec V3) + antennas | Team mesh | 30–60 each |
 | RTL-SDR Blog V4 + dipole kit | Receive-only awareness | 45 |
 | u-blox USB GPS | Position without transmitting | 20 |
@@ -119,8 +145,10 @@ intentionally vulnerable practice machines. A "lab notebook" template records sc
 - Recording people: follow Puerto Rico privacy law; don't publish others' data.
 
 ## Build phases
-1. **Base** — SSD + RAM, Kali with full-disk encryption (+ optional nuke passphrase), MAC randomization,
-   `deckmode silent|mesh|link`, field logbook, offline maps of Puerto Rico + elevation.
+1. **Base** — Ubuntu (encrypted home folder), MAC randomization, `deckmode silent|mesh|link`, field logbook,
+   offline maps of Puerto Rico + elevation; SSD + 16 GB when bought.
+1b. **Overkill stick** — Kali Live + encrypted persistence + drop partition + nuke test; field toolkit
+   preinstalled; optional Tails ghost stick; Deeper Pico set up for LINK (sharing off); Ledger security-key apps.
 2. **Awareness** — RTL-SDR stack (SDR++, ADS-B map, rtl_433, SatDump), GPS (gpsd), Kismet passive survey.
 3. **Team picture** — Meshtastic nodes, OpenTAKServer, TAK↔Meshtastic gateway, ATAK-CIV on the Android over USB.
 4. **Drone** — QGroundControl, SiK link, MAVLink→TAK bridge, photo geotag import.
