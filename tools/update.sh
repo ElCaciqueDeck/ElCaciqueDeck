@@ -81,6 +81,9 @@ export REPO LIBRARY VAULT TWIN_DIR="$DATA/twin"
 if python3 "$REPO/tools/snapshot.py"; then ok "El Cacique Admin is up to date"
 else warn "The snapshot had problems (the real deck is fine) - try: bash ~/elcaciquedeck/tools/snapshot.sh"; fi
 
+python3 "$REPO/tools/logbook.py" add update info "update.sh ran ($(git -C "$REPO" log -1 --format=%h))" 2>/dev/null
+python3 "$REPO/tools/logbook.py" collect 2>/dev/null
+
 finish
 IP="$(laptop_ip)"
 cat <<EOT

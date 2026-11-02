@@ -26,8 +26,8 @@ import base64, getpass, http.client as httpclient, json, os, re, secrets, socket
 HOME = os.path.expanduser("~")
 ACC = os.environ.get("ACCOUNTS_DIR") or os.path.join(HOME, "elcaciquedeck-data", "accounts")
 HOST = os.environ.get("CACIQUE_HOST", "127.0.0.1")       # the apps run on this same laptop
-PORTS = {"adguard": 3000, "jellyfin": 8096, "immich": 2283, "paperless": 8000, "romm": 8090, "homeassistant": 8123, "vaultwarden": 8222}
-NAMES = {"adguard": "CaciqueGuard", "jellyfin": "CaciqueFlix", "immich": "CaciquePhotos", "paperless": "CaciqueDocs", "romm": "CaciqueArcade",
+PORTS = {"calendar": 5232, "cams": 5000, "adguard": 3000, "jellyfin": 8096, "immich": 2283, "paperless": 8000, "romm": 8090, "homeassistant": 8123, "vaultwarden": 8222}
+NAMES = {"calendar": "CaciqueCalendar", "cams": "CaciqueCams", "adguard": "CaciqueGuard", "jellyfin": "CaciqueFlix", "immich": "CaciquePhotos", "paperless": "CaciqueDocs", "romm": "CaciqueArcade",
          "homeassistant": "CaciqueHome", "vaultwarden": "CaciqueVault"}
 EMAIL_DOMAIN = "cacique.home"
 ALBUM_NAME = "Familia Abierta · Family Open"
@@ -166,7 +166,7 @@ def load_passwords(people):
     for p in people:
         if p["type"] == "adult":
             pw["people"].setdefault(p["login"], friendly_password())
-    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "adguard"):
+    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "adguard", "calendar", "cams"):
         pw["elcacique"].setdefault(app, strong_password())
     save_json(path, pw)
     return pw
@@ -219,7 +219,7 @@ def set_admin_login(people):
         f.write("\n".join(lines) + "\n")
     people = load_people()
     pw = load_passwords(people)
-    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "adguard"):
+    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "adguard", "calendar", "cams"):
         pw["elcacique"][app] = p1
     save_json(os.path.join(ACC, "passwords.json"), pw)
     say("  OK: the admin is \"%s\" (CaciquePhotos email: %s@%s) with that password in every app." % (name, name.lower(), EMAIL_DOMAIN))
@@ -963,14 +963,104 @@ def do_adguard(pw):
     note(app, name, "created (CaciqueGuard restarted; old settings kept as AdGuardHome.yaml.before-elcacique)")
 
 
+# ================================================================ CaciqueCalendar (Radicale)
+def env_file(rel):
+    out = {}
+    try:
+        for line in open(os.path.join(REPO_DIR, rel), encoding="utf-8"):
+            if "=" in line and not line.startswith("#"):
+                k, v = line.rstrip("\n").split("=", 1)
+                out[k] = v
+    except Exception:
+        pass
+    return out
+
+
+def do_calendar(people, pw):
+    app = "calendar"
+    cal = env_file("calendar/.env").get("CALENDAR_DIR")
+    if not cal:
+        note(app, "-", "skipped (run calendar/setup-calendar.sh first)")
+        return {}
+    users_file = os.path.join(cal, "users")
+    have = {}
+    try:
+        for line in open(users_file, encoding="utf-8"):
+            if ":" in line:
+                u, h = line.rstrip("\n").split(":", 1)
+                have[u] = h
+    except Exception:
+        pass
+    done, changed = {}, False
+    for p in people:
+        if p["type"] in ("family", "guest"):
+            continue
+        login = ADMIN["romm"] if p["type"] == "admin" else p["login"]
+        if login in have:
+            note(app, p["login"], "already there (password not changed)")
+            done[p["login"]] = (login, False)
+            continue
+        h = bcrypt_hash(password_for(p, app, pw) if p["type"] != "admin" else pw["elcacique"][app])
+        if not h:
+            note(app, p["login"], "FAILED: could not make the password code")
+            continue
+        have[login] = h
+        changed = True
+        note(app, p["login"], "created")
+        done[p["login"]] = (login, True)
+    if changed:
+        with open(users_file, "w", encoding="utf-8") as f:
+            f.write("".join("%s:%s\n" % (u, h) for u, h in have.items()))
+        os.chmod(users_file, 0o644)
+    # the shared family calendar (everyone who logs in can see and edit it)
+    rc, out = sh(["docker", "exec", "-u", "0", "caciquecalendar", "sh", "-c",
+                  "d=/data/collection-root/familia/calendario; if [ ! -e $d/.Radicale.props ]; then mkdir -p $d && "
+                  "echo '{}' > /data/collection-root/familia/.Radicale.props && "
+                  "echo '{\"tag\": \"VCALENDAR\", \"D:displayname\": \"Familia\", \"ICAL:calendar-color\": \"#F6A744\"}' > $d/.Radicale.props && "
+                  "(chown -R radicale /data/collection-root 2>/dev/null || true) && echo made; else echo there; fi"], timeout=60)
+    note(app, "Familia", "shared family calendar %s" % ("created" if "made" in out else "already there" if "there" in out
+                                                         else "FAILED (%s)" % short(out, 120)))
+    return done
+
+
+# ================================================================ CaciqueCams (Frigate)
+def do_cams(people, pw):
+    app = "cams"
+    st, _, users = call(PORTS[app], "GET", "/api/users")
+    if st != 200 or not isinstance(users, list):
+        note(app, "-", "could not list users (%s %s)" % (st, short(users)))
+        return {}
+    have = {(u.get("username") or "").lower() for u in users}
+    done = {}
+    for p in people:
+        if p["type"] in ("family", "guest"):
+            continue
+        name = ADMIN["paperless"] if p["type"] == "admin" else p["login"]
+        if name.lower() in have:
+            note(app, p["login"], "already there (password not changed)")
+            done[p["login"]] = (name, False)
+            continue
+        pwd_ = pw["elcacique"][app] if p["type"] == "admin" else password_for(p, app, pw)
+        st, _, d = call(PORTS[app], "POST", "/api/users", {"username": name, "password": pwd_,
+                                                           "role": "admin" if p["type"] == "admin" else "viewer"})
+        if st in (200, 201):
+            note(app, p["login"], "created" + (" (admin)" if p["type"] == "admin" else " (can watch, not change)"))
+            done[p["login"]] = (name, True)
+        else:
+            note(app, p["login"], "FAILED to create (%s %s)" % (st, short(d)))
+    return done
+
+
 # ================================================================ cards + import file
 def write_outputs(people, pw, made, ip):
     cards = os.path.join(ACC, "cards")
     os.makedirs(cards, mode=0o700, exist_ok=True)
     urls = {"jellyfin": "http://%s:8096" % ip, "immich": "http://%s:2283" % ip, "paperless": "http://%s:8000" % ip,
-            "romm": "http://%s:8090" % ip, "homeassistant": "http://%s:8123" % ip, "vaultwarden": "https://%s:8443" % ip}
+            "romm": "http://%s:8090" % ip, "homeassistant": "http://%s:8123" % ip, "vaultwarden": "https://%s:8443" % ip,
+            "calendar": "http://%s:5232" % ip, "cams": "http://%s:8971" % ip}
     login_word = {"jellyfin": "nombre / name", "immich": "correo / email", "paperless": "usuario / user",
-                  "romm": "usuario / user", "homeassistant": "usuario / user"}
+                  "romm": "usuario / user", "homeassistant": "usuario / user", "calendar": "usuario / user",
+                  "cams": "usuario / user"}
     open_link = ""
     try:
         open_link = open(os.path.join(ACC, "open-photos-link.txt")).read().strip()
@@ -984,7 +1074,7 @@ def write_outputs(people, pw, made, ip):
                  "Contraseña inicial / Starter password:   %s" % pw["people"][p["login"]],
                  "(Cámbiala cuando entres. Change it after you log in.)", "",
                  "Dónde usarla / Where to use it:"]
-        for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant"):
+        for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "calendar", "cams"):
             if p["login"] in made.get(app, {}):
                 value, created = made[app][p["login"]]
                 lines.append("  %-14s %-26s %s: %s%s" % (NAMES[app], urls[app], login_word[app], value,
@@ -1009,7 +1099,7 @@ def write_outputs(people, pw, made, ip):
     rows = [["folder", "favorite", "type", "name", "notes", "fields", "reprompt",
              "login_uri", "login_username", "login_password", "login_totp"]]
     ec = next(p for p in people if p["type"] == "admin")
-    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant"):
+    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "calendar", "cams"):
         if ec["login"] in made.get(app, {}):
             rows.append(["El Cacique", "", "login", "El Cacique · %s" % NAMES[app], "Administrator account",
                          "", "1", urls[app], made[app][ec["login"]][0], pw["elcacique"][app], ""])
@@ -1510,6 +1600,7 @@ def main():
     steps = [("jellyfin", lambda: do_jellyfin(people, pw)), ("immich", lambda: do_immich(people, pw, ip)),
              ("paperless", lambda: do_paperless(people, pw)), ("romm", lambda: do_romm(people, pw)),
              ("homeassistant", lambda: do_homeassistant(people, pw)), ("adguard", lambda: do_adguard(pw)),
+             ("calendar", lambda: do_calendar(people, pw)), ("cams", lambda: do_cams(people, pw)),
              ("vaultwarden", lambda: do_vaultwarden(people))]
     for app, fn in steps:
         if only and app not in only:

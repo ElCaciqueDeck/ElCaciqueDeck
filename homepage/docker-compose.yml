@@ -6,7 +6,8 @@
 # Open:        http://<laptop number>   (or http://cacique.home)
 #              Caddy (in the adguard folder) shows it on the plain address.
 #
-# The look and the buttons are in ./config (settings, services, widgets).
+# The look and the buttons are in ./config (settings, services, widgets); setup-homepage.sh copies them
+# to ./config-live, leaving out the buttons of apps that aren't installed.
 # The laptop number is filled in from .env, which never goes to GitHub.
 # Nothing here starts by itself at boot (restart: "no").
 
@@ -21,7 +22,7 @@ services:
     environment:
       PORT: 3001
     volumes:
-      - ./config:/app/config
+      - ./config-live:/app/config     # made by setup-homepage.sh from ./config (only installed apps)
       - ${LIBRARY_PATH}:/library:ro
       - ${VAULT_PATH:-${LIBRARY_PATH}}:/vault:ro
       - ./icons:/app/public/icons:ro

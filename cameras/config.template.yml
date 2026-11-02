@@ -1,0 +1,36 @@
+# CaciqueCams (Frigate) settings - written once by setup-cameras.sh, then yours to edit
+# (in the camera page: Settings -> Configuration editor).
+mqtt:
+  enabled: false
+
+tls:
+  enabled: false        # plain http inside the house
+
+auth:
+  enabled: true         # log in to see the cameras
+
+record:
+  enabled: true
+  retain:
+    days: 90            # every recording deletes itself after 90 days
+    mode: all
+
+snapshots:
+  enabled: true
+  retain:
+    default: 90
+
+detect:
+  enabled: false        # person/car detection is off on the laptop (turn on later on the rig)
+
+cameras:
+  # One example, switched off. Copy it for each real camera:
+  #   1. Find the camera's stream address in its app/manual (usually rtsp://user:password@<camera number>:554/...)
+  #   2. Paste it below, give the camera a name, set enabled: true, Save & Restart.
+  ejemplo_puerta:
+    enabled: false
+    ffmpeg:
+      inputs:
+        - path: rtsp://usuario:clave@192.168.1.100:554/stream1
+          roles:
+            - record

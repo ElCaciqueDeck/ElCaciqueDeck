@@ -28,7 +28,7 @@ HOMEPAGE_VAR_IP=$IP
 HOMEPAGE_VAR_OPENPHOTOS=$(cat "$DATA/accounts/open-photos-link.txt" 2>/dev/null || echo "http://$IP:2283")
 HOMEPAGE_ALLOWED_HOSTS=$IP,$IP:80,$IP:3001,cacique.home,localhost,localhost:3001,127.0.0.1:3001
 LIBRARY_PATH=$LIBRARY
-$(mountpoint -q "$VAULT" && echo "VAULT_PATH=$VAULT")
+$(drive_ready "$VAULT" && echo "VAULT_PATH=$VAULT")
 PUID=$(id -u)
 PGID=$(id -g)
 ENV
@@ -54,6 +54,39 @@ else
 fi
 
 cp -f "$DIR"/custom-icons/*.svg "$DIR/icons/" 2>/dev/null && ok "Cacique icons copied"
+
+# the live front page config: same as ./config, without the buttons of apps that aren't installed
+mkdir -p "$DIR/config-live"
+cp -f "$DIR"/config/*.yaml "$DIR"/config/custom.* "$DIR/config-live/" 2>/dev/null
+python3 - "$DIR/config/services.yaml" "$DIR/config-live/services.yaml" "$REPO" <<'PY'
+import os, re, sys
+src, dst, repo = sys.argv[1:4]
+out, block, keep = [], [], True
+def flush():
+    if keep:
+        out.extend(block)
+for line in open(src, encoding="utf-8").read().splitlines():
+    if re.match(r"^    - ", line) or re.match(r"^- ", line):
+        flush(); block, keep = [line], True
+        continue
+    m = re.match(r"^\s+# needs: (\S+)", line)
+    if m:
+        path = os.path.expanduser(m.group(1))
+        keep = os.path.exists(path if os.path.isabs(path) else os.path.join(repo, path))
+        continue
+    block.append(line)
+flush()
+# drop groups left without buttons
+text, cleaned = out, []
+for i, line in enumerate(text):
+    if re.match(r"^- ", line):
+        nxt = next((l for l in text[i + 1:] if l.strip()), "")
+        if not nxt.startswith("    - "):
+            continue
+    cleaned.append(line)
+open(dst, "w", encoding="utf-8").write("\n".join(cleaned) + "\n")
+PY
+ok "Front page buttons: only the apps installed on this computer"
 
 step "4/6  Downloading and starting the Homepage"
 open_port 3001 "Homepage"

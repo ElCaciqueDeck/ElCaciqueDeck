@@ -5,6 +5,16 @@
 > Everything here is shared as a learning journal. Use it at your own risk, adapt it to your own setup,
 > and always understand a command before you run it.
 
+
+## 🧰 Install on a new computer (the installer)
+On any computer with **Ubuntu 22.04+**, open the Terminal and type one line:
+```
+wget -qO- https://raw.githubusercontent.com/ElCaciqueDeck/ElCaciqueDeck/main/install.sh | bash
+```
+A simple gray step-by-step window (**El Cacique Setup**) checks the computer, offers **Level 1 · Laptop**,
+**Level 2 · Deck** or **Level 3 · Lab**, lets you tick the apps, create the admin and the family accounts, and installs
+everything. Details: [docs/installer.md](docs/installer.md).
+
 ---
 
 ## What this is

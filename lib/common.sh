@@ -8,6 +8,11 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA="$HOME/elcaciquedeck-data"          # app data that lives on the laptop's own disk
 LIBRARY="/media/$USER/Library"           # drive 1: media, games, encyclopedia (replaceable)
 VAULT="/media/$USER/Vault"               # drive 2: documents, photos, backups (irreplaceable)
+CACIQUE_LEVEL=2                          # 1 = Laptop (programs only), 2 = Deck (+ drives), 3 = Lab (the rig)
+# The installer saves the choices here (level, where Library and Vault are). Older setups don't have it.
+CACIQUE_CONF="$DATA/cacique.conf"
+# shellcheck disable=SC1090
+[ -f "$CACIQUE_CONF" ] && . "$CACIQUE_CONF"
 REPORT_DIR="$REPO/reports"
 OK=0; WARN=0
 
@@ -44,8 +49,14 @@ need_docker() {
     fi
 }
 
+drive_ready() {   # drive_ready <path>: a connected drive, or a plain folder on Laptop level / folder setups
+    mountpoint -q "$1" 2>/dev/null && return 0
+    { [ "$CACIQUE_LEVEL" = "1" ] || [ "$VAULT_IS_FOLDER" = "1" ]; } && [ -d "$1" ]
+}
+
 need_vault() {
-    if mountpoint -q "$VAULT" 2>/dev/null; then
+    if [ "$CACIQUE_LEVEL" = "1" ]; then mkdir -p "$VAULT"; ok "Vault folder (Laptop level, on this disk): $VAULT"; return; fi
+    if mountpoint -q "$VAULT" 2>/dev/null || [ "$VAULT_IS_FOLDER" = "1" ] && [ -d "$VAULT" ]; then
         ok "Vault drive is connected"
     else
         fail "The Vault drive isn't connected. Open the Files app, click 'Vault', then run this again."
@@ -53,6 +64,7 @@ need_vault() {
 }
 
 need_library() {
+    if [ "$CACIQUE_LEVEL" = "1" ]; then mkdir -p "$LIBRARY/Kiwix"; ok "Library folder (Laptop level, on this disk): $LIBRARY"; return; fi
     if mountpoint -q "$LIBRARY" 2>/dev/null || [ -d "$LIBRARY/Kiwix" ]; then
         ok "Library drive is connected"
     else

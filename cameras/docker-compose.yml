@@ -1,0 +1,30 @@
+# ElCaciqueDeck - CaciqueCams (Frigate): our own "Ring-style" camera recorder
+#
+# Any network camera that gives a video stream (RTSP / ONVIF - most Wi-Fi and PoE cameras do: Reolink,
+# Amcrest, TP-Link Tapo, Hikvision, Dahua...) records HERE, on the Library drive, never on someone else's
+# cloud. Recordings and snapshots delete themselves after 90 days.
+#
+# First time:  the installer, or  bash ~/elcaciquedeck/cameras/setup-cameras.sh
+# Open:        http://<laptop number>:8971   (log in; add cameras in Settings -> Configuration editor)
+# Needs the Deck level (a second drive): video fills disks fast.
+# Nothing here starts by itself at boot (restart: "no").
+
+services:
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: caciquecams
+    restart: "no"
+    shm_size: "256mb"
+    ports:
+      - "8971:8971"               # the camera page (with login)
+      - "127.0.0.1:5000:5000"     # internal only (health checks)
+      - "8554:8554"               # live streams for other apps
+    environment:
+      TZ: America/Puerto_Rico
+    volumes:
+      - ${CAMS_CONFIG}:/config
+      - ${CAMS_MEDIA}:/media/frigate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 500000000

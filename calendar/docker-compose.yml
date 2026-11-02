@@ -1,0 +1,24 @@
+# ElCaciqueDeck - CaciqueCalendar (Radicale): the family calendar, kept at home
+#
+# First time:  the installer, or  bash ~/elcaciquedeck/calendar/setup-calendar.sh
+# Start/stop:  cd ~/elcaciquedeck/calendar && docker compose up -d   /   docker compose down
+# Phones:      CalDAV account -> server  http://<laptop number>:5232   (iPhone: Settings -> Calendar -> Accounts;
+#              Android: the free "DAVx5" app), user + password from the accounts tool
+# Each adult has their own calendars; the shared "familia" calendar is for everyone.
+# Nothing here starts by itself at boot (restart: "no").
+
+services:
+  radicale:
+    image: tomsquest/docker-radicale:latest
+    container_name: caciquecalendar
+    restart: "no"
+    init: true
+    ports:
+      - "5232:5232"
+    environment:
+      TAKE_FILE_OWNERSHIP: "true"
+    volumes:
+      - ${CALENDAR_DIR}/collections:/data
+      - ./config/config:/config/config:ro
+      - ./config/rights:/config/rights:ro
+      - ${CALENDAR_DIR}/users:/config/users:ro

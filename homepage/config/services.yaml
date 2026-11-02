@@ -2,6 +2,8 @@
 # {{HOMEPAGE_VAR_IP}} is replaced with the laptop number (from .env).
 # Icons are saved on the laptop by the setup script (works offline).
 # siteMonitor checks the server on this same laptop and shows a green dot when it's up.
+# "# needs: <file>" = only show this button when that file exists (the app was installed).
+#   setup-homepage.sh writes the live copy (config-live/) without the buttons whose app isn't installed.
 
 - Familia · Family:
     - CaciqueFlix:
@@ -11,6 +13,7 @@
         siteMonitor: http://127.0.0.1:8096
 
     - CaciquePhotos:
+        # needs: immich/.env
         icon: /icons/immich.png
         href: http://{{HOMEPAGE_VAR_IP}}:2283
         description: Fotos y videos de la familia · Family photos
@@ -23,22 +26,32 @@
         siteMonitor: http://127.0.0.1:8080
 
     - CaciqueArcade:
+        # needs: arcade/.env
         icon: /icons/romm.png
         href: http://{{HOMEPAGE_VAR_IP}}:8090
         description: Juegos clásicos en el navegador · Retro games
         siteMonitor: http://127.0.0.1:8090
 
     - CaciqueDocs:
+        # needs: paperless/.env
         icon: /icons/paperless-ngx.png
         href: http://{{HOMEPAGE_VAR_IP}}:8000
         description: Documentos importantes · Documents
         siteMonitor: http://127.0.0.1:8000
 
     - Familia Abierta:
+        # needs: ~/elcaciquedeck-data/accounts/open-photos-link.txt
         icon: /icons/immich.png
         href: "{{HOMEPAGE_VAR_OPENPHOTOS}}"
         description: Fotos para visitas, en presentación · Family Open photos slideshow
         siteMonitor: http://127.0.0.1:2283
+
+    - CaciqueSync:
+        # needs: ~/elcaciquedeck-data/sync.enabled
+        icon: /icons/sync.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8384
+        description: Nuestra propia "Dropbox" · Our own Dropbox (Syncthing)
+        siteMonitor: http://127.0.0.1:8384
 
 - Aprender · Learn:
     - CaciqueAcademy:
@@ -53,12 +66,34 @@
         description: Cómo cuidar y arreglar todo · How to care for and fix everything
         siteMonitor: http://127.0.0.1:8080
 
+    - CaciqueGuía:
+        # needs: guide/.env
+        icon: /icons/guide.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8070
+        description: Pregúntale a la IA de la casa · Ask the home AI helper
+        siteMonitor: http://127.0.0.1:8070/health
+
 - Hogar · Home:
     - CaciqueHome:
+        # needs: homeassistant/.env
         icon: /icons/home-assistant.png
         href: http://{{HOMEPAGE_VAR_IP}}:8123
         description: Luces y casa inteligente · Smart home & lights
         siteMonitor: http://127.0.0.1:8123
+
+    - CaciqueCalendar:
+        # needs: calendar/.env
+        icon: /icons/calendar.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:5232
+        description: Calendario de la familia · Family calendar
+        siteMonitor: http://127.0.0.1:5232
+
+    - CaciqueCams:
+        # needs: cameras/.env
+        icon: /icons/cameras.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8971
+        description: Cámaras, se borran a los 90 días · Cameras, kept 90 days
+        siteMonitor: http://127.0.0.1:5000/api/version
 
 - Servidor · Server:
     - CaciqueDash:
@@ -74,6 +109,7 @@
         siteMonitor: http://127.0.0.1:3000
 
     - CaciqueVault:
+        # needs: vaultwarden/.env
         icon: /icons/vault.svg
         href: https://{{HOMEPAGE_VAR_IP}}:8443
         description: Contraseñas de los adultos · Adults' password safe

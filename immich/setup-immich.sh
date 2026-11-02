@@ -23,7 +23,7 @@ IP="$(laptop_ip)"; [ -n "$IP" ] && ok "Laptop number: $IP" || warn "Could not fi
 
 step "2/5  Folders"
 # Family photos are irreplaceable: use the Vault drive when it's connected.
-if mountpoint -q "$VAULT" 2>/dev/null; then PHOTOS="$VAULT/Photos/immich"; else PHOTOS="$LIBRARY/Photos/immich"; fi
+if drive_ready "$VAULT"; then PHOTOS="$VAULT/Photos/immich"; else PHOTOS="$LIBRARY/Photos/immich"; fi
 DB="$DATA/immich-postgres"
 mkdir -p "$PHOTOS" && ok "Photos will be stored in: $PHOTOS" || fail "Could not create $PHOTOS"
 mkdir -p "$DB" && ok "Database will be stored in: $DB" || fail "Could not create $DB"

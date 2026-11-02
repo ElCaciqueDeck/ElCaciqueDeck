@@ -1,0 +1,27 @@
+# Who can see what in CaciqueCalendar
+# Everyone who logs in: their own calendars (read + write) ...
+[principal]
+user: .+
+collection: {user}
+permissions: RW
+
+[calendars]
+user: .+
+collection: {user}/[^/]+
+permissions: rw
+
+# ... and the shared family calendars under /familia/
+[familia-root]
+user: .+
+collection: familia
+permissions: R
+
+[familia]
+user: .+
+collection: familia/[^/]+
+permissions: rw
+
+[root]
+user: .+
+collection:
+permissions: R

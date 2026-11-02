@@ -1,0 +1,19 @@
+# ElCaciqueDeck - CaciqueGuía: the Home Lab's own AI helper (Ollama, runs 100% on this computer)
+#
+# First time:  the installer, or  bash ~/elcaciquedeck/guide/setup-guide.sh
+# Open:        http://<laptop number>:8070   (the chat page is guide/caciqueguia.py, started by start-all.sh)
+# The AI only answers questions about THIS Home Lab: it reads the logbook, the server status,
+# recent errors and the Field Manual. Nothing leaves the house.
+# Nothing here starts by itself at boot (restart: "no").
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: caciqueguide-ai
+    restart: "no"
+    ports:
+      - "127.0.0.1:11434:11434"   # only this computer talks to the AI engine
+    environment:
+      OLLAMA_KEEP_ALIVE: 10m       # free the memory 10 minutes after the last question
+    volumes:
+      - ${OLLAMA_DIR}:/root/.ollama
