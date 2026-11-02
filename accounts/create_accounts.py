@@ -26,8 +26,8 @@ import base64, getpass, http.client as httpclient, json, os, re, secrets, socket
 HOME = os.path.expanduser("~")
 ACC = os.environ.get("ACCOUNTS_DIR") or os.path.join(HOME, "elcaciquedeck-data", "accounts")
 HOST = os.environ.get("CACIQUE_HOST", "127.0.0.1")       # the apps run on this same laptop
-PORTS = {"jellyfin": 8096, "immich": 2283, "paperless": 8000, "romm": 8090, "homeassistant": 8123, "vaultwarden": 8222}
-NAMES = {"jellyfin": "CaciqueFlix", "immich": "CaciquePhotos", "paperless": "CaciqueDocs", "romm": "CaciqueArcade",
+PORTS = {"adguard": 3000, "jellyfin": 8096, "immich": 2283, "paperless": 8000, "romm": 8090, "homeassistant": 8123, "vaultwarden": 8222}
+NAMES = {"adguard": "CaciqueGuard", "jellyfin": "CaciqueFlix", "immich": "CaciquePhotos", "paperless": "CaciqueDocs", "romm": "CaciqueArcade",
          "homeassistant": "CaciqueHome", "vaultwarden": "CaciqueVault"}
 EMAIL_DOMAIN = "cacique.home"
 ALBUM_NAME = "Familia Abierta · Family Open"
@@ -41,6 +41,13 @@ WORDS = ("Coqui Yunque Flamboyan Mofongo Guayaba Quenepa Ceiba Tostones Alcapurr
          "Gallito Canica Yuca Platano Batata Calabaza Aguacate").split()
 
 report = []          # (app, person, result)
+ADMIN = {"jellyfin": "El Cacique", "immich": "elcacique@cacique.home", "paperless": "elcacique",
+         "romm": "elcacique", "homeassistant": "elcacique"}     # replaced from people.txt in main()
+
+
+def set_admin(people):
+    a = next(p for p in people if p["type"] == "admin")
+    ADMIN.update(jellyfin=a["nick"], immich=a["email"], paperless=a["nick"], romm=a["login"], homeassistant=a["login"])
 
 
 def say(msg=""):
@@ -156,7 +163,7 @@ def load_passwords(people):
     for p in people:
         if p["type"] == "adult":
             pw["people"].setdefault(p["login"], friendly_password())
-    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant"):
+    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "adguard"):
         pw["elcacique"].setdefault(app, strong_password())
     save_json(path, pw)
     return pw
@@ -190,6 +197,30 @@ def ask_owner(app, ident, people, pw):
 
 def linked(pw, app, login):
     return pw.get("links", {}).get(app, {}).get(login)
+
+
+def set_admin_login(people):
+    """--set-admin NAME : the same admin name and password in every app (asked twice, hidden)."""
+    name = sys.argv[sys.argv.index("--set-admin") + 1] if len(sys.argv) > sys.argv.index("--set-admin") + 1 else ""
+    if not re.match(r"^[A-Za-z][A-Za-z0-9]{2,30}$", name):
+        sys.exit("  Admin name: letters and numbers only (example: ElCaciqueAdmin)")
+    p1 = getpass.getpass("  Admin password for every app (won't show): ")
+    p2 = getpass.getpass("  Type it again: ")
+    if p1 != p2 or len(p1) < 8:
+        sys.exit("  The two passwords don't match, or it's shorter than 8 characters. Nothing changed.")
+    path = os.path.join(ACC, "people.txt")
+    lines = [l for l in open(path, encoding="utf-8").read().splitlines() if not l.endswith("|admin")]
+    lines.insert(2 if len(lines) >= 2 else len(lines), "%s|%s|admin" % (name.lower(), name))
+    fd = os.open(path, os.O_WRONLY | os.O_TRUNC | os.O_CREAT, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    people = load_people()
+    pw = load_passwords(people)
+    for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "adguard"):
+        pw["elcacique"][app] = p1
+    save_json(os.path.join(ACC, "passwords.json"), pw)
+    say("  OK: the admin is \"%s\" (CaciquePhotos email: %s@%s) with that password in every app." % (name, name.lower(), EMAIL_DOMAIN))
+    return 0
 
 
 def password_for(p, app, pw):
@@ -321,7 +352,7 @@ def jf_help(user):
 
 def do_jellyfin(people, pw):
     app = "jellyfin"
-    tok, me = jf_login("El Cacique", pw["elcacique"][app])
+    tok, me = jf_login(ADMIN["jellyfin"], pw["elcacique"][app])
     if not tok and pw.get("reset", {}).get(app):
         tok, me = jf_login(*pw["reset"][app])
         if tok:
@@ -513,11 +544,12 @@ def pl_check(H):
 def pl_make_elcacique(password):
     """Make (or repair) the El Cacique superuser from inside the CaciqueDocs server: no old password needed."""
     code = ("import os; from django.contrib.auth.models import User; "
-            "u, _ = User.objects.get_or_create(username='elcacique'); "
+            "u, _ = User.objects.get_or_create(username=os.environ['CQ_USER']); "
             "u.set_password(os.environ['CQ_PW']); u.is_superuser = True; u.is_staff = True; u.is_active = True; "
-            "u.first_name = 'El Cacique'; u.email = 'elcacique@%s'; u.save(); print('elcacique-ok')" % EMAIL_DOMAIN)
+            "u.first_name = os.environ['CQ_USER']; u.email = os.environ['CQ_MAIL']; u.save(); print('elcacique-ok')")
     compose = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "paperless")
-    r = subprocess.run(["docker", "compose", "exec", "-T", "-e", "CQ_PW=" + password, "webserver",
+    r = subprocess.run(["docker", "compose", "exec", "-T", "-e", "CQ_PW=" + password, "-e", "CQ_USER=" + ADMIN["paperless"],
+                        "-e", "CQ_MAIL=" + ADMIN["immich"], "webserver",
                         "python3", "manage.py", "shell", "-c", code],
                        cwd=compose, capture_output=True, text=True, timeout=180)
     if "elcacique-ok" in r.stdout:
@@ -528,7 +560,7 @@ def pl_make_elcacique(password):
 
 def do_paperless(people, pw):
     app = "paperless"
-    H = pl_headers("elcacique", pw["elcacique"][app])
+    H = pl_headers(ADMIN["paperless"], pw["elcacique"][app])
     while not pl_check(H):
         login = ask_login(app)
         if not login:
@@ -547,7 +579,7 @@ def do_paperless(people, pw):
             if yes("    Make El Cacique directly now? (y/N): "):
                 if pl_make_elcacique(pw["elcacique"][app]):
                     say("    El Cacique is ready in CaciqueDocs.")
-                    H = pl_headers("elcacique", pw["elcacique"][app])
+                    H = pl_headers(ADMIN["paperless"], pw["elcacique"][app])
         else:
             ask_owner(app, login[0], people, pw)
     st, _, d = call(PORTS[app], "GET", "/api/users/?page_size=1000", headers=H)
@@ -580,13 +612,19 @@ def do_paperless(people, pw):
             done[p["login"]] = (by_name[mine.lower()]["username"], False)
             continue
         admin = p["type"] == "admin"
-        body = {"username": p["login"], "password": password_for(p, app, pw), "first_name": p["nick"],
+        if admin and ADMIN["paperless"].lower() in by_name:
+            note(app, p["login"], "already there (password not changed)")
+            done[p["login"]] = (ADMIN["paperless"], False)
+            continue
+        body = {"username": ADMIN["paperless"] if admin else p["login"], "password": password_for(p, app, pw), "first_name": p["nick"],
                 "email": p["email"], "is_staff": admin, "is_superuser": admin, "is_active": True,
                 "groups": [] if admin or not group else [group["id"]]}
         st, _, u = call(PORTS[app], "POST", "/api/users/", body, H)
+        if st not in (200, 201) and admin and pl_make_elcacique(pw["elcacique"][app]):
+            st = 201          # CaciqueDocs refuses very simple passwords through its API; made directly instead
         if st in (200, 201):
             note(app, p["login"], "created" + (" (superuser)" if admin else " (own private documents)"))
-            done[p["login"]] = (p["login"], True)
+            done[p["login"]] = (body["username"], True)
         else:
             note(app, p["login"], "FAILED to create (%s %s)" % (st, short(u)))
     return done
@@ -603,7 +641,13 @@ def rm_token(user, password):
 
 def do_romm(people, pw):
     app = "romm"
-    tok = rm_token("elcacique", pw["elcacique"][app])
+    tok = rm_token(ADMIN["romm"], pw["elcacique"][app])
+    if not tok:
+        st, _, u = call(PORTS[app], "POST", "/api/users", {"username": ADMIN["romm"], "email": ADMIN["immich"],
+                                                          "password": pw["elcacique"][app], "role": "admin"})
+        if st in (200, 201):
+            note(app, ADMIN["romm"], "created as the first CaciqueArcade admin")
+            tok = rm_token(ADMIN["romm"], pw["elcacique"][app])
     if not tok and pw.get("reset", {}).get(app):
         tok = rm_token(*pw["reset"][app])
         if tok:
@@ -748,9 +792,39 @@ def ha_token(user, password):
     return None, "token answered %s" % st
 
 
+def ha_onboard_owner(name, username, password):
+    """Fresh Home Assistant (first-time setup never finished): make the admin its owner."""
+    port = PORTS["homeassistant"]
+    st, _, steps = call(port, "GET", "/api/onboarding")
+    if st != 200 or not isinstance(steps, list):
+        return None
+    if any(x.get("step") == "user" and x.get("done") for x in steps):
+        return None
+    cid = "http://%s:%d/" % (HOST, port)
+    st, _, d = call(port, "POST", "/api/onboarding/users", {"client_id": cid, "name": name, "username": username,
+                                                           "password": password, "language": "es"})
+    if st != 200 or not isinstance(d, dict) or not d.get("auth_code"):
+        say("    CaciqueHome first-time setup refused: %s %s" % (st, short(d)))
+        return None
+    st, _, t = call(port, "POST", "/auth/token", form={"grant_type": "authorization_code",
+                                                         "code": d["auth_code"], "client_id": cid})
+    tok = t.get("access_token") if isinstance(t, dict) else None
+    if tok:      # finish the remaining first-time screens (location defaults, no analytics)
+        H = {"Authorization": "Bearer " + tok}
+        call(port, "POST", "/api/onboarding/core_config", {}, H)
+        call(port, "POST", "/api/onboarding/analytics", {}, H)
+        call(port, "POST", "/api/onboarding/integration", {"client_id": cid, "redirect_uri": cid + "?auth_callback=1"}, H)
+    return tok
+
+
 def do_homeassistant(people, pw):
     app = "homeassistant"
-    tok, why = ha_token("elcacique", pw["elcacique"][app])
+    tok, why = ha_token(ADMIN["homeassistant"], pw["elcacique"][app])
+    if not tok:
+        ec = next(p for p in people if p["type"] == "admin")
+        tok = ha_onboard_owner(ec["nick"], ADMIN["homeassistant"], pw["elcacique"][app])
+        if tok:
+            note(app, ADMIN["homeassistant"], "created as the CaciqueHome owner (first-time setup finished)")
     if not tok and pw.get("reset", {}).get(app):
         tok, why = ha_token(*pw["reset"][app])
         if tok:
@@ -845,6 +919,47 @@ def do_vaultwarden(people):
     return done
 
 
+# ================================================================ CaciqueGuard (AdGuard Home)
+def bcrypt_hash(password):
+    try:
+        import bcrypt     # if Ubuntu has it
+        return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    except Exception:
+        return romm_hash(password)     # borrow CaciqueArcade's copy
+
+
+def do_adguard(pw):
+    app = "adguard"
+    conf = os.path.join(REPO_DIR, "adguard", "conf", "AdGuardHome.yaml")
+    rc, text = sh(["sudo", "-n", "cat", conf], timeout=30)
+    if rc != 0:
+        note(app, "-", "skipped: can't read %s (%s)" % (conf, short(text, 120)))
+        return
+    name = ADMIN["paperless"]
+    if re.search(r"^\s*-\s*name:\s*%s\s*$" % re.escape(name), text, re.M):
+        note(app, name, "already there (password not changed)")
+        return
+    h = bcrypt_hash(pw["elcacique"][app])
+    if not h:
+        note(app, name, "FAILED: could not make the password code")
+        return
+    entry = "  - name: %s\n    password: %s\n" % (name, h)
+    if re.search(r"^users:\s*\[\]\s*$", text, re.M):
+        new = re.sub(r"^users:\s*\[\]\s*$", "users:\n" + entry.rstrip("\n"), text, count=1, flags=re.M)
+    elif re.search(r"^users:\s*$", text, re.M):
+        new = re.sub(r"^users:\s*$", "users:\n" + entry.rstrip("\n"), text, count=1, flags=re.M)
+    else:
+        note(app, name, "FAILED: no users list in AdGuard's settings")
+        return
+    sh(["sudo", "-n", "cp", conf, conf + ".before-elcacique"], timeout=30)
+    rc, out = sh(["sudo", "-n", "tee", conf], inp=new, timeout=30)
+    if rc != 0:
+        note(app, name, "FAILED to save: " + short(out))
+        return
+    sh(["docker", "restart", "caciqueguard"], timeout=120)
+    note(app, name, "created (CaciqueGuard restarted; old settings kept as AdGuardHome.yaml.before-elcacique)")
+
+
 # ================================================================ cards + import file
 def write_outputs(people, pw, made, ip):
     cards = os.path.join(ACC, "cards")
@@ -933,7 +1048,7 @@ class AppAdapter:
 
 class JellyfinAdapter(AppAdapter):
     def connect(self):
-        tok, _ = jf_login("El Cacique", self.pw["elcacique"]["jellyfin"])
+        tok, _ = jf_login(ADMIN["jellyfin"], self.pw["elcacique"]["jellyfin"])
         self.H = jf_auth(tok) if tok else None
         return bool(tok)
 
@@ -977,7 +1092,7 @@ class ImmichAdapter(AppAdapter):
 
 class PaperlessAdapter(AppAdapter):
     def connect(self):
-        self.H = pl_headers("elcacique", self.pw["elcacique"]["paperless"])
+        self.H = pl_headers(ADMIN["paperless"], self.pw["elcacique"]["paperless"])
         return pl_check(self.H)
 
     def accounts(self):
@@ -995,7 +1110,7 @@ class PaperlessAdapter(AppAdapter):
 
 class RommAdapter(AppAdapter):
     def connect(self):
-        tok = rm_token("elcacique", self.pw["elcacique"]["romm"])
+        tok = rm_token(ADMIN["romm"], self.pw["elcacique"]["romm"])
         self.H = {"Authorization": "Bearer " + tok} if tok else None
         return bool(tok)
 
@@ -1015,7 +1130,7 @@ class RommAdapter(AppAdapter):
 
 class HomeAssistantAdapter(AppAdapter):
     def connect(self):
-        tok, _ = ha_token("elcacique", self.pw["elcacique"]["homeassistant"])
+        tok, _ = ha_token(ADMIN["homeassistant"], self.pw["elcacique"]["homeassistant"])
         if not tok:
             return False
         self.ws = WebSocket(HOST, PORTS["homeassistant"], "/api/websocket")
@@ -1374,6 +1489,9 @@ def main():
         sys.exit("  The El Cacique admin line is missing from people.txt (run people.sh list to recreate it).")
     if not any(p["type"] == "adult" for p in people):
         say("  [WARN] No adults on the list yet. Add them with: bash ~/elcaciquedeck/accounts/people.sh add <login> <nickname>")
+    if "--set-admin" in sys.argv:
+        return set_admin_login(people)
+    set_admin(people)
     pw = load_passwords(people)
     ip = laptop_ip()
     say("  People: " + ", ".join("%s (%s)" % (p["nick"], p["type"]) for p in people))
@@ -1388,7 +1506,8 @@ def main():
     made = {}
     steps = [("jellyfin", lambda: do_jellyfin(people, pw)), ("immich", lambda: do_immich(people, pw, ip)),
              ("paperless", lambda: do_paperless(people, pw)), ("romm", lambda: do_romm(people, pw)),
-             ("homeassistant", lambda: do_homeassistant(people, pw)), ("vaultwarden", lambda: do_vaultwarden(people))]
+             ("homeassistant", lambda: do_homeassistant(people, pw)), ("adguard", lambda: do_adguard(pw)),
+             ("vaultwarden", lambda: do_vaultwarden(people))]
     for app, fn in steps:
         if only and app not in only:
             continue

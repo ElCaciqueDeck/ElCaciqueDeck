@@ -3,7 +3,7 @@
 #
 # The list lives ONLY on this laptop: ~/elcaciquedeck-data/accounts/people.txt
 # (names never go to GitHub). Three accounts are always there:
-#   elcacique  "El Cacique"  admin   - the Home Lab's own administrator (whoever manages the lab uses it)
+#   elcaciqueadmin "ElCaciqueAdmin" admin - the Home Lab's own administrator (whoever manages the lab uses it)
 #   familia    "Familia"     family  - tap to enter, no password, movies up to PG
 #   invitado   "Invitado"    guest   - visitors: movies up to PG-13, Familia Abierta photos, the Arcade
 #
@@ -21,7 +21,7 @@ if [ ! -f "$LIST" ]; then
     cat > "$LIST" <<'EOF'
 # ElCaciqueDeck - people with accounts (stays on this laptop)
 # login|nickname|type   (type: admin, adult, family, guest)
-elcacique|El Cacique|admin
+elcaciqueadmin|ElCaciqueAdmin|admin
 familia|Familia|family
 invitado|Invitado|guest
 EOF

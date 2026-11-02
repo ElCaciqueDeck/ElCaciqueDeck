@@ -50,6 +50,7 @@ else
     info "CaciqueArcade isn't set up on this laptop"
 fi
 
+sudo -v || warn "Without your computer password, CaciqueGuard is skipped"
 step "3/5  Creating the accounts"
 python3 "$REPO/accounts/create_accounts.py" "$@"
 RESULT=$?
