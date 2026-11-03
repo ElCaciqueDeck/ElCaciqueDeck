@@ -537,6 +537,7 @@ class Installer:
             r = subprocess.run(["sudo", "-A", "-v"], env=self.env, capture_output=True, text=True)
             if r.returncode != 0:
                 raise RuntimeError("the computer password was not accepted")
+        self.pin_drives()
         for d in (DATA, self.p.library, self.p.vault, os.path.join(self.p.library, "Kiwix")):
             self.log("  folder: " + d)
             if not self.dry:
@@ -569,6 +570,35 @@ class Installer:
                         raise RuntimeError("could not set aside %s: %s" % (path, r.stderr.strip()[:200]))
         elif old:
             self.log("  keeping the program data already on the drives: " + ", ".join(old))
+
+    def pin_drives(self):
+        """Ubuntu 26.04+ opens USB drives at /run/media/<user>/<name>, only after someone logs in.
+        El Cacique wants them at /media/<user>/<name>, opened when the computer turns on: add them to /etc/fstab
+        by their label ("nofail": the computer still starts if a drive is unplugged)."""
+        for attr in ("library", "vault"):
+            path = getattr(self.p, attr)
+            if attr == "vault" and self.p.vault_is_folder:
+                continue
+            if not path.startswith("/run/media/"):
+                continue
+            src = sh_out(["findmnt", "-no", "SOURCE", path]).strip()
+            label = sh_out(["lsblk", "-no", "LABEL", src]).strip() if src else ""
+            fstype = sh_out(["lsblk", "-no", "FSTYPE", src]).strip() if src else ""
+            if not label or not re.match(r"^[A-Za-z0-9_-]+$", label) or fstype not in ("ext4", "xfs", "btrfs", "f2fs"):
+                self.log("  [WARN] %s: can't pin it to /media (label %r, type %r); using %s" % (attr, label, fstype, path))
+                continue
+            target = "/media/%s/%s" % (USER, label)
+            line = "LABEL=%s %s %s defaults,nofail,x-gvfs-show 0 2" % (label, target, fstype)
+            self.log("  %s drive: %s -> %s (opened at power-on)" % (attr, path, target))
+            fstab = open("/etc/fstab").read() if os.path.exists("/etc/fstab") else ""
+            if not re.search(r"^LABEL=%s\s" % re.escape(label), fstab, re.M):
+                self.run(["bash", "-c", "printf '%%s\\n' %s | sudo tee -a /etc/fstab >/dev/null" % shlex.quote(line)])
+            self.sudo("umount", path, check=False)
+            self.sudo("mkdir", "-p", target)
+            self.sudo("systemctl", "daemon-reload", check=False)
+            self.sudo("mount", target)
+            self.sudo("chown", "%s:%s" % (USER, USER), target)
+            setattr(self.p, attr, target)
 
     def s_server_mode(self):
         """A home server must not fall asleep: no sleep on power, lid closed = keep running, Wi-Fi without power saving."""
