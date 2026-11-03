@@ -85,6 +85,7 @@ start_stack arcade        "CaciqueArcade" ".env"
 start_stack vaultwarden   "CaciqueVault"  ".env"
 start_stack calendar      "CaciqueCalendar" ".env"
 start_stack finanzas      "CaciqueFinanzas" ".env"
+start_stack office        "CaciqueOffice" ".env"
 start_stack cameras       "CaciqueCams"   ".env"
 start_stack guide         "CaciqueGuía (AI engine)" ".env"
 [ -f "$REPO/homepage/.env" ] && bash "$REPO/homepage/make-live-config.sh" >/dev/null

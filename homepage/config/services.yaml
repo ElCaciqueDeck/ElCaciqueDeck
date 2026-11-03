@@ -88,6 +88,13 @@
         description: Calendario de la familia · Family calendar
         siteMonitor: http://127.0.0.1:5232
 
+    - CaciqueOffice:
+        # needs: office/.env
+        icon: /icons/office.svg
+        href: https://{{HOMEPAGE_VAR_IP}}:5445
+        description: Documentos, hojas y presentaciones · Docs, sheets & slides
+        siteMonitor: http://127.0.0.1:8085/status.php
+
     - CaciqueFinanzas:
         # needs: finanzas/.env
         icon: /icons/finanzas.svg

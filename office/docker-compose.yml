@@ -1,0 +1,67 @@
+# ElCaciqueDeck - CaciqueOffice: LibreOffice in the browser (Collabora) + everyone's own files (Nextcloud)
+#
+# A heavier app: the installer only offers it when the computer has ~12 GB of memory or more.
+# First time:  the installer, or  bash ~/elcaciquedeck/office/setup-office.sh
+# Open:        https://<laptop number>:5445   (Caddy's secure door; the editor itself uses 5446)
+# Every adult logs in with their own account; files are private unless shared.
+# The folder "Enviar a CaciqueDocs" drops PDFs into CaciqueDocs (Paperless) to be archived.
+# Files and database live on the Vault (irreplaceable). Nothing starts by itself at boot (restart: "no").
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: caciqueoffice-db
+    restart: "no"
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${OFFICE_DB_PASSWORD}
+    volumes:
+      - ${OFFICE_DIR}/db:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: caciqueoffice-redis
+    restart: "no"
+
+  nextcloud:
+    image: nextcloud:stable-apache
+    container_name: caciqueoffice
+    restart: "no"
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "127.0.0.1:8085:80"          # only inside the laptop; the family uses https://<laptop>:5445
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${OFFICE_DB_PASSWORD}
+      REDIS_HOST: redis
+      NEXTCLOUD_ADMIN_USER: caciqueroot              # setup account; the real admin is made by the accounts tool
+      NEXTCLOUD_ADMIN_PASSWORD: ${OFFICE_ROOT_PASSWORD}
+      NEXTCLOUD_TRUSTED_DOMAINS: ${CACIQUE_IP} localhost
+      PHP_UPLOAD_LIMIT: 2G
+      PHP_MEMORY_LIMIT: 512M
+    volumes:
+      - ${OFFICE_HTML}:/var/www/html
+      - ${OFFICE_DIR}/data:/var/www/html/data
+      - ${OFFICE_TO_DOCS}:/mnt/caciquedocs           # = CaciqueDocs' "consume" folder (or a holding folder)
+
+  collabora:
+    image: collabora/code:latest
+    container_name: caciqueoffice-editor
+    restart: "no"
+    cap_add:
+      - MKNOD
+    ports:
+      - "127.0.0.1:9980:9980"        # the family reaches it through https://<laptop>:5446
+    environment:
+      aliasgroup1: https://${CACIQUE_IP}:5445
+      server_name: ${CACIQUE_IP}:5446
+      dictionaries: es_ES en_US
+      username: editor
+      password: ${COLLABORA_PASSWORD}
+      # Caddy does the https; the Cacique certificate is home-made, so the editor doesn't check it.
+      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:ssl.ssl_verification=false

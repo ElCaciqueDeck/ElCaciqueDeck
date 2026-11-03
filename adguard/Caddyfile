@@ -91,6 +91,19 @@ https://caciquefinanzas.home, https://{$CACIQUE_IP:127.0.0.1}:5443 {
 	reverse_proxy 127.0.0.1:5006
 }
 
+# CaciqueOffice: everyone's files (Nextcloud) and the LibreOffice editor (Collabora)
+https://{$CACIQUE_IP:127.0.0.1}:5445 {
+	tls internal
+	request_body {
+		max_size 2GB
+	}
+	reverse_proxy 127.0.0.1:8085
+}
+https://{$CACIQUE_IP:127.0.0.1}:5446 {
+	tls internal
+	reverse_proxy 127.0.0.1:9980
+}
+
 # CaciqueFinanzas coach page (finanzas/caciquefinanzas.py). flush_interval -1 = the AI's answer appears as it writes.
 https://{$CACIQUE_IP:127.0.0.1}:5444 {
 	tls internal

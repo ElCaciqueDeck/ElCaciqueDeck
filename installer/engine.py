@@ -54,12 +54,20 @@ APPS = [
     ("arcade",   "CaciqueArcade",   "Juegos legales en el navegador (RomM)", "Legal games in the browser (RomM)", 1, 1.0),
     ("vault",    "CaciqueVault",    "Caja fuerte de contraseñas (Vaultwarden)", "Password safe (Vaultwarden)", 1, 0.1),
     ("calendar", "CaciqueCalendar", "Calendario de la familia, en la casa (Radicale)", "Family calendar, kept at home (Radicale)", 1, 0.1),
+    ("office",   "CaciqueOffice",   "LibreOffice en el navegador + archivos de cada uno (pesada: ~12 GB)", "LibreOffice in the browser + everyone's files (heavy: ~12 GB)", 1, 3.0),
     ("finanzas", "CaciqueFinanzas", "Presupuesto de la familia + coach con IA (Actual Budget)", "Family budget + AI money coach (Actual Budget)", 1, 0.4),
     ("sync",     "CaciqueSync",     "Nuestra propia Dropbox (Syncthing)", "Our own Dropbox (Syncthing)", 1, 0.05),
     ("guide",    "CaciqueGuía",     "IA local que ayuda a cuidar el Lab (Ollama)", "Local AI that helps care for the Lab (Ollama)", 1, 3.0),
     ("cams",     "CaciqueCams",     "Cámaras: graba aquí y borra a los 90 días (Frigate)", "Cameras: record here, delete after 90 days (Frigate)", 2, 1.5),
 ]
 APP_KEYS = [a[0] for a in APPS]
+# Heavy apps: only offered when the computer has this much memory (GB as Linux reports it; 16 GB shows ~15).
+# They stay in GitHub, ready for a bigger Home Lab; "Show everything" on the apps page still allows them.
+APP_MIN_RAM = {"office": 11.5}
+
+
+def app_fits(key, s):
+    return s.get("ram_gb", 0) >= APP_MIN_RAM.get(key, 0)
 
 
 # ================================================================ looking at the computer
@@ -175,7 +183,7 @@ def existing_install():
     found = []
     for key, path in [("names", "adguard/conf"), ("front", "homepage/.env"), ("docs", "paperless/.env"),
                       ("photos", "immich/.env"), ("home", "homeassistant/.env"), ("arcade", "arcade/.env"),
-                      ("vault", "vaultwarden/.env"), ("calendar", "calendar/.env"), ("cams", "cameras/.env"), ("finanzas", "finanzas/.env"),
+                      ("vault", "vaultwarden/.env"), ("calendar", "calendar/.env"), ("cams", "cameras/.env"), ("finanzas", "finanzas/.env"), ("office", "office/.env"),
                       ("guide", "guide/.env")]:
         if os.path.exists(os.path.join(REPO, path)):
             found.append(key)
@@ -190,7 +198,7 @@ def existing_install():
 
 # Program data a previous El Cacique left on the drives. Media (movies, games, encyclopedias, photos you copied)
 # is never touched; only these program folders are set aside on a clean start.
-OLD_APP_DATA = [("vault", "paperless"), ("vault", "vaultwarden"), ("vault", "Photos/immich"), ("vault", "calendar"), ("vault", "finanzas"),
+OLD_APP_DATA = [("vault", "paperless"), ("vault", "vaultwarden"), ("vault", "Photos/immich"), ("vault", "calendar"), ("vault", "finanzas"), ("vault", "office"),
                 ("vault", "Sync"), ("library", "Arcade/assets"), ("library", "Arcade/config"), ("library", "Cameras")]
 
 
@@ -267,6 +275,9 @@ def default_apps(level, s):
         apps.discard("cams")
     if s["ram_gb"] < 11.5:
         apps.discard("guide")          # the AI is slow and heavy with 8 GB; can still be ticked
+    for key in APP_MIN_RAM:
+        if not app_fits(key, s):
+            apps.discard(key)          # too heavy for this computer: not downloaded
     return apps
 
 
@@ -470,6 +481,10 @@ class Installer:
             out.append((("CaciqueCalendar", "CaciqueCalendar"), lambda: self.script("calendar/setup-calendar.sh")))
         if "finanzas" in a:
             out.append((("CaciqueFinanzas", "CaciqueFinanzas"), lambda: self.script("finanzas/setup-finanzas.sh")))
+        if "office" in a:
+            out.append((("CaciqueOffice (descarga grande)", "CaciqueOffice (big download)"),
+                        lambda: self.script("office/setup-office.sh",
+                                            env={"CQ_FORCE": "0" if engine_fits("office") else "1"})))
         if "sync" in a:
             out.append((("CaciqueSync", "CaciqueSync"), self.s_sync))
         if "cams" in a:
@@ -725,6 +740,7 @@ class Installer:
         pw = ca.load_passwords(people)
         for app in ("jellyfin", "immich", "paperless", "romm", "homeassistant", "adguard", "calendar", "cams"):
             pw["elcacique"][app] = self.p.admin_pw
+        pw["elcacique"]["office"] = self.p.admin_pw
         ca.save_json(os.path.join(acc, "passwords.json"), pw)
         self.script("accounts/create-accounts.sh")
 
@@ -760,6 +776,10 @@ class Installer:
                             "Categories=Utility;\n" % (title, comment, cmd, icon))
         self.run(["bash", os.path.join(REPO, "start-all.sh")], docker=True, check=False)
         self.run([sys.executable, os.path.join(REPO, "tools", "logbook.py"), "collect"], check=False)
+
+
+def engine_fits(key):
+    return scan_ram() >= APP_MIN_RAM.get(key, 0)
 
 
 def scan_ram():

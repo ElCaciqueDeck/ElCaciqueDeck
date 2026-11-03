@@ -28,13 +28,13 @@ T = {  # every text, Spanish + English
             "This wizard turns this computer into the family's home server."),
     "w_body": ("Vamos a:\n\n  1. Mirar qué tiene esta computadora.\n  2. Escoger el nivel: Laptop, Deck o Lab.\n"
                "  3. Escoger las aplicaciones: películas, fotos, documentos, casa inteligente, juegos,\n"
-               "     contraseñas, calendario, presupuesto, Dropbox propia, cámaras e IA local.\n  4. Crear el administrador y las cuentas de la familia.\n"
+               "     contraseñas, calendario, presupuesto, oficina, Dropbox propia, cámaras e IA local.\n  4. Crear el administrador y las cuentas de la familia.\n"
                "  5. Instalar todo. Usted solo mira.\n\n"
                "Hecho en Puerto Rico. Proyecto para aprender. Solo contenido legal (sus películas, juegos gratis o propios).\n"
                "Necesita internet durante la instalación. Después, casi todo funciona sin internet.",
                "We will:\n\n  1. Look at what this computer has.\n  2. Choose the level: Laptop, Deck or Lab.\n"
                "  3. Choose the apps: movies, photos, documents, smart home, games,\n"
-               "     passwords, calendar, budget, our own Dropbox, cameras and local AI.\n  4. Create the administrator and the family accounts.\n"
+               "     passwords, calendar, budget, office, our own Dropbox, cameras and local AI.\n  4. Create the administrator and the family accounts.\n"
                "  5. Install everything. You just watch.\n\n"
                "Made in Puerto Rico. A learning project. Legal content only (your own movies, free or owned games).\n"
                "Needs internet during the install. Afterwards, almost everything works without internet."),
@@ -114,6 +114,7 @@ T = {  # every text, Spanish + English
               "\nLab: now set up the VLANs and firewall on the Omada gear following docs/network-plan.md."),
     "e_pw": ("La contraseña debe tener 8 caracteres o más, y las dos deben ser iguales.",
              "The password must have 8 characters or more, and both must match."),
+    "needs_ram": ("(necesita ~%.0f GB de memoria; queda lista en GitHub)", "(needs ~%.0f GB of memory; stays ready in GitHub)"),
     "e_admin": ("Nombre del administrador: solo letras y números (ej. ElCaciqueAdmin).", "Admin name: letters and numbers only (e.g. ElCaciqueAdmin)."),
     "e_login": ("Usuario: letras y números, sin espacios ni acentos (ej. maria).", "Login: letters and numbers, no spaces or accents (e.g. maria)."),
     "e_sudo": ("La contraseña de la computadora no es correcta.", "The computer password is not correct."),
@@ -391,12 +392,13 @@ class Wizard:
         self.head("a_h", "a_s")
         existing = set(self.scan["existing"])
         for key, name, es, en, minlv, gb in engine.APPS:
-            allowed = self.plan.level >= minlv or self.v_force.get()
+            fits = engine.app_fits(key, self.scan)
+            allowed = (self.plan.level >= minlv and fits) or self.v_force.get()
             if not allowed:
                 self.v_apps[key].set(False)
             f = tk.Frame(self.body, bg=GRAY)
             f.pack(fill="x")
-            extra = "" if allowed else "  " + self.t("needs2")
+            extra = "" if allowed else "  " + (self.t("needs2") if fits else self.t("needs_ram") % engine.APP_MIN_RAM[key])
             if key == "guide" and self.scan["ram_gb"] < 11.5:
                 extra += "  " + self.t("slow")
             if key in existing:
