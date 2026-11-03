@@ -385,7 +385,7 @@ class Installer:
         if self.cancelled.is_set():
             raise Stop()
         if docker and not self.docker_ok():
-            cmd = ["sg", "docker", "-c", shlex.join(cmd)]
+            cmd = self.as_docker_group(cmd)
         self.log("$ " + " ".join(shlex.quote(c) for c in cmd).replace(self.p.admin_pw or "\x00", "••••••"))
         if self.dry:
             return 0
@@ -409,8 +409,15 @@ class Installer:
                 raise RuntimeError("took longer than %d minutes" % (timeout // 60))
         rc = proc.wait()
         if check and rc != 0:
-            raise RuntimeError("%s ended with error %d" % (os.path.basename(cmd[0]) if cmd[0] != "sg" else cmd[3].split()[0], rc))
+            raise RuntimeError("%s ended with error %d" % (cmd[-1].split()[0] if cmd[0] == "sg" or "-g" in cmd[:6] else os.path.basename(cmd[0]), rc))
         return rc
+
+    def as_docker_group(self, cmd):
+        """Run cmd with the 'docker' group even before the next login. Older Ubuntu: sg. Ubuntu 26.04 has no sg:
+        sudo can switch the group (same user, same home)."""
+        if shutil.which("sg"):
+            return ["sg", "docker", "-c", shlex.join(cmd)]
+        return ["sudo", "-A", "--preserve-env", "-u", USER, "-g", "docker", "bash", "-c", shlex.join(cmd)]
 
     def sudo(self, *args, **kw):
         return self.run(["sudo"] + list(args), **kw)
@@ -654,7 +661,7 @@ class Installer:
         if "docker" not in groups:
             self.sudo("usermod", "-aG", "docker", USER)
             self.log("  You were added to the 'docker' group (works fully after the next restart).")
-        if not self.dry and not self.docker_ok() and subprocess.run(["sg", "docker", "-c", "docker info"],
+        if not self.dry and not self.docker_ok() and subprocess.run(self.as_docker_group(["docker", "info"]), env=self.env,
                                                                     capture_output=True).returncode != 0:
             raise RuntimeError("Docker is installed but not answering")
 

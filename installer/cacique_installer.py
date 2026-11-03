@@ -114,6 +114,10 @@ T = {  # every text, Spanish + English
               "\nLab: now set up the VLANs and firewall on the Omada gear following docs/network-plan.md."),
     "e_pw": ("La contraseña debe tener 8 caracteres o más, y las dos deben ser iguales.",
              "The password must have 8 characters or more, and both must match."),
+    "e_swap": ("El disco llamado Vault no puede ser Library (ni al revés). Escoja cada disco por su nombre.\n"
+               "¿No sale el disco Library? Ábralo en la app Archivos y vuelva a abrir El Cacique Setup.",
+               "The drive named Vault can't be Library (or the other way round). Pick each drive by its name.\n"
+               "Library drive missing? Open it in the Files app, then open El Cacique Setup again."),
     "needs_ram": ("(necesita ~%.0f GB de memoria; queda lista en GitHub)", "(needs ~%.0f GB of memory; stays ready in GitHub)"),
     "e_admin": ("Nombre del administrador: solo letras y números (ej. ElCaciqueAdmin).", "Admin name: letters and numbers only (e.g. ElCaciqueAdmin)."),
     "e_login": ("Usuario: letras y números, sin espacios ni acentos (ej. maria).", "Login: letters and numbers, no spaces or accents (e.g. maria)."),
@@ -456,6 +460,11 @@ class Wizard:
             return False
         p.library = self.v_lib.get()
         v = self.v_vault.get()
+        # never put Library on the drive named "Vault" (or the reverse): a mix-up mixes the irreplaceable with the replaceable
+        names = {d["mount"]: (d["label"] or "").lower() for d in engine.usable_drives(self.scan, 1)}
+        if names.get(p.library) == "vault" or names.get(v) == "library":
+            messagebox.showwarning(self.t("title"), self.t("e_swap"))
+            return False
         if not v or v in T["vault_folder"] or v == p.library:
             p.vault, p.vault_is_folder = os.path.join(p.library, "Vault"), True
         else:
