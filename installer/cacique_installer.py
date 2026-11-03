@@ -28,13 +28,13 @@ T = {  # every text, Spanish + English
             "This wizard turns this computer into the family's home server."),
     "w_body": ("Vamos a:\n\n  1. Mirar qué tiene esta computadora.\n  2. Escoger el nivel: Laptop, Deck o Lab.\n"
                "  3. Escoger las aplicaciones: películas, fotos, documentos, casa inteligente, juegos,\n"
-               "     contraseñas, calendario, Dropbox propia, cámaras e IA local.\n  4. Crear el administrador y las cuentas de la familia.\n"
+               "     contraseñas, calendario, presupuesto, Dropbox propia, cámaras e IA local.\n  4. Crear el administrador y las cuentas de la familia.\n"
                "  5. Instalar todo. Usted solo mira.\n\n"
                "Hecho en Puerto Rico. Proyecto para aprender. Solo contenido legal (sus películas, juegos gratis o propios).\n"
                "Necesita internet durante la instalación. Después, casi todo funciona sin internet.",
                "We will:\n\n  1. Look at what this computer has.\n  2. Choose the level: Laptop, Deck or Lab.\n"
                "  3. Choose the apps: movies, photos, documents, smart home, games,\n"
-               "     passwords, calendar, our own Dropbox, cameras and local AI.\n  4. Create the administrator and the family accounts.\n"
+               "     passwords, calendar, budget, our own Dropbox, cameras and local AI.\n  4. Create the administrator and the family accounts.\n"
                "  5. Install everything. You just watch.\n\n"
                "Made in Puerto Rico. A learning project. Legal content only (your own movies, free or owned games).\n"
                "Needs internet during the install. Afterwards, almost everything works without internet."),
@@ -70,8 +70,8 @@ T = {  # every text, Spanish + English
              "Laptop level: everything goes on this computer's own disk (programs only, no movies):"),
     "lib": ("Library - películas, juegos, enciclopedia, cámaras (se puede reemplazar):",
             "Library - movies, games, encyclopedia, cameras (replaceable):"),
-    "vault": ("Vault - documentos, fotos, contraseñas, calendario (¡no se puede perder!):",
-              "Vault - documents, photos, passwords, calendar (must not be lost!):"),
+    "vault": ("Vault - documentos, fotos, contraseñas, calendario, presupuesto (¡no se puede perder!):",
+              "Vault - documents, photos, passwords, calendar, budget (must not be lost!):"),
     "vault_folder": ("Carpeta 'Vault' dentro del disco Library", "A 'Vault' folder inside the Library drive"),
     "vault_warn": ("Mejor en un disco aparte: si Library se daña, no pierde los documentos.",
                    "Better on its own drive: if Library breaks, the documents survive."),

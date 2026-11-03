@@ -84,6 +84,7 @@ start_stack homeassistant "CaciqueHome"   ".env"
 start_stack arcade        "CaciqueArcade" ".env"
 start_stack vaultwarden   "CaciqueVault"  ".env"
 start_stack calendar      "CaciqueCalendar" ".env"
+start_stack finanzas      "CaciqueFinanzas" ".env"
 start_stack cameras       "CaciqueCams"   ".env"
 start_stack guide         "CaciqueGuía (AI engine)" ".env"
 [ -f "$REPO/homepage/.env" ] && bash "$REPO/homepage/make-live-config.sh" >/dev/null
@@ -93,6 +94,10 @@ start_stack homepage      "Cacique"       ".env"
 if [ -f "$REPO/guide/.env" ] && ! up 8070; then
     nohup python3 "$REPO/guide/caciqueguia.py" >"$RUN/guide.log" 2>&1 &
     echo "  CaciqueGuía (chat page) starting..."
+fi
+if [ -f "$REPO/finanzas/.env" ] && ! up 8075; then
+    nohup python3 "$REPO/finanzas/caciquefinanzas.py" >"$RUN/finanzas.log" 2>&1 &
+    echo "  CaciqueFinanzas coach starting..."
 fi
 if command -v syncthing >/dev/null && [ -f "$HOME/elcaciquedeck-data/sync.enabled" ] && ! up 8384; then
     nohup syncthing serve --no-browser --gui-address=0.0.0.0:8384 >"$RUN/syncthing.log" 2>&1 &

@@ -47,7 +47,8 @@ Rules of this Home Lab you must respect:
 Apps: CaciqueFlix (Jellyfin 8096), CaciquePhotos (Immich 2283), CaciqueLibrary (Kiwix 8080), CaciqueArcade (RomM 8090),
 CaciqueDocs (Paperless 8000), CaciqueAcademy (8095), CaciqueHome (Home Assistant 8123), CaciqueDash (gauges 8888),
 CaciqueGuard (AdGuard 3000 + names), CaciqueVault (passwords, https 8443), CaciqueCalendar (5232), CaciqueSync (Syncthing 8384),
-CaciqueCams (cameras 8971, recordings deleted after 90 days), front page on port 80."""
+CaciqueCams (cameras 8971, recordings deleted after 90 days), CaciqueFinanzas (family budget https 5443, money coach https 5444;
+password in ~/elcaciquedeck-data/accounts/finanzas-password.txt), front page on port 80."""
 
 
 def run(cmd, timeout=60):

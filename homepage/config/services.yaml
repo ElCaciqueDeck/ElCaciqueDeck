@@ -88,6 +88,20 @@
         description: Calendario de la familia · Family calendar
         siteMonitor: http://127.0.0.1:5232
 
+    - CaciqueFinanzas:
+        # needs: finanzas/.env
+        icon: /icons/finanzas.svg
+        href: https://{{HOMEPAGE_VAR_IP}}:5443
+        description: Presupuesto de la familia · Family budget
+        siteMonitor: http://127.0.0.1:5006
+
+    - Coach de Dinero:
+        # needs: finanzas/.env
+        icon: /icons/finanzas.svg
+        href: https://{{HOMEPAGE_VAR_IP}}:5444
+        description: Pronóstico y alertas de gastos · Forecast and spending alerts
+        siteMonitor: http://127.0.0.1:8075/health
+
     - CaciqueCams:
         # needs: cameras/.env
         icon: /icons/cameras.svg

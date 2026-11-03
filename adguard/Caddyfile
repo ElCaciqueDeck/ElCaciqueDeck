@@ -84,3 +84,17 @@ https://caciquevault.home, https://{$CACIQUE_IP:127.0.0.1}:8443 {
 	tls internal
 	reverse_proxy 127.0.0.1:8222
 }
+
+# CaciqueFinanzas: the family budget (Actual Budget needs https to run in the browser)
+https://caciquefinanzas.home, https://{$CACIQUE_IP:127.0.0.1}:5443 {
+	tls internal
+	reverse_proxy 127.0.0.1:5006
+}
+
+# CaciqueFinanzas coach page (finanzas/caciquefinanzas.py). flush_interval -1 = the AI's answer appears as it writes.
+https://{$CACIQUE_IP:127.0.0.1}:5444 {
+	tls internal
+	reverse_proxy 127.0.0.1:8075 {
+		flush_interval -1
+	}
+}

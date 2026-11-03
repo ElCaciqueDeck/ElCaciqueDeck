@@ -1,0 +1,35 @@
+# ElCaciqueDeck - CaciqueFinanzas: the family budget (Actual Budget) + the AI money coach
+#
+# First time:  the installer, or  bash ~/elcaciquedeck/finanzas/setup-finanzas.sh
+# Budget app:  https://<laptop number>:5443   (secure door made by Caddy, like CaciqueVault)
+# Coach page:  https://<laptop number>:5444   (finanzas/caciquefinanzas.py, started by start-all.sh)
+# Both ports below listen ONLY inside the laptop; the family reaches them through the https doors.
+# The budgets live on the Vault (irreplaceable). Nothing here starts by itself at boot (restart: "no").
+
+services:
+  actual:
+    image: actualbudget/actual-server:latest
+    container_name: caciquefinanzas
+    restart: "no"
+    ports:
+      - "127.0.0.1:5006:5006"
+    environment:
+      ACTUAL_LOGIN_METHOD: password
+    volumes:
+      - ${FINANZAS_DIR}/server:/data
+
+  # A small helper that lets the coach READ the budgets (accounts, categories, transactions).
+  api:
+    image: jhonderson/actual-http-api:latest
+    container_name: caciquefinanzas-api
+    restart: "no"
+    depends_on:
+      - actual
+    ports:
+      - "127.0.0.1:5007:5007"
+    environment:
+      ACTUAL_SERVER_URL: http://actual:5006/
+      ACTUAL_SERVER_PASSWORD: ${FINANZAS_PASSWORD}
+      API_KEY: ${FINANZAS_API_KEY}
+    volumes:
+      - ${FINANZAS_DIR}/api-cache:/data

@@ -6,13 +6,14 @@ REPO="$(cd "$(dirname "$0")" && pwd)"
 echo
 echo "  ELCACIQUEDECK · stopping servers"
 echo "  ---------------------------------"
-for d in homepage guide cameras calendar vaultwarden arcade homeassistant immich adguard paperless; do
+for d in homepage guide cameras finanzas calendar vaultwarden arcade homeassistant immich adguard paperless; do
     if [ -f "$REPO/$d/docker-compose.yml" ] && (cd "$REPO/$d" && docker compose ps -q 2>/dev/null | grep -q .); then
         (cd "$REPO/$d" && docker compose down >/dev/null 2>&1) && echo "  $d stopped"
     fi
 done
 pkill -f "[c]aciquedash.py" && echo "  CaciqueDash stopped"
 pkill -f "[c]aciqueguia.py" && echo "  CaciqueGuía stopped"
+pkill -f "[c]aciquefinanzas.py" && echo "  CaciqueFinanzas coach stopped"
 pkill -x syncthing && echo "  CaciqueSync stopped"
 flatpak kill org.jellyfin.JellyfinServer 2>/dev/null && echo "  CaciqueFlix stopped"
 pkill -x kiwix-serve && echo "  CaciqueLibrary stopped"

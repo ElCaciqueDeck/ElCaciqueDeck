@@ -54,6 +54,7 @@ APPS = [
     ("arcade",   "CaciqueArcade",   "Juegos legales en el navegador (RomM)", "Legal games in the browser (RomM)", 1, 1.0),
     ("vault",    "CaciqueVault",    "Caja fuerte de contraseñas (Vaultwarden)", "Password safe (Vaultwarden)", 1, 0.1),
     ("calendar", "CaciqueCalendar", "Calendario de la familia, en la casa (Radicale)", "Family calendar, kept at home (Radicale)", 1, 0.1),
+    ("finanzas", "CaciqueFinanzas", "Presupuesto de la familia + coach con IA (Actual Budget)", "Family budget + AI money coach (Actual Budget)", 1, 0.4),
     ("sync",     "CaciqueSync",     "Nuestra propia Dropbox (Syncthing)", "Our own Dropbox (Syncthing)", 1, 0.05),
     ("guide",    "CaciqueGuía",     "IA local que ayuda a cuidar el Lab (Ollama)", "Local AI that helps care for the Lab (Ollama)", 1, 3.0),
     ("cams",     "CaciqueCams",     "Cámaras: graba aquí y borra a los 90 días (Frigate)", "Cameras: record here, delete after 90 days (Frigate)", 2, 1.5),
@@ -174,7 +175,7 @@ def existing_install():
     found = []
     for key, path in [("names", "adguard/conf"), ("front", "homepage/.env"), ("docs", "paperless/.env"),
                       ("photos", "immich/.env"), ("home", "homeassistant/.env"), ("arcade", "arcade/.env"),
-                      ("vault", "vaultwarden/.env"), ("calendar", "calendar/.env"), ("cams", "cameras/.env"),
+                      ("vault", "vaultwarden/.env"), ("calendar", "calendar/.env"), ("cams", "cameras/.env"), ("finanzas", "finanzas/.env"),
                       ("guide", "guide/.env")]:
         if os.path.exists(os.path.join(REPO, path)):
             found.append(key)
@@ -189,7 +190,7 @@ def existing_install():
 
 # Program data a previous El Cacique left on the drives. Media (movies, games, encyclopedias, photos you copied)
 # is never touched; only these program folders are set aside on a clean start.
-OLD_APP_DATA = [("vault", "paperless"), ("vault", "vaultwarden"), ("vault", "Photos/immich"), ("vault", "calendar"),
+OLD_APP_DATA = [("vault", "paperless"), ("vault", "vaultwarden"), ("vault", "Photos/immich"), ("vault", "calendar"), ("vault", "finanzas"),
                 ("vault", "Sync"), ("library", "Arcade/assets"), ("library", "Arcade/config"), ("library", "Cameras")]
 
 
@@ -467,6 +468,8 @@ class Installer:
             out.append((("CaciqueVault", "CaciqueVault"), lambda: self.script("vaultwarden/setup-vault.sh")))
         if "calendar" in a:
             out.append((("CaciqueCalendar", "CaciqueCalendar"), lambda: self.script("calendar/setup-calendar.sh")))
+        if "finanzas" in a:
+            out.append((("CaciqueFinanzas", "CaciqueFinanzas"), lambda: self.script("finanzas/setup-finanzas.sh")))
         if "sync" in a:
             out.append((("CaciqueSync", "CaciqueSync"), self.s_sync))
         if "cams" in a:
