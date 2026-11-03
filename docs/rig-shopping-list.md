@@ -32,7 +32,8 @@
 ## D. Rack & power
 | Qty | Item | Spec | Why |
 |---|---|---|---|
-| 1 | **10" open-frame rack, 8U–12U** | DeskPi RackMate T1/T2 class | Small, ventilated, closet-friendly |
+| 1 | **10" open-frame rack, 12U, with top handle** | DeskPi RackMate T2 class | Small, ventilated; layout in `docs/rack-layout.md` |
+| 1 | **Rolling base / cart with locking casters** | Fits the rack + UPS tower | No wall mounting: it rolls or carries |
 | 2–3 | 10" rack shelves (1U) | Vented | Gateway, switch, NAS, controller |
 | 1 | 10" patch panel, 12-port, keystone | Cat6 | Clean termination of house cables |
 | 1 | 10" power strip (PDU) | Surge-protected | Power inside the rack |

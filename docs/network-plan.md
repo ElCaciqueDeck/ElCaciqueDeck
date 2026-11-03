@@ -16,7 +16,11 @@ adults have full internet, and the rig lives in a protected shed.
 ---
 
 > **Update 2026-11-01:** the rig goes in a **dry, cool closet inside the house** (no shed, no fiber, no Faraday cage),
-> and the network brand is **TP-Link Omada**. The Omada gateway (ER707-M2) takes the firewall role below;
+> and the network brand is **TP-Link Omada**.
+> **Update 2026-11-02:** Phase 1 gateway = **TP-Link ER605** (Omada, 1 Gbps = the internet speed). Chain: Liberty modem →
+> existing 5-port switch (second-apartment line stays outside the home lab, untouched) → **Deeper Mini (always part of the rig)** →
+> ER605 → TL-SG108E → family-room router in AP mode, IdeaPad, Hue Bridge. Rack: `docs/rack-layout.md`.
+> The Omada gateway (ER707-M2) takes the firewall role below;
 > OPNsense stays an option. Full parts list: `docs/rig-shopping-list.md`.
 
 ## 2. Physical layout / Recorrido físico
