@@ -330,8 +330,27 @@ class Installer:
     """Runs the steps. log(line) gets every line; progress(i, n, title) at each step."""
 
     def __init__(self, plan, log=print, progress=None, dry_run=False):
-        self.p, self.log, self.progress, self.dry = plan, log, progress or (lambda *a: None), dry_run
+        self.p, self.progress, self.dry = plan, progress or (lambda *a: None), dry_run
         self.ip = laptop_ip() or "127.0.0.1"
+        # every line also goes to reports/installer-<date>.txt, so a run can be checked afterwards
+        self._file = None
+        if not dry_run:
+            try:
+                os.makedirs(os.path.join(REPO, "reports"), exist_ok=True)
+                self.log_path = os.path.join(REPO, "reports", "installer-%s.txt" % time.strftime("%Y-%m-%d_%H%M"))
+                self._file = open(self.log_path, "a", encoding="utf-8")
+            except Exception:
+                self._file = None
+
+        def both(line, _show=log):
+            _show(line)
+            if self._file:
+                try:
+                    self._file.write(line + "\n")
+                    self._file.flush()
+                except Exception:
+                    pass
+        self.log = both
         self.failed = []
         self.cancelled = threading.Event()
         self.tmp = tempfile.mkdtemp(prefix="cacique-install-")
