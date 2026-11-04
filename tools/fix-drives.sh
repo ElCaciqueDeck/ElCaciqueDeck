@@ -54,11 +54,17 @@ move_vault() {   # move_vault <folder inside Vault/Vault> <same place on the Vau
         do_ sudo mv "$item" "$to/$name" && ok "Vault${to#$V}/$name"
     done
 }
-if [ -d "$V/Vault" ]; then
-    move_vault "$V/Vault" "$V"
-    do_ rmdir "$V/Vault" 2>/dev/null
+# Where the mixed-up install put the Vault apps: Vault/Vault, or Library/Vault when the Library drive had been
+# opened under the name Vault (a wrong /etc/fstab line). mv works across drives (it copies, then removes).
+VSRC=""
+[ -d "$V/Vault" ] && VSRC="$V/Vault"
+[ -z "$VSRC" ] && [ -d "$L/Vault" ] && VSRC="$L/Vault"
+if [ -n "$VSRC" ]; then
+    info "Vault apps found in: $VSRC"
+    move_vault "$VSRC" "$V"
+    do_ rmdir "$VSRC" 2>/dev/null
 else
-    info "no Vault/Vault folder"
+    info "no misplaced Vault folder"
 fi
 
 step "3/5  Library apps -> the Library drive"
