@@ -27,7 +27,9 @@ step "1/5  Checks"
 if [ -z "$FIX_TEST" ]; then
     mountpoint -q "$L" && ok "Library drive open at $L" || fail "The Library drive isn't open at $L (see docs: fstab step)"
     mountpoint -q "$V" && ok "Vault drive open at $V" || fail "The Vault drive isn't open at $V"
-    [ "$(stat -c %d "$L")" != "$(stat -c %d "$V")" ] || fail "Library and Vault are the same drive?"
+    SL="$(findmnt -no SOURCE "$L")"; SV="$(findmnt -no SOURCE "$V")"
+    info "Library is $SL, Vault is $SV"
+    [ -n "$SL" ] && [ "$SL" != "$SV" ] || fail "Library and Vault look like the same drive ($SL / $SV). Send a photo of: df -h $L $V"
 fi
 info "Now:  LIBRARY=$LIBRARY   VAULT=$VAULT"
 if [ "$LIBRARY" = "$L" ] && [ "$VAULT" = "$V" ]; then ok "Settings already correct - nothing to fix"; finish; exit 0; fi
