@@ -14,6 +14,34 @@ Windows Vista / XP years, when computers felt safe and simple to explore. All se
 |---|---|---|
 | ![phone](homepage-aero/after-familia-phone390.jpg) | ![tablet](homepage-aero/after-invitado-tablet.jpg) | ![small](homepage-aero/after-todas-phone320.jpg) |
 
+## CaciqueGauges (port 8888): the same look, no dials
+The health page now matches the front page.
+- **One-line verdict:** "Todo funciona bien", "Funciona, pero algo necesita atención" or "Hay un problema".
+- **Glossy Vista-style bars** for the processor, temperature, memory and battery, with the state in words: Normal, Alto (high), Crítico (critical), Sin sensor (no sensor).
+- **A trend line** for the last 5 minutes.
+- **Drive bars** like the Vista "Computer" window.
+- **The apps** with En línea or Apagada (off).
+- **The connection and the computer:** home network, internet, address, Wi-Fi or cable, time since power-on.
+- A **🌙 Noche** switch (each device remembers it) for a screen left on overnight.
+
+**Warning levels:**
+
+| Reading | Alto (high) at | Crítico (critical) at |
+|---|---|---|
+| Processor | 70% | 90% |
+| Temperature | 70 °C | 85 °C |
+| Memory | 80% | 92% |
+| Drives | 85% full | 95% full |
+| Battery (unplugged) | under 30% | under 15% |
+
+If the page can't reach the server for 3 seconds, it says **"Sin señal"** (no signal) and points to power, network or the computer.
+
+**Unchanged:** the readings, `/api`, the one-reading-per-minute log in `~/deck-logs`, port 8888 and the always-on service. On the front page, the button is now named **CaciqueGauges** (same link).
+
+| Day | Night | Something needs attention | Phone (night, attention) |
+|---|---|---|---|
+| ![day](homepage-aero/gauges-day-desktop.jpg) | ![night](homepage-aero/gauges-night-desktop.jpg) | ![warn](homepage-aero/gauges-warn-desktop.jpg) | ![phone](homepage-aero/gauges-warn-phone.jpg) |
+
 ## What changed
 | File | Change | Why |
 |---|---|---|
@@ -21,10 +49,12 @@ Windows Vista / XP years, when computers felt safe and simple to explore. All se
 | `homepage/config/settings.yaml` | Light theme, default cards, 4/3/3/3 columns | Base for the light Aero look |
 | `homepage/config/custom.css` | Rewritten: sky + Puerto Rican hills drawn in CSS, glass panels, glossy buttons, big cards, status words | The look; works offline (no web fonts, no outside images) |
 | `homepage/config/custom.js` | Rewritten: header + date, the three views, big buttons, Familia Abierta panel, status words, accessible labels | The behavior; it only reads what Homepage draws |
+| `caciquedash.py` | New page (the `PAGE` text) only; the readings and the log code are unchanged | The CaciqueGauges redesign |
+| `homepage/config/services.yaml` | Card renamed CaciqueDash → **CaciqueGauges** (same link and check) | Your name for it |
 | `docs/homepage-aero.md` + `docs/homepage-aero/*.jpg` | This page + screenshots | Review and rollback |
 
 **Unchanged:**
-- `services.yaml`: every link, every `siteMonitor` check and every `# needs` filter.
+- `services.yaml`: every link, every `siteMonitor` check and every `# needs` filter (only one card's name changed).
 - `make-live-config.sh`, `setup-homepage.sh`, `docker-compose.yml` and `caciquedash.py`.
 - Every app account, rating and password.
 
@@ -74,9 +104,11 @@ They come from Homepage's real health checks, not invented values.
 1. `cd ~/elcaciquedeck && git fetch && git checkout homepage-aero`
 2. `bash ~/elcaciquedeck/homepage/make-live-config.sh`
 3. `cd ~/elcaciquedeck/homepage && docker compose restart`
-4. On a phone or computer: open `http://<laptop>` and **refresh** (or use a private tab, since browsers keep the old look for a while).
+4. `sudo systemctl restart caciquedash` (loads the new CaciqueGauges page)
+5. On a phone or computer: open `http://<laptop>` and **refresh** (or use a private tab, since browsers keep the old look for a while).
 
 ## Undo (back to the previous dark design)
 1. `cd ~/elcaciquedeck && git checkout main`
 2. `bash ~/elcaciquedeck/homepage/make-live-config.sh`
 3. `cd ~/elcaciquedeck/homepage && docker compose restart`
+4. `sudo systemctl restart caciquedash`
