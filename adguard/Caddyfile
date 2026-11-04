@@ -6,6 +6,9 @@
 	# Caddy makes its own "Cacique certificate" for the secure door of CaciqueVault.
 	# Don't try to install it inside the container; the setup script installs it on the laptop.
 	skip_install_trust
+	# The family front page stays on plain http://<laptop number>. Without this, Caddy would send it to one of
+	# the secure doors (5443, 8443...) because they share the same address.
+	auto_https disable_redirects
 }
 
 http://caciquelibrary.home {
