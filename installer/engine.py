@@ -832,6 +832,8 @@ class Installer:
         elif os.path.exists(unit):
             self.sudo("systemctl", "disable", "elcaciquedeck.service", check=False)
             self.log("  Start-by-itself is OFF (use start-all.sh).")
+        # the gauges are always on, so the owner can watch the Home Lab while other servers stop/update
+        self.run(["bash", os.path.join(REPO, "tools", "dash-always-on.sh")], check=False)
         # menu shortcuts
         apps = os.path.join(HOME, ".local", "share", "applications")
         icon = os.path.join(REPO, "homepage", "custom-icons", "cacique-emblem.svg")

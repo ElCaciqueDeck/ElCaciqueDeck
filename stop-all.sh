@@ -11,7 +11,11 @@ for d in homepage guide cameras office finanzas calendar vaultwarden arcade home
         (cd "$REPO/$d" && docker compose down >/dev/null 2>&1) && echo "  $d stopped"
     fi
 done
-pkill -f "[c]aciquedash.py" && echo "  CaciqueDash stopped"
+if systemctl is-enabled caciquedash.service >/dev/null 2>&1; then
+    echo "  CaciqueDash stays on (always-on gauges; turn off: bash ~/elcaciquedeck/tools/dash-always-on.sh --off)"
+else
+    pkill -f "[c]aciquedash.py" && echo "  CaciqueDash stopped"
+fi
 pkill -f "[c]aciqueguia.py" && echo "  CaciqueGuía stopped"
 pkill -f "[c]aciquefinanzas.py" && echo "  CaciqueFinanzas coach stopped"
 pkill -x syncthing && echo "  CaciqueSync stopped"

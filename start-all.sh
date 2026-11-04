@@ -51,9 +51,11 @@ echo
 # --- non-Docker servers --------------------------------------------------
 if up 8080; then
     echo "  CaciqueLibrary already running"
-elif ls "$LIBRARY"/Kiwix/*.zim >/dev/null 2>&1; then
-    nohup kiwix-serve --port 8080 "$LIBRARY"/Kiwix/*.zim >"$RUN/kiwix.log" 2>&1 &
-    echo "  CaciqueLibrary starting..."
+elif find "$LIBRARY/Kiwix" -maxdepth 4 -name '*.zim' 2>/dev/null | grep -q .; then
+    # every encyclopedia file in Kiwix, also inside sub-folders (backups often keep their own folder)
+    mapfile -t ZIMS < <(find "$LIBRARY/Kiwix" -maxdepth 4 -name '*.zim' -size +0 2>/dev/null | sort)
+    nohup kiwix-serve --port 8080 "${ZIMS[@]}" >"$RUN/kiwix.log" 2>&1 &
+    echo "  CaciqueLibrary starting with ${#ZIMS[@]} book(s)..."
 fi
 
 if up 8096; then
