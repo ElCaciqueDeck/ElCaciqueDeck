@@ -1,28 +1,4 @@
-# Cacique - the top bar
-- greeting:
-    text_size: xl
-    text: ¡Bienvenidos a casa! · Welcome home
-
-- datetime:
-    locale: es
-    text_size: md
-    format:
-      dateStyle: long
-      timeStyle: short
-      hour12: true
-
-- resources:
-    label: ElCaciqueDeck
-    cpu: true
-    memory: true
-    cputemp: true
-    units: metric
-    uptime: true
-
-- resources:
-    label: Library · Media
-    disk: /library
-
-- resources:
-    label: Vault · Docs & Photos
-    disk: /vault
+# Cacique - top bar widgets
+# The front page shows NO server numbers (CPU, memory, temperature, disks, uptime): those live only in
+# CaciqueDash (port 8888). The welcome and the date are drawn by custom.js, so this list stays empty.
+[]

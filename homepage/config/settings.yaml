@@ -1,11 +1,11 @@
-# Cacique - look and feel
+# Cacique - look and feel (the "Aero Naturaleza" design lives in custom.css + custom.js)
 title: El Cacique
-description: ElCaciqueDeck · Home lab · Puerto Rico
-theme: dark
-color: neutral
+description: El Cacique · Tu hogar digital · Your digital home
+theme: light
+color: slate
 language: es
 headerStyle: clean
-cardStyle: hairline
+cardStyle: default
 statusStyle: dot
 hideVersion: true
 disableUpdateCheck: true
@@ -14,13 +14,13 @@ target: _self
 layout:
   Familia · Family:
     style: row
-    columns: 5
+    columns: 4
   Aprender · Learn:
     style: row
-    columns: 4
+    columns: 3
   Hogar · Home:
     style: row
-    columns: 4
+    columns: 3
   Servidor · Server:
     style: row
-    columns: 4
+    columns: 3
