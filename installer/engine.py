@@ -162,6 +162,23 @@ def list_drives():
             collect(d.get("children") or [], disk)
 
     collect(data.get("blockdevices", []))
+    # Second look: anything mounted under /media, /run/media or /mnt that lsblk didn't report (seen on Ubuntu 26.04)
+    seen = {d["mount"] for d in out if d["mount"]}
+    for line in sh_out(["findmnt", "-rn", "-t", "ext4,xfs,btrfs,f2fs,exfat,ntfs3,vfat", "-o", "TARGET,SOURCE,FSTYPE,LABEL"]).splitlines():
+        parts = line.split(" ")
+        if len(parts) < 3:
+            continue
+        target = parts[0].replace("\\x20", " ")
+        if target in seen or not target.startswith(("/media/", "/run/media/", "/mnt/")):
+            continue
+        try:
+            st = os.statvfs(target)
+            size, free = st.f_blocks * st.f_frsize, st.f_bavail * st.f_frsize
+        except Exception:
+            continue
+        out.append({"dev": parts[1], "label": parts[3].replace("\\x20", " ") if len(parts) > 3 else "", "fstype": parts[2],
+                    "size_gb": round(size / 1e9), "mount": target, "usb": True, "free_gb": round(free / 1e9)})
+        seen.add(target)
     return out
 
 
