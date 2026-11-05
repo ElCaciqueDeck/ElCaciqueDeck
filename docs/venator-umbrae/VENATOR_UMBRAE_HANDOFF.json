@@ -1,0 +1,423 @@
+{
+  "schema_version": "1.0.0",
+  "document_id": "venator-umbrae-handoff-2026-11-05",
+  "project": {
+    "name": "Venator Umbrae",
+    "meaning": "Latin: 'Hunter of the Shadow' (venator = hunter, umbrae = of the shadow). Owner's request: 'Shadow Hunter'.",
+    "short_name": "VU",
+    "tagline_es": "Estación de mando móvil · escucha, ubica, coordina, mantente oculto",
+    "tagline_en": "Mobile command station · listen, locate, coordinate, stay hidden",
+    "owner": "Jay (GitHub: ElCaciqueDeck), Puerto Rico",
+    "github_account": "ElCaciqueDeck",
+    "repository": {
+      "name": "venator-umbrae",
+      "url_expected": "https://github.com/ElCaciqueDeck/venator-umbrae",
+      "visibility": "public (like elcaciquedeck); never commit secrets, IPs, names, keys, coordinates of the owner's home",
+      "note": "If the repo does not exist yet, ask the owner to create it empty (or create it if you have rights); then attach it to the session."
+    },
+    "sibling_project": {
+      "name": "El Cacique Home Lab (ElCaciqueDeck)",
+      "repo": "https://github.com/ElCaciqueDeck/ElCaciqueDeck",
+      "read_first": [
+        "docs/cyberdeck-plan.md (field deck design: kit, EMCON modes, sensing, drone, power, legal lines, phases)",
+        "installer/engine.py + installer/cacique_installer.py (proven Tkinter wizard + step engine pattern: scan, levels, plan, steps, dry-run, askpass sudo, logbook)",
+        "caciquedash.py (stdlib-only live status server pattern) and tools/logbook.py (JSONL logbook pattern)",
+        "lib/common.sh (report/ok/warn/fail helpers), status.sh/start-all.sh/stop-all.sh conventions",
+        "docs/PAUSE-AND-RESUME.md (current state of the home lab)"
+      ],
+      "relationship": "Separate product and repo. The deck may later sync logs/maps home to El Cacique only in LINK mode at home. Reuse patterns and conventions, not the home-lab apps."
+    },
+    "status": "Requirements handoff. Nothing built yet for VU. Owner will answer remaining open_questions before or during phase 0."
+  },
+  "mission": {
+    "summary": "Turn the ThinkPad L540 into a portable command station for a scout (e-bike, drone, radio, Android with ATAK) that can listen to the radio world (aircraft, ships, weather, mesh), know exactly where it is on offline Puerto Rico maps, coordinate a small team over off-grid LoRa mesh, and control what it transmits so it stays as quiet as possible on networks and airwaves.",
+    "scenario_framing": "Grid-down / emergency preparedness role-play the owner finds motivating ('special recon in a SHTF scenario'). Treat it as a learning and preparedness project: receive-only sensing, the owner's own equipment, legal transmitting only.",
+    "principles": [
+      "Offline first: everything works with zero internet; updates only in LINK mode",
+      "Silent by default: nothing transmits unless the operator chooses a mode that allows it",
+      "Receive is legal and invisible; transmit is a decision (EMCON modes)",
+      "Encrypted at rest; the owner's data never leaves the deck except by choice",
+      "Beginner-operable: one command per box, every screen explains itself in Spanish and English",
+      "Legal only (see legal_lines) - the project must never become a problem for the owner"
+    ]
+  },
+  "owner_profile_and_working_style": {
+    "skill": "Beginner learning Linux; investor/business owner, not a programmer. Visual learner. Wants independence from AI over time.",
+    "commands": "He TYPES every terminal command by hand. Always give commands as single lines, ONE per code box, numbered in order, and for each say what to look for, what he should see and what to expect.",
+    "build_model": "80/20: the AI builds and pushes to GitHub; he runs `git pull` and the setup on the ThinkPad and reports back with photos.",
+    "language": "Bilingual UI and docs: Spanish primary, English secondary (same as El Cacique).",
+    "budget": "Limited. Work from what he owns first; add only what's needed for a base he can expand. Prefer TP-Link for network gear. The Deeper (Connect Mini at home, Connect Pico in the field) is non-negotiable in his setups.",
+    "autostart": "Nothing starts by itself at boot unless he chooses it (installer checkbox, off by default). Exception pattern exists in El Cacique: an always-on health page he explicitly chose.",
+    "values": "No surveillance, data ownership, open source, no accounts with third parties, legal content only."
+  },
+  "hardware": {
+    "host": {
+      "model": "Lenovo ThinkPad L540 (2014, Intel 4th gen, ~7.5 GB RAM usable, removable battery)",
+      "storage_now": "Internal HDD with Ubuntu (The Base). Planned: swap to SATA SSD (vibration on an e-bike kills spinning disks) and 16 GB RAM (2x8 GB DDR3L).",
+      "ports_note": "No USB-C. Use the BLUE USB 3.0 ports for the Overkill stick and SDR; a powered USB hub is planned for radios.",
+      "verify_on_device": "Run a hardware scan first (lscpu, free -h, lsblk, lsusb) and adapt; do not assume exact CPU/RAM."
+    },
+    "overkill_kit": {
+      "overkill_stick": "256 GB fast USB SSD-class stick (USB-A + USB-C), Kali Live + LUKS encrypted persistence",
+      "deeper_connect_pico": "Pocket hardware firewall/VPN, USB-C powered, Ethernet/Wi-Fi. LINK mode only; its bandwidth sharing/mining OFF in the field.",
+      "ledger_nano": "Model to confirm (Nano S / S Plus / X). Crypto wallet + FIDO2/U2F security key (Security Key app) + OpenPGP app. Seed phrase only on paper/steel, never typed into any computer."
+    },
+    "field_kit": [
+      {
+        "item": "Meshtastic LoRa node(s), 915 MHz US band (e.g. Heltec V3 / RAK WisBlock)",
+        "use": "Off-grid encrypted text + positions with the team",
+        "status": "ordered/arriving per owner - confirm"
+      },
+      {
+        "item": "RTL-SDR Blog V4 + dipole/antenna kit",
+        "use": "Receive-only: spectrum, ADS-B aircraft, AIS ships, NOAA weather radio/satellites, sensors",
+        "status": "ordered/arriving per owner - confirm"
+      },
+      {
+        "item": "u-blox USB GPS puck",
+        "use": "Position without transmitting (gpsd)",
+        "status": "to buy"
+      },
+      {
+        "item": "Used Google Pixel (6a/7a class) with GrapheneOS, no SIM",
+        "use": "ATAK-CIV, tethered to the deck by USB cable only; Faraday pouch when not in use",
+        "status": "to buy (decided Nov 5)"
+      },
+      {
+        "item": "Drone with ArduPilot or PX4 (MAVLink) + SiK 915 MHz telemetry pair",
+        "use": "QGroundControl planning/telemetry; drone position on the TAK map",
+        "status": "owner has a drone on ArduPilot/PX4 - confirm model; SiK pair to buy"
+      },
+      {
+        "item": "GMRS handhelds (Part 95 certified) + GMRS license",
+        "use": "Team voice",
+        "status": "not bought"
+      },
+      {
+        "item": "Alfa AWUS036ACM (or similar) USB Wi-Fi",
+        "use": "Monitor-mode practice ON OWN EQUIPMENT ONLY (Overkill stick)",
+        "status": "to buy (optional)"
+      },
+      {
+        "item": "Power: spare L540 battery, power station + 100 W folding solar, short right-angle USB cables, powered hub, hard case",
+        "use": "Field hours",
+        "status": "to buy over time"
+      }
+    ],
+    "usb_ids_for_detection": {
+      "note": "Use for the hardware scan / 'connected gear' panel; verify on device, IDs vary by revision.",
+      "rtl_sdr": [
+        "0bda:2838",
+        "0bda:2832"
+      ],
+      "ublox_gps": [
+        "1546:01a6",
+        "1546:01a7",
+        "1546:01a8",
+        "1546:01a9"
+      ],
+      "meshtastic_usb_serial": [
+        "10c4:ea60 (CP210x)",
+        "1a86:7523 / 1a86:55d4 (CH34x)",
+        "303a:* (ESP32-S3 native USB)",
+        "239a:* (nRF52/Adafruit bootloader)"
+      ],
+      "sik_radio": [
+        "0403:6001 / 0403:6015 (FTDI)",
+        "10c4:ea60 (CP210x)"
+      ],
+      "android_adb": [
+        "18d1:* (Google/Pixel)"
+      ]
+    }
+  },
+  "system_architecture": {
+    "decided": "Keep Base + Overkill (owner confirmed Nov 5, 2026).",
+    "the_base": {
+      "os": "Ubuntu (LTS) on the internal drive - the friendly command station. Same family as El Cacique.",
+      "role": "Maps, GPS, Meshtastic, SDR sensing, ATAK link + OpenTAKServer, drone ground station, logbook, field library, the VU HUD.",
+      "encryption": "Ubuntu was installed unencrypted. Plan: (a) when the SSD arrives, reinstall with full-disk LUKS encryption (preferred), or (b) until then, encrypt the user data with an encrypted home/data volume. Ask the owner which and when.",
+      "hardening": [
+        "ufw default deny incoming; allow nothing inbound except the USB-tethered phone subnet and localhost services",
+        "NetworkManager: MAC address randomization for Wi-Fi scans and connections; generic hostname; no auto-join of networks",
+        "Bluetooth and Wi-Fi hardware-off with rfkill in SILENT mode",
+        "USBGuard (allow-list of the owner's devices; new USB devices blocked until approved)",
+        "AppArmor on (Ubuntu default); unattended upgrades only in LINK mode",
+        "Tor Browser for any online lookups; no cloud accounts or telemetry on the deck",
+        "Ledger FIDO2/U2F for any logins that support it; OpenPGP for signing/encrypting field notes",
+        "Encrypted 'drop' partition (on the Overkill stick) is the only data bridge between Base and Overkill"
+      ]
+    },
+    "the_overkill": {
+      "os": "Kali Linux Live + LUKS-encrypted persistence on the 256 GB stick (boot option 'Live USB Encrypted Persistence'); Kali nuke passphrase tested on a copy first; LUKS header backup kept at home.",
+      "partitions": [
+        "Kali live image",
+        "encrypted persistence (~200 GB)",
+        "encrypted 'drop' (~40 GB, LUKS, opened by both Base and Overkill)"
+      ],
+      "role": "Ethical-hacking / network-defense LEARNING lab on the owner's own equipment: Nmap, Wireshark, Kismet, Bettercap, aircrack-ng suite, Metasploit, Burp, Hashcat, etc. Practice targets: his own home lab, his own test router, intentionally vulnerable practice VMs.",
+      "internal_drive": "Not mounted when the Overkill is booted (Base untouched)."
+    },
+    "optional_ghost_stick": "Separate small Tails USB for anonymous browsing via Tor. Not part of the build unless the owner asks.",
+    "emcon_modes": {
+      "description": "One command `vu mode silent|mesh|link` + a HUD indicator. Same on Base and Overkill.",
+      "SILENT": "Nothing transmits: Wi-Fi + Bluetooth hardware-off (rfkill), Meshtastic node set receive-only (lora.tx_enabled=false), SiK/drone uplink off, phone tethered by cable only. Allowed: GPS, SDR receive, maps, logbook, listening to the mesh.",
+      "MESH": "Only short encrypted LoRa bursts when the operator sends; no automatic position beacons (Meshtastic position broadcast off or manual).",
+      "LINK": "Wi-Fi allowed (known networks only, e.g. home); updates, sync to El Cacique; Deeper Pico by cable as firewall/VPN.",
+      "always": "Random MACs, generic hostname, no network auto-join, phone in airplane mode + Faraday pouch when unused."
+    }
+  },
+  "modules": [
+    {
+      "id": "hud",
+      "name_es": "Pantalla táctica",
+      "name_en": "Tactical HUD",
+      "what": "The main local web app (served on localhost only, stdlib Python like caciquedash.py or a small FastAPI if justified) opened full-screen in Firefox kiosk mode. Tabs/screens below. Works offline.",
+      "screens": [
+        "MAPA/MAP (center: offline PR map with own GPS, mesh nodes, aircraft, ships, drone, waypoints)",
+        "SEÑALES/SIGINT (spectrum waterfall link to SDR++, ADS-B list, AIS list, weather)",
+        "COMMS (Meshtastic channels, messages, node list, radio state)",
+        "NAV (GPS fix, coordinates in MGRS + lat/long, heading, speed, satellites, offline routing)",
+        "DRON/DRONE (MAVLink telemetry summary + open QGroundControl)",
+        "ESTADO/STATUS (EMCON mode, battery, power source, temps, CPU/RAM, drives, connected gear)",
+        "BITÁCORA/LOG (time-stamped field log; export to the encrypted drop)"
+      ]
+    },
+    {
+      "id": "maps",
+      "name_es": "Mapas de Puerto Rico",
+      "name_en": "Puerto Rico maps",
+      "what": "Offline vector + raster maps of Puerto Rico (incl. Vieques and Culebra): OpenStreetMap data (Geofabrik puerto-rico extract) served locally (e.g. tileserver-gl or PMTiles with a local MapLibre front end); terrain/elevation hillshade; optional USGS topo; satellite imagery only where license allows. Same tiles exported for ATAK (MBTiles) so the phone works offline. Organic Maps already tested by the owner as a fallback."
+    },
+    {
+      "id": "gps",
+      "name_es": "GPS",
+      "name_en": "GPS",
+      "what": "gpsd + u-blox puck; time sync from GPS (chrony) when offline; position feeds the HUD, ATAK (via OpenTAKServer) and optionally Meshtastic (only in MESH/LINK, manual)."
+    },
+    {
+      "id": "mesh",
+      "name_es": "Malla Meshtastic",
+      "name_en": "Meshtastic mesh",
+      "what": "Meshtastic Python API/CLI over USB serial; US 915 MHz region; private encrypted channel(s) with owner-chosen PSK (never committed); receive-only toggle for SILENT; message/node view in the HUD; TAK<->Meshtastic gateway so ATAK sees mesh positions/messages."
+    },
+    {
+      "id": "sdr",
+      "name_es": "Escucha de radio",
+      "name_en": "Radio listening (receive only)",
+      "what": "RTL-SDR stack: SDR++ (spectrum), readsb + tar1090 (ADS-B aircraft, offline map), AIS-catcher (ships; VHF 161.975/162.025 MHz), rtl_433 (weather stations/sensors), NOAA Weather Radio (162.4-162.55 MHz) audio, SatDump (NOAA/Meteor weather satellites), public FRS/GMRS/marine listening in the clear. Feeds aircraft/ships into the HUD map and into TAK as CoT."
+    },
+    {
+      "id": "tak",
+      "name_es": "ATAK y mapa compartido",
+      "name_en": "ATAK + shared map",
+      "what": "OpenTAKServer on the Base (localhost/tether only) or FreeTAKServer if lighter; ATAK-CIV on the Pixel/GrapheneOS connected by USB cable (USB tethering or reverse tethering), Wi-Fi/Bluetooth off on the phone; PyTAK bridges: ADS-B/AIS/drone/mesh -> CoT. Data packages for map sources and the team channel."
+    },
+    {
+      "id": "drone",
+      "name_es": "Dron",
+      "name_en": "Drone",
+      "what": "QGroundControl (missions, geofence, RTH, telemetry, offline maps); SiK 915 MHz link (MESH/LINK modes only; pre-planned missions can fly with uplink off); MAVLink -> TAK bridge (PyTAK) puts the drone on everyone's map; photo geotag import into the log."
+    },
+    {
+      "id": "sense",
+      "name_es": "Entorno Wi-Fi/Bluetooth",
+      "name_en": "Wi-Fi/Bluetooth awareness",
+      "what": "Kismet in PASSIVE mode only: how many devices/networks are around (awareness), nothing joined or attacked. On the Overkill stick for the learning lab; optional on Base."
+    },
+    {
+      "id": "library",
+      "name_es": "Biblioteca de campo",
+      "name_en": "Field library",
+      "what": "Kiwix with medical, survival, repair (iFixit), Wikipedia ES/EN subsets that fit the drive; the VU field manual as a ZIM like El Cacique's manual."
+    },
+    {
+      "id": "logbook",
+      "name_es": "Bitácora",
+      "name_en": "Logbook",
+      "what": "JSONL time-stamped log (pattern from El Cacique tools/logbook.py): mode changes, GPS fixes, mesh messages, contacts seen (aircraft/ships), notes; secrets masked; exportable to the encrypted drop; never uploaded."
+    },
+    {
+      "id": "installer",
+      "name_es": "Instalador",
+      "name_en": "Installer",
+      "what": "One-line bootstrap from GitHub + a Tkinter wizard reusing El Cacique's engine pattern (scan -> choose modules -> summary -> install with live log -> finish), restyled in the tactical HUD look. Hardware scan detects gear by USB ID and marks modules ready/missing. Dry-run mode. Every step safe to re-run. Separate script set to prepare the Overkill stick (with explicit 'type yes' confirmations before touching any drive, showing size/model).",
+      "levels": {
+        "1_base": "Ubuntu Base: HUD, maps, GPS, mesh, SDR, TAK, library, logbook, hardening",
+        "2_overkill": "Build/refresh the Kali Overkill stick (persistence + drop + tools)",
+        "3_full_kit": "Drone + SiK, gateways, power monitoring - when the hardware is present"
+      }
+    }
+  ],
+  "ui_style": {
+    "chosen": "Night-vision tactical HUD (owner chose Nov 5): video-game military equipment feel (Splinter Cell / Metal Gear codec), professional and readable - not cartoonish.",
+    "palette": {
+      "background": "#020604 near-black with faint green",
+      "primary_phosphor": "#7CFF6B night-vision green",
+      "dim": "#2F6B2A",
+      "amber_warning": "#FFB000",
+      "red_alert": "#FF3B30",
+      "cyan_friendly": "#59E1FF (own/team markers)",
+      "text_high": "#D8FFD0"
+    },
+    "night_mode": "Red-light mode (#FF2A1A on black) for dark conditions - preserves night vision and lowers screen glow; one key toggles it.",
+    "typography": "Local monospace only (DejaVu Sans Mono / Liberation Mono / ship an OFL font such as Share Tech Mono or JetBrains Mono inside the repo). No web fonts from the internet.",
+    "elements": [
+      "corner brackets around panels",
+      "subtle scan lines and vignette (toggle off; respect prefers-reduced-motion)",
+      "codec-style comms panel with callsign, channel, signal bars",
+      "status strip: EMCON mode pill (SILENT green / MESH amber / LINK red-blink), GPS fix, battery, clock (local + UTC/Zulu)",
+      "MGRS grid overlay on the map",
+      "big keyboard shortcuts (F1-F8 screens; M = mode; N = night red; L = log note)",
+      "boot sequence animation (skippable) like powering military equipment"
+    ],
+    "accessibility": "Minimum 16 px text, high contrast, status always in words + icon (not color only), works on the L540's 15.6\" 1366x768 screen first.",
+    "bilingual_labels": "Short ES/EN labels: MAPA · MAP, SEÑALES · SIGINT, COMUNICACIONES · COMMS, NAVEGACIÓN · NAV, DRON · DRONE, ESTADO · STATUS, BITÁCORA · LOG"
+  },
+  "security_and_privacy": {
+    "goal": "Protect the deck and its operator: encrypted storage, minimal emissions, no telemetry, controlled USB, and a hands-on LEARNING lab for network defense on the owner's own gear.",
+    "must": [
+      "Full-disk or data encryption (LUKS) on Base; encrypted persistence + drop on Overkill",
+      "No secrets in the repo: PSKs, passwords, Ledger data, home coordinates, IPs stay in local .env/keyrings",
+      "Firewall default-deny; local services bind to 127.0.0.1 or the USB tether interface only",
+      "EMCON modes actually enforce radio state (verify with rfkill list, nmcli, meshtastic --info)",
+      "Updates only in LINK mode; verify package signatures (apt/Kali repos)",
+      "Teach as you build: each hardening step explained in the field manual"
+    ],
+    "learning_lab_rules": "Wi-Fi/Bluetooth/network testing ONLY on equipment the owner owns or has written permission to test; a 'lab notebook' template records scope and permission."
+  },
+  "legal_lines": [
+    "Listening to clear (unencrypted) public radio: OK (ADS-B, AIS, NOAA, FRS/GMRS/marine in the clear).",
+    "Do NOT intercept cellular calls, decode private encrypted communications, or break into networks - the deck does not do it and the build must not add tools aimed at that.",
+    "Transmitting: Meshtastic (915 MHz ISM) and SiK radios are license-free within FCC Part 15 limits; GMRS needs a license (no exam, covers family); amateur bands need an exam.",
+    "Jamming or spoofing (RF, GPS, Wi-Fi deauth against others) is illegal - never build it.",
+    "Drones: FAA rules - registration, Remote ID on, below 400 ft, out of restricted airspace (B4UFLY); non-recreational use needs Part 107.",
+    "Recording people: follow Puerto Rico privacy law; never publish others' data.",
+    "The owner stated: not asking to find, hack, crack, download or make anything illegal."
+  ],
+  "repository_layout_proposal": {
+    "install.sh": "one-line bootstrap (git + python3-tk, clone, open wizard)",
+    "installer/": "engine.py + vu_installer.py (Tkinter wizard, HUD-styled), dry-run",
+    "lib/common.sh": "report/ok/warn/fail helpers (copy El Cacique's)",
+    "hud/": "vu-hud server + static web app (map, sigint, comms, nav, drone, status, log)",
+    "modes/": "vu (CLI: mode silent|mesh|link, status, log)",
+    "maps/": "scripts to download/build PR tiles at home (LINK) + serve offline; ATAK MBTiles export",
+    "mesh/": "Meshtastic config helpers, TAK gateway",
+    "sdr/": "readsb/tar1090, AIS-catcher, rtl_433, SatDump configs + CoT bridges",
+    "tak/": "OpenTAKServer setup, phone tether guide, data packages",
+    "drone/": "QGroundControl setup, SiK notes, MAVLink->TAK bridge",
+    "harden/": "ufw, MAC randomization, USBGuard, rfkill profiles, encryption guides",
+    "overkill/": "build-stick.sh (with drive-size confirmation), persistence + drop + nuke test guide",
+    "manual/": "bilingual field manual (Markdown -> ZIM for Kiwix)",
+    "docs/": "plan, legal, roadmap, pause/resume notes"
+  },
+  "phases": [
+    {
+      "phase": 0,
+      "name": "Foundations",
+      "deliverables": [
+        "repo + README (legal-use banner)",
+        "hardware scan script",
+        "lib/common.sh",
+        "`vu mode` with SILENT/MESH/LINK (rfkill + NetworkManager), status output"
+      ],
+      "acceptance": [
+        "`vu mode silent` -> rfkill shows Wi-Fi/BT blocked; `vu mode link` restores",
+        "scan lists connected gear by USB ID"
+      ]
+    },
+    {
+      "phase": 1,
+      "name": "HUD shell + maps + GPS",
+      "deliverables": [
+        "HUD web app with the night-vision style, all screens as shells",
+        "offline PR map with MGRS overlay",
+        "gpsd integration (own position, fix quality)"
+      ],
+      "acceptance": [
+        "works with network unplugged",
+        "1366x768 legible",
+        "red night mode toggle"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Listening (SDR)",
+      "deliverables": [
+        "ADS-B + AIS on the HUD map",
+        "NOAA weather radio",
+        "rtl_433 sensors",
+        "spectrum via SDR++"
+      ],
+      "acceptance": [
+        "aircraft/ships appear on the offline map",
+        "nothing transmits"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Mesh + TAK",
+      "deliverables": [
+        "Meshtastic COMMS screen",
+        "receive-only enforcement in SILENT",
+        "OpenTAKServer + Pixel/GrapheneOS ATAK over USB cable",
+        "TAK<->mesh gateway; ADS-B/AIS -> CoT"
+      ],
+      "acceptance": [
+        "phone sees own position, mesh nodes and aircraft with Wi-Fi/BT off",
+        "SILENT really silent (verify with a second node / SDR)"
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Hardening + Overkill stick",
+      "deliverables": [
+        "ufw/USBGuard/MAC randomization",
+        "encryption plan executed",
+        "Overkill stick builder + drop partition + nuke test guide",
+        "lab notebook template"
+      ],
+      "acceptance": [
+        "unknown USB blocked",
+        "drop opens on both systems",
+        "nuke tested on a copy"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Drone + field manual + installer polish",
+      "deliverables": [
+        "QGroundControl + MAVLink->TAK",
+        "bilingual field manual ZIM",
+        "installer wizard end-to-end + dry-run"
+      ],
+      "acceptance": [
+        "fresh Ubuntu -> one command -> working deck",
+        "manual readable offline in Kiwix"
+      ]
+    }
+  ],
+  "deliverables_from_coding_ai": [
+    "Code pushed to github.com/ElCaciqueDeck/venator-umbrae (feature branches + PRs are fine; owner pulls on the ThinkPad)",
+    "Screenshots of the HUD at 1366x768 (day and red-night modes)",
+    "For every owner-run step: numbered single-line commands, one per box, with what to look for / expect",
+    "Dry-run/simulation tests where hardware is absent; clearly mark what was NOT tested on real hardware",
+    "docs/PAUSE-AND-RESUME.md kept current"
+  ],
+  "conventions": {
+    "commit_trailer": "End commit messages with the attribution lines the session provides.",
+    "secrets": "Never commit .env, PSKs, passwords, IPs, family names, coordinates. Use .gitignore + local files with chmod 600.",
+    "style": "Plain words in docs; ES first, EN second; no jargon without a one-line explanation.",
+    "testing": "Simulate hardware with mocks (fake serial, recorded ADS-B/AIS samples, fake gpsd) and say plainly what still needs the real device."
+  },
+  "open_questions_for_owner": [
+    "Which radios/devices have actually arrived (Meshtastic node model, RTL-SDR, GPS)? Which still to buy?",
+    "Ledger model: Nano S, S Plus or X?",
+    "Drone make/model and flight controller (ArduPilot or PX4)?",
+    "Base encryption: reinstall Ubuntu with full-disk encryption when the SSD arrives, or encrypt only the data folder now?",
+    "Map coverage: Puerto Rico + Vieques/Culebra only, or also USVI/neighboring islands? How much disk for maps?",
+    "Team size and callsigns/channel names for Meshtastic and ATAK (kept local, never in the repo)?",
+    "Should the HUD start full-screen at login on the Base (autostart is off by default in his projects)?"
+  ],
+  "naming_research_note": "Owner first asked for a Taíno name meaning 'Shadow Warrior/Hunter'. Taíno survives only in colonial records: no attested words for 'hunter' or 'shadow'; closest were hupia (night spirit of the dead, hides by day, linked to bats) and nitaíno (noble class that led in war). Owner chose Latin instead: Venator Umbrae. Taíno words may still appear as module nicknames if he wants (e.g. Hupia for SILENT mode)."
+}
