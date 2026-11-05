@@ -117,10 +117,10 @@
         siteMonitor: http://127.0.0.1:5000/api/version
 
 - Servidor · Server:
-    - CaciqueDash:
+    - CaciqueGauges:
         icon: /icons/speedometer.svg
         href: http://{{HOMEPAGE_VAR_IP}}:8888
-        description: Indicadores del servidor · Server gauges
+        description: Salud del Home Lab · Home Lab health
         siteMonitor: http://127.0.0.1:8888
 
     - CaciqueGuard:

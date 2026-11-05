@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ElCaciqueDeck Dashboard - JDM-style system gauges for the home lab.
+ElCaciqueDeck Dashboard - CaciqueGauges: the Home Lab health page ("Aero Naturaleza" panels, no dials).
 
 Start:  python3 caciquedash.py          (opens on port 8888)
 Stop:   Ctrl+C
@@ -284,206 +284,259 @@ def sampler():
 
 
 PAGE = r"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ElCaciqueDeck Gauges</title>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CaciqueGauges</title>
 <style>
-:root{--glow:#ff8a1c;--glow2:#ffb35c;--red:#ff2a1a;--face:#0b0b0d;--txt:#f4efe6}
-body.blue{--glow:#38b6ff;--glow2:#9fdcff}
-body.red{--glow:#ff3b2f;--glow2:#ff8a80}
-body.white{--glow:#e8f0ff;--glow2:#ffffff}
+/* CaciqueGauges - "Aero Naturaleza" health page. Same readings as before; no dials.
+   Light by day; "Noche" switch for a screen left on overnight. Offline: no fonts or images from outside. */
+:root{
+ --ink:#102E39;--ink2:#3E5D66;--aqua:#36B7BB;--aqua-deep:#157989;--sun:#F2B862;
+ --ok:#22865D;--warn:#A46A24;--bad:#C05050;--off:#7d8f93;
+ --panel1:rgba(255,255,255,.86);--panel2:rgba(243,255,248,.66);--card:rgba(255,255,255,.93);--line:rgba(255,255,255,.95);
+ --edge:#d5ebe6;--track:linear-gradient(180deg,#dfe9e7,#f4f8f7);
+ --sky:radial-gradient(circle at 82% 6%,rgba(255,240,180,.95) 0,rgba(255,238,171,.4) 9%,transparent 26%),radial-gradient(ellipse 120% 80% at 50% 0%,#fdfdf2 0%,#dff6f3 38%,#bfe6da 70%,#9fd3c2 100%);
+ --hills:.55;--shadow:0 14px 38px rgba(24,102,98,.14),inset 0 1px 0 #fff;
+ --gloss:linear-gradient(180deg,rgba(255,255,255,.75) 0%,rgba(255,255,255,.2) 49%,rgba(255,255,255,0) 50%);
+ --font:"Segoe UI","Frutiger","Univers","Ubuntu",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+ color-scheme:light}
+body.night{
+ --ink:#e8f6f5;--ink2:#a9c6c9;--aqua-deep:#6fd6d6;--ok:#57d39a;--warn:#f2b862;--bad:#ff8a80;--off:#7f9599;
+ --panel1:rgba(20,48,60,.78);--panel2:rgba(14,36,46,.66);--card:rgba(24,56,68,.9);--line:rgba(255,255,255,.14);
+ --edge:rgba(255,255,255,.1);--track:linear-gradient(180deg,#0e2630,#1a3a46);
+ --sky:radial-gradient(circle at 82% 6%,rgba(190,220,255,.35) 0,rgba(160,200,255,.1) 8%,transparent 22%),radial-gradient(ellipse 120% 80% at 50% 0%,#24435a 0%,#163244 45%,#0d2230 80%,#0a1b26 100%);
+ --hills:.35;--shadow:0 14px 38px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);
+ --gloss:linear-gradient(180deg,rgba(255,255,255,.35) 0%,rgba(255,255,255,.08) 49%,rgba(255,255,255,0) 50%);
+ color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#050506;color:var(--txt);
- font-family:"DejaVu Sans Mono","Liberation Mono",Menlo,Consolas,monospace}
-body{background:
- repeating-linear-gradient(45deg,#0d0d0f 0 4px,#121215 4px 8px),
- repeating-linear-gradient(-45deg,#0d0d0f 0 4px,#101013 4px 8px);
- background-blend-mode:lighten;padding:16px;overflow-x:hidden}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
- max-width:1200px;margin:0 auto 10px}
-.brand{font-style:italic;font-weight:900;letter-spacing:.18em;font-size:clamp(16px,3vw,26px);
- color:var(--glow2);text-shadow:0 0 8px var(--glow),0 0 22px var(--glow)}
-.brand small{display:block;font-size:.45em;letter-spacing:.5em;color:#8a8478;text-shadow:none;font-style:normal}
-button{background:#151518;color:var(--glow2);border:1px solid #333;border-radius:4px;
- font:inherit;font-size:12px;letter-spacing:.2em;padding:8px 12px;cursor:pointer}
-button:hover{border-color:var(--glow)}
-.cluster{max-width:1200px;margin:0 auto;padding:18px;border-radius:28px;
- background:linear-gradient(#18181b,#0a0a0b);box-shadow:inset 0 2px 0 #2a2a2e,0 20px 50px #000,inset 0 -30px 60px #000}
-.main{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:12px;align-items:center}
-.pods{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}
-.gauge svg{width:100%;height:auto;display:block}
-.lcd{background:#0f1410;border:1px solid #222;border-radius:6px;padding:10px 14px;
- color:var(--glow2);text-shadow:0 0 6px var(--glow);font-size:13px;line-height:1.7;letter-spacing:.08em}
-.lcd b{color:#fff;font-weight:700}
-.lights{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
-.lamp{min-width:92px;text-align:center;padding:7px 10px;border-radius:4px;font-size:11px;font-weight:700;
- letter-spacing:.18em;border:1px solid #2a2a2a;color:#3a3a3a;background:#0c0c0c}
-.lamp.on{color:#062a0a;background:#46ff6a;box-shadow:0 0 14px #46ff6a;border-color:#8dff9f}
-.lamp.warn{color:#2a1800;background:#ffb000;box-shadow:0 0 14px #ffb000;border-color:#ffd36b}
-.lamp.bad{color:#2a0000;background:var(--red);box-shadow:0 0 16px var(--red);border-color:#ff8077}
-.sidecol{display:flex;flex-direction:column;gap:12px}
-.foot{max-width:1200px;margin:10px auto 0;text-align:center;font-size:11px;color:#5a564e;letter-spacing:.3em}
-.needle{transition:transform .9s cubic-bezier(.25,1.4,.5,1)}
-@media(max-width:860px){.main{grid-template-columns:1fr 1fr}.main .tach{grid-column:1/-1;order:-1}
- .pods{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:520px){.main{grid-template-columns:1fr}.pods{grid-template-columns:repeat(2,1fr)}
- body{padding:10px}.cluster{padding:10px;border-radius:18px}}
+html,body{margin:0;min-height:100%}
+body{font-family:var(--font);color:var(--ink);background:var(--sky) fixed,#bfe6da;overflow-x:hidden;transition:background .4s}
+body.night{background:var(--sky) fixed,#0d2230}
+body::before{content:"";position:fixed;left:0;right:0;bottom:0;height:40vh;z-index:0;pointer-events:none;opacity:var(--hills);
+ background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 420' preserveAspectRatio='none'><path d='M0 265C135 197 242 232 374 183C517 128 622 224 732 182C843 139 912 123 1007 168C1149 234 1208 85 1373 138C1475 169 1507 132 1600 120V420H0Z' fill='%238abeaf'/><path d='M0 323C149 237 202 299 350 253C492 210 600 286 722 238C811 204 917 249 996 235C1108 214 1229 236 1304 178C1450 103 1538 215 1600 193V420H0Z' fill='%2375b3a4'/><path d='M0 365C173 300 280 363 426 306C565 257 723 378 865 286C998 207 1073 332 1239 282C1399 246 1493 298 1600 266V420H0Z' fill='%234f9d8b'/></svg>") center bottom/100% 100% no-repeat}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;
+ padding:max(18px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+ display:grid;gap:20px}
+:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.en{color:var(--ink2);font-weight:500}
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.orb{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
+ background:var(--gloss),radial-gradient(circle at 50% 120%,#8ff0dd 0%,#2fb5ad 45%,#146b79 100%);
+ border:1px solid rgba(255,255,255,.9);box-shadow:0 8px 20px rgba(23,102,115,.3),inset 0 -3px 8px rgba(0,60,70,.25)}
+.orb svg{width:28px;height:28px;color:#fff;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+.name{font-size:23px;font-weight:750;letter-spacing:-.4px;line-height:1.1}
+.sub{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink2);margin-top:3px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{font-size:15px;color:var(--ink2);background:var(--panel1);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
+.btn{appearance:none;cursor:pointer;min-height:44px;padding:0 16px;border-radius:14px;font:650 15px var(--font);color:var(--ink);
+ border:1px solid var(--edge);background:var(--gloss),var(--card);box-shadow:0 4px 12px rgba(21,106,128,.12)}
+/* panels */
+.panel{background:linear-gradient(115deg,var(--panel1),var(--panel2));border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);
+ -webkit-backdrop-filter:blur(18px) saturate(130%);backdrop-filter:blur(18px) saturate(130%);padding:22px 24px}
+h2{margin:0 0 14px;font-size:21px;letter-spacing:-.4px;line-height:1.3}
+h2 svg{width:24px;height:24px;color:var(--aqua-deep);vertical-align:-5px;margin-right:8px}
+/* the big verdict */
+.verdict{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.vicon{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;color:#fff;
+ background:var(--gloss),radial-gradient(circle at 50% 120%,#7ee0a6,#22865D 70%);box-shadow:0 8px 18px rgba(34,134,93,.35)}
+.vicon svg{width:34px;height:34px}
+.verdict[data-v="warn"] .vicon{background:var(--gloss),radial-gradient(circle at 50% 120%,#ffd58a,#c5821f 70%);box-shadow:0 8px 18px rgba(196,130,31,.35)}
+.verdict[data-v="bad"] .vicon{background:var(--gloss),radial-gradient(circle at 50% 120%,#ffb0a8,#C05050 70%);box-shadow:0 8px 18px rgba(192,80,80,.35)}
+.verdict[data-v="wait"] .vicon{background:var(--gloss),radial-gradient(circle at 50% 120%,#c9e3e6,#7d8f93 70%)}
+.vtext{flex:1 1 280px;min-width:0}
+.vtitle{font-size:clamp(24px,3.2vw,34px);font-weight:750;letter-spacing:-.8px;line-height:1.15}
+.vsub{font-size:16px;color:var(--ink2);margin-top:4px;line-height:1.45}
+.facts{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px;font-size:15px;color:var(--ink2)}
+.facts b{color:var(--ink);font-weight:650}
+/* metric cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--edge);border-radius:22px;padding:16px 18px;box-shadow:0 6px 16px rgba(44,138,117,.12),inset 0 1px 0 rgba(255,255,255,.6);min-width:0}
+.ctop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.clabel{font-size:16px;font-weight:700;line-height:1.25}
+.clabel .en{display:block;font-size:13px;font-weight:500}
+.ctop{align-items:flex-start!important}
+.state{font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.state svg{width:16px;height:16px;stroke-width:2.4}
+.big{font-size:38px;font-weight:750;letter-spacing:-1px;margin:6px 0 2px;font-variant-numeric:tabular-nums;line-height:1.1}
+.big small{font-size:18px;font-weight:650;color:var(--ink2);letter-spacing:0;margin-left:2px}
+.detail{font-size:14px;color:var(--ink2);min-height:20px}
+/* Vista-style glossy bar */
+.bar{position:relative;height:16px;border-radius:9px;margin:10px 0 4px;background:var(--track);border:1px solid var(--edge);overflow:hidden;
+ box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:8px;transition:width .8s cubic-bezier(.2,.7,.2,1);
+ background:var(--gloss),linear-gradient(180deg,#5fd88f,#22865D)}
+[data-s="warn"] .fill{background:var(--gloss),linear-gradient(180deg,#ffd27a,#c5821f)}
+[data-s="bad"] .fill{background:var(--gloss),linear-gradient(180deg,#ff9b90,#C05050)}
+[data-s="ok"] .state{color:var(--ok)} [data-s="warn"] .state{color:var(--warn)} [data-s="bad"] .state{color:var(--bad)} [data-s="na"] .state{color:var(--off)}
+.spark{width:100%;height:46px;display:block;margin-top:6px}
+.spark .area{fill:rgba(54,183,187,.16)} .spark .line{fill:none;stroke:var(--aqua);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+[data-s="warn"] .spark .line{stroke:#c5821f} [data-s="bad"] .spark .line{stroke:var(--bad)}
+.sparkcap{font-size:12px;color:var(--ink2);display:flex;justify-content:space-between}
+/* drives, like the Vista "Computer" window */
+.drives{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.drive{display:flex;gap:14px;align-items:center}
+.dicon{width:56px;height:56px;flex:0 0 56px;border-radius:16px;display:grid;place-items:center;
+ background:var(--gloss),linear-gradient(180deg,#f4fffc,#d3efe8);border:1px solid #fff;box-shadow:0 4px 10px rgba(21,106,128,.14)}
+body.night .dicon{background:var(--gloss),linear-gradient(180deg,#2a5866,#173a46);border-color:rgba(255,255,255,.12)}
+.dicon svg{width:30px;height:30px;color:var(--aqua-deep)}
+.dtext{flex:1;min-width:0}
+.dname{font-size:17px;font-weight:750}
+.dfree{font-size:14px;color:var(--ink2)}
+.drive .fill{background:var(--gloss),linear-gradient(180deg,#6fd0f0,#1f8fb8)}
+.drive[data-s="warn"] .fill{background:var(--gloss),linear-gradient(180deg,#ffd27a,#c5821f)}
+.drive[data-s="bad"] .fill{background:var(--gloss),linear-gradient(180deg,#ff9b90,#C05050)}
+/* apps and connection */
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.app{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:var(--card);border:1px solid var(--edge);min-width:0}
+.app b{font-size:15px;display:block}
+.app span{font-size:13px;font-weight:700}
+.dot{width:26px;height:26px;flex:0 0 26px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--gloss),radial-gradient(circle at 50% 120%,#7ee0a6,#22865D 70%)}
+.dot svg{width:15px;height:15px;stroke-width:2.6}
+.app.down .dot{background:var(--gloss),radial-gradient(circle at 50% 120%,#c9d3d5,#7d8f93 70%)}
+.app.up span{color:var(--ok)} .app.down span{color:var(--off)}
+.two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;align-items:start}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:15px;margin:0}
+.kv dt{color:var(--ink2)} .kv dd{margin:0;text-align:right;font-weight:650;overflow-wrap:anywhere}
+footer{text-align:center;font-size:14px;color:var(--ink2);line-height:1.6}
+footer.lost{color:var(--bad);font-weight:700}
+@media(max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.panel{padding:16px;border-radius:22px}.big{font-size:32px}.name{font-size:20px}.grid,.drives{grid-template-columns:minmax(0,1fr)}
+ .apps{grid-template-columns:minmax(0,1fr)}.chip{font-size:14px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head>
 <body>
-<div class="top">
- <div class="brand">ELCACIQUEDECK<small>HOME LAB INSTRUMENT CLUSTER</small></div>
- <button id="lightBtn" title="Change backlight color">BACKLIGHT: AMBER</button>
-</div>
-<div class="cluster">
- <div class="main">
-  <div class="sidecol">
-   <div class="gauge" id="g-temp"></div>
-   <div class="lcd" id="lcd-left"></div>
-  </div>
-  <div class="gauge tach" id="g-cpu"></div>
-  <div class="sidecol">
-   <div class="gauge" id="g-net"></div>
-   <div class="lcd" id="lcd-right"></div>
-  </div>
- </div>
- <div class="pods">
-  <div class="gauge" id="g-ram"></div>
-  <div class="gauge" id="g-bat"></div>
-  <div class="gauge" id="g-fan"></div>
-  <div class="gauge" id="g-disk0"></div>
-  <div class="gauge" id="g-disk1"></div>
- </div>
- <div class="lights" id="lights"></div>
-</div>
-<div class="foot" id="foot">STARTING ENGINE…</div>
+<div class="wrap">
+ <header>
+  <div class="brand"><span class="orb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg></span>
+   <div><div class="name">CaciqueGauges</div><div class="sub">Salud del Home Lab · <span lang="en">Home Lab health</span></div></div></div>
+  <div class="tools"><span class="chip" id="clock">—</span><button class="btn" id="nightBtn" type="button" aria-pressed="false">🌙 Noche · Night</button></div>
+ </header>
 
+ <section class="panel" aria-live="polite">
+  <div class="verdict" id="verdict" data-v="wait">
+   <div class="vicon" id="vicon" aria-hidden="true"></div>
+   <div class="vtext"><div class="vtitle" id="vtitle">Revisando… · Checking…</div>
+    <div class="vsub" id="vsub">Leyendo el estado del servidor. · Reading the server's health.</div>
+    <div class="facts" id="facts"></div></div>
+  </div>
+ </section>
+
+ <section class="panel" aria-labelledby="h-now">
+  <h2 id="h-now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg>Ahora mismo <span class="en" lang="en">· Right now</span></h2>
+  <div class="grid" id="metrics"></div>
+ </section>
+
+ <section class="panel" aria-labelledby="h-drives">
+  <h2 id="h-drives"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2.5"/><path d="M7 12h.01M11 12h6"/></svg>Discos <span class="en" lang="en">· Drives</span></h2>
+  <div class="drives" id="drives"></div>
+ </section>
+
+ <div class="two">
+  <section class="panel" aria-labelledby="h-apps">
+   <h2 id="h-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>Aplicaciones <span class="en" lang="en">· Apps</span></h2>
+   <div class="apps" id="apps"></div>
+  </section>
+  <section class="panel" aria-labelledby="h-net">
+   <h2 id="h-net"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.8 16a4.8 4.8 0 0 1 6.4 0"/><circle cx="12" cy="19" r="1"/></svg>Conexión y equipo <span class="en" lang="en">· Connection & computer</span></h2>
+   <dl class="kv" id="kv"></dl>
+  </section>
+ </div>
+ <footer id="foot">Conectando… · Connecting…</footer>
+</div>
 <script>
-const NS="http://www.w3.org/2000/svg";
-function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
-const START=-225, SWEEP=270;            // classic 270-degree dial, 0 at lower-left
-function pt(cx,cy,r,deg){const a=(deg)*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)]}
-function arc(cx,cy,r,a0,a1){const[x0,y0]=pt(cx,cy,r,a0),[x1,y1]=pt(cx,cy,r,a1);
- return`M${x0} ${y0} A${r} ${r} 0 ${a1-a0>180?1:0} 1 ${x1} ${y1}`}
+const $=id=>document.getElementById(id);
+const ICON={ok:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',warn:'<path d="M12 7v6M12 17h.01"/>',bad:'<path d="M7 7l10 10M17 7 7 17"/>',na:'<path d="M6 12h12"/>',wait:'<path d="M12 6v6l3.5 2"/><circle cx="12" cy="12" r="8.5"/>',
+ drive:'<rect x="3" y="7" width="18" height="10" rx="2.5"/><path d="M7 12h.01M11 12h6"/>'};
+const svg=(n,c)=>`<svg ${c?`class="${c}"`:""} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[n]}</svg>`;
+const WORD={ok:["Normal","Normal"],warn:["Alto","High"],bad:["Crítico","Critical"],na:["Sin sensor","No sensor"]};
+const APPNAMES={LIBRARY:"CaciqueLibrary",FLIX:"CaciqueFlix",DOCS:"CaciqueDocs",GUARD:"CaciqueGuard",NAMES:"Nombres · Names",PHOTOS:"CaciquePhotos",
+ HOME:"CaciqueHome",FRONT:"Cacique (portada)",ARCADE:"CaciqueArcade",ACADEMY:"CaciqueAcademy",VAULT:"CaciqueVault"};
+const HIST={cpu:[],temp:[],ram:[],net:[]}, KEEP=300;   // last 5 minutes, one reading per second
+const lvl=(v,w,b)=>v==null||isNaN(v)?"na":v>=b?"bad":v>=w?"warn":"ok";
 
-const gauges={};
-function makeGauge(id,o){
- const host=document.getElementById(id);host.innerHTML="";
- const big=!!o.big, S=200, c=100;
- const svg=el("svg",{viewBox:`0 0 ${S} ${S}`},host);
- const defs=el("defs",{},svg);
- const bz=el("linearGradient",{id:id+"bz",x1:0,y1:0,x2:0,y2:1},defs);
- el("stop",{offset:"0",  "stop-color":"#e9e9ec"},bz);el("stop",{offset:".45","stop-color":"#6b6b70"},bz);
- el("stop",{offset:".55","stop-color":"#2a2a2e"},bz);el("stop",{offset:"1","stop-color":"#a9a9ae"},bz);
- const fc=el("radialGradient",{id:id+"fc",cx:".5",cy:".42",r:".65"},defs);
- el("stop",{offset:"0","stop-color":"#1d1d22"},fc);el("stop",{offset:"1","stop-color":"#050506"},fc);
- const gl=el("filter",{id:id+"gl",x:"-50%",y:"-50%",width:"200%",height:"200%"},defs);
- el("feGaussianBlur",{stdDeviation:"2.2",result:"b"},gl);
- const m=el("feMerge",{},gl);el("feMergeNode",{in:"b"},m);el("feMergeNode",{in:"SourceGraphic"},m);
-
- el("circle",{cx:c,cy:c,r:98,fill:`url(#${id}bz)`},svg);
- el("circle",{cx:c,cy:c,r:91,fill:"#000"},svg);
- el("circle",{cx:c,cy:c,r:89,fill:`url(#${id}fc)`},svg);
-
- const min=o.min||0,max=o.max,rl=o.red;
- const toDeg=v=>START+SWEEP*Math.max(0,Math.min(1,(v-min)/(max-min)));
- if(rl!=null) el("path",{d:arc(c,c,78,toDeg(rl),START+SWEEP),stroke:"var(--red)","stroke-width":big?9:8,fill:"none",opacity:.9,filter:`url(#${id}gl)`},svg);
- if(o.low!=null) el("path",{d:arc(c,c,78,START,toDeg(o.low)),stroke:"var(--red)","stroke-width":big?9:8,fill:"none",opacity:.9,filter:`url(#${id}gl)`},svg);
- el("path",{d:arc(c,c,84,START,START+SWEEP),stroke:"var(--glow)","stroke-width":1.2,fill:"none",opacity:.55},svg);
-
- const major=o.major, minor=o.minor||major/2;
- for(let v=min;v<=max+1e-9;v+=minor){
-  const isMaj=Math.abs(((v-min)/major)-Math.round((v-min)/major))<1e-6;
-  const d=toDeg(v), [x0,y0]=pt(c,c,isMaj?70:75,d), [x1,y1]=pt(c,c,84,d);
-  const red=(rl!=null&&v>=rl)||(o.low!=null&&v<o.low);
-  el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:red?"var(--red)":"var(--txt)","stroke-width":isMaj?2.6:1.2,"stroke-linecap":"round"},svg);
-  if(isMaj){const[tx,ty]=pt(c,c,big?57:56,d);
-   const t=el("text",{x:tx,y:ty+4,"text-anchor":"middle","font-size":big?13:12,"font-weight":"700","font-style":"italic",
-    fill:red?"var(--red)":"var(--glow2)",filter:`url(#${id}gl)`,"font-family":"inherit"},svg);
-   t.textContent=o.fmt?o.fmt(v):v;}
- }
- const lab=el("text",{x:c,y:big?124:70,"text-anchor":"middle","font-size":big?11:10,"letter-spacing":"2","fill":"#9b968c","font-family":"inherit"},svg);lab.textContent=o.label;
- if(o.unit){const u=el("text",{x:c,y:big?135:81,"text-anchor":"middle","font-size":8,"letter-spacing":"1.5",fill:"#6c675f","font-family":"inherit"},svg);u.textContent=o.unit;}
- const val=el("text",{x:c,y:big?162:157,"text-anchor":"middle","font-size":big?24:20,"font-weight":"700",fill:"var(--glow2)",filter:`url(#${id}gl)`,"font-family":"inherit"},svg);val.textContent="--";
- const sub=el("text",{x:c,y:big?177:172,"text-anchor":"middle","font-size":8.5,"letter-spacing":"1.5",fill:"#7d786f","font-family":"inherit"},svg);
-
- const g=el("g",{class:"needle",style:`transform-origin:${c}px ${c}px;transform:rotate(${START}deg)`},svg);
- el("path",{d:`M${c-3} ${c} L${c+(big?80:74)} ${c-1} L${c+(big?80:74)} ${c+1} L${c-3} ${c+2.5} Z`,transform:`translate(0,-0.75)`,fill:"var(--red)",filter:`url(#${id}gl)`},g);
- el("rect",{x:c-22,y:c-2,width:20,height:4,rx:2,fill:"#222"},g);
- el("circle",{cx:c,cy:c,r:big?11:9,fill:"#1a1a1d",stroke:"#555","stroke-width":1.5},svg);
- el("circle",{cx:c,cy:c,r:3,fill:"#666"},svg);
- const warn=el("circle",{cx:c+(big?52:48),cy:c+(big?52:48),r:4,fill:"#300"},svg);
- gauges[id]={toDeg,g,val,sub,warn,o};
+function spark(arr,max){
+ if(arr.length<2)return'<svg class="spark" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true"></svg>';
+ const m=Math.max(max||0,...arr,1),n=arr.length,x=i=>300*i/(n-1),y=v=>44-40*(v/m);
+ const pts=arr.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
+ return`<svg class="spark" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true"><polygon class="area" points="${x(0)},46 ${pts} ${x(n-1)},46"/><polyline class="line" points="${pts}"/></svg>`;
 }
-function setGauge(id,v,text,subtext){
- const G=gauges[id];if(!G)return;
- const ok=v!=null&&!isNaN(v);
- G.g.style.transform=`rotate(${ok?G.toDeg(v):START}deg)`;
- G.val.textContent=ok?(text!=null?text:Math.round(v)):"N/A";
- G.sub.textContent=subtext||"";
- const hot=ok&&((G.o.red!=null&&v>=G.o.red)||(G.o.low!=null&&v<G.o.low));
- G.warn.setAttribute("fill",hot?"var(--red)":"#300");
- G.warn.setAttribute("filter",hot?`url(#${id}gl)`:"");
+function card(id,label,en,value,unit,pct,s,detail,hist,max){
+ const st=WORD[s];
+ return`<article class="card" data-s="${s}" aria-label="${label} ${value==null?"":value+unit}, ${st[0]}">
+  <div class="ctop"><span class="clabel">${label}<span class="en" lang="en">${en}</span></span><span class="state">${svg(s)}${st[0]} <span lang="en">· ${st[1]}</span></span></div>
+  <div class="big">${value==null?"—":value}<small>${value==null?"":unit}</small></div>
+  ${pct==null?"":`<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><div class="fill" style="width:${Math.max(0,Math.min(100,pct))}%"></div></div>`}
+  <div class="detail">${detail||""}</div>
+  ${hist?spark(hist,max)+`<div class="sparkcap"><span>${since(hist.length)}</span><span>ahora · now</span></div>`:""}
+ </article>`;
 }
+function since(n){return n>=KEEP?"hace 5 min · 5 min ago":n<60?`hace ${n} s · ${n} s ago`:`hace ${Math.floor(n/60)} min · ${Math.floor(n/60)} min ago`}
+function upFmt(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+ return(d?d+" d ":"")+h+" h "+m+" min";}
+function push(k,v){if(v==null||isNaN(v))return;HIST[k].push(v);if(HIST[k].length>KEEP)HIST[k].shift();}
 
-makeGauge("g-cpu",{big:1,label:"CPU LOAD",unit:"x10 %",max:100,major:10,minor:5,red:85,fmt:v=>v/10});
-makeGauge("g-temp",{label:"CPU TEMP",unit:"°C",min:30,max:110,major:20,minor:10,red:85});
-makeGauge("g-net",{label:"NETWORK",unit:"Mbps",max:100,major:20,minor:10});
-makeGauge("g-ram",{label:"RAM",unit:"%",max:100,major:25,red:90});
-makeGauge("g-bat",{label:"BATTERY",unit:"%",max:100,major:25,low:15});
-makeGauge("g-fan",{label:"FAN",unit:"x1000 RPM",max:6000,major:1000,minor:500,red:5000,fmt:v=>v/1000});
-makeGauge("g-disk0",{label:"DISK",unit:"% FULL",max:100,major:25,red:90});
-makeGauge("g-disk1",{label:"DISK 2",unit:"% FULL",max:100,major:25,red:90});
-
-function fmtUp(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return`${d}D ${String(h).padStart(2,"0")}H ${String(m).padStart(2,"0")}M`}
-function lamp(name,cls){return`<div class="lamp ${cls}">${name}</div>`}
-
+let lost=0;
 async function tick(){
  try{
   const r=await fetch("/api",{cache:"no-store"});const s=await r.json();
-  if(!s.host){return}
-  setGauge("g-cpu",s.cpu,Math.round(s.cpu)+"%",`LOAD ${s.load[0]}`);
-  setGauge("g-temp",s.temp,s.temp!=null?Math.round(s.temp)+"°":null,s.temp!=null?"":"NO SENSOR");
-  const net=s.rx+s.tx;
-  setGauge("g-net",Math.min(net,100),net<10?net.toFixed(1):Math.round(net),`↓${s.rx.toFixed(1)} ↑${s.tx.toFixed(1)}`);
-  setGauge("g-ram",s.ram_pct,Math.round(s.ram_pct)+"%",`${s.ram_used_gb}/${s.ram_total_gb} GB`);
-  const b=s.bat;
-  setGauge("g-bat",b.pct,b.pct!=null?b.pct+"%":null,b.status?(({Charging:"CHARGING",Discharging:"ON BATTERY",Full:"FULL","Not charging":"PLUGGED IN"})[b.status]||b.status.toUpperCase())+(b.watts?` ${b.watts}W`:""):"NO BATTERY");
-  setGauge("g-fan",s.fan,s.fan!=null?s.fan:null,s.fan!=null?"RPM":"NO SENSOR");
-  const d=s.disks||[];
-  setGauge("g-disk0",d[0]?d[0].pct:null,d[0]?d[0].pct+"%":null,d[0]?`${d[0].name} ${d[0].free_gb}GB FREE`:"");
-  setGauge("g-disk1",d[1]?d[1].pct:null,d[1]?d[1].pct+"%":null,d[1]?`${d[1].name} ${d[1].free_gb}GB FREE`:"NOT MOUNTED");
-  document.getElementById("lcd-left").innerHTML=
-   `HOST <b>${s.host.toUpperCase()}</b><br>IP&nbsp;&nbsp; <b>${s.ip||"--"}</b><br>LINK <b>${s.iface||"--"}</b>`;
-  document.getElementById("lcd-right").innerHTML=
-   `UPTIME <b>${fmtUp(s.uptime)}</b><br>CORES&nbsp; <b>${s.cores}</b><br>CLOCK&nbsp; <b>${s.time}</b>`;
-  let L="";
-  L+=lamp("LAN",s.link?"on":"bad");
-  L+=lamp("INTERNET",s.internet==null?"":s.internet?"on":"warn");
-  L+=lamp("AC POWER",b.ac==null?"":b.ac?"on":"warn");
-  L+=lamp("BATT LOW",b.pct!=null&&b.pct<15?"bad":"");
-  L+=lamp("OVERHEAT",s.temp!=null&&s.temp>=85?"bad":"");
-  for(const k in s.services)L+=lamp(k,s.services[k]?"on":"");
-  document.getElementById("lights").innerHTML=L;
-  document.getElementById("foot").textContent=`LIVE · UPDATED ${s.time}`;
+  if(!s.host)return;
+  lost=0;
+  const net=+(s.rx+s.tx).toFixed(1);
+  push("cpu",s.cpu);push("temp",s.temp);push("ram",s.ram_pct);push("net",net);
+  const b=s.bat||{}, d=s.disks||[];
+  const cS=lvl(s.cpu,70,90), tS=lvl(s.temp,70,85), rS=lvl(s.ram_pct,80,92);
+  const bS=b.pct==null?"na":(b.pct<15&&!b.ac?"bad":b.pct<30&&!b.ac?"warn":"ok");
+  let M="";
+  M+=card("cpu","Procesador","CPU",Math.round(s.cpu),"%",s.cpu,cS,`Carga · Load ${s.load[0]} · ${s.cores} núcleos · cores`,HIST.cpu,100);
+  M+=card("temp","Temperatura","Temperature",s.temp==null?null:Math.round(s.temp),"°C",s.temp==null?null:Math.min(100,(s.temp-30)/(95-30)*100),tS,
+   s.temp==null?"Este equipo no muestra la temperatura · No sensor":(s.temp<70?"Cómodo · Comfortable":s.temp<85?"Caliente: revisa la ventilación · Warm: check airflow":"Muy caliente · Very hot"),HIST.temp,95);
+  M+=card("ram","Memoria","Memory",Math.round(s.ram_pct),"%",s.ram_pct,rS,`${s.ram_used_gb} de ${s.ram_total_gb} GB en uso · in use`,HIST.ram,100);
+  M+=card("net","Red","Network",net,"Mbps",null,s.link?"ok":"bad",`↓ ${s.rx.toFixed(1)} · ↑ ${s.tx.toFixed(1)} Mbps`,HIST.net,null);
+  M+=card("bat",b.ac===false?"Batería":"Corriente","Power",b.pct,"%",b.pct,bS,
+   b.pct==null?"Sin batería · No battery":({Charging:"Cargando · Charging",Discharging:"Usando la batería · On battery",Full:"Llena · Full","Not charging":"Conectada · Plugged in"}[b.status]||b.status||"")+(b.watts?` · ${b.watts} W`:""),null);
+  if(s.fan!=null)M+=card("fan","Ventilador","Fan",s.fan,"RPM",Math.min(100,s.fan/60),lvl(s.fan,4500,5500),"",null);
+  $("metrics").innerHTML=M;
+
+  $("drives").innerHTML=d.length?d.map(x=>{const ds=lvl(x.pct,85,95);const nm=x.name==="SYSTEM"?"Sistema · System":x.name.charAt(0)+x.name.slice(1).toLowerCase();
+   return`<div class="drive" data-s="${ds}"><span class="dicon">${svg("drive")}</span><div class="dtext"><div class="dname">${nm}</div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${x.pct}" aria-label="${nm} ${x.pct}%"><div class="fill" style="width:${x.pct}%"></div></div>
+    <div class="dfree">${x.free_gb.toLocaleString("es")} GB libres de ${x.total_gb.toLocaleString("es")} GB · ${x.pct}% usado · used</div></div></div>`}).join("")
+   :'<p class="dfree">No se ven discos · No drives found</p>';
+
+  const svc=s.services||{};let A="",down=0,tot=0;
+  for(const k in svc){tot++;if(!svc[k])down++;
+   A+=`<div class="app ${svc[k]?"up":"down"}"><span class="dot">${svg(svc[k]?"ok":"na")}</span><div><b>${APPNAMES[k]||k}</b><span>${svc[k]?"En línea · Online":"Apagada · Off"}</span></div></div>`;}
+  $("apps").innerHTML=A;
+
+  $("kv").innerHTML=`<dt>Red de la casa · LAN</dt><dd>${s.link?"Conectada · Connected":"Sin conexión · Disconnected"}</dd>
+   <dt>Internet</dt><dd>${s.internet==null?"Revisando…":s.internet?"Sí · Yes":"No (la casa funciona igual) · No"}</dd>
+   <dt>Dirección · Address</dt><dd>${s.ip||"—"}</dd><dt>Conexión · Interface</dt><dd>${s.iface?(s.iface.startsWith("wl")?"Wi-Fi ("+s.iface+")":"Cable ("+s.iface+")"):"—"}</dd>
+   <dt>Equipo · Computer</dt><dd>${s.host}</dd><dt>Encendido · Up</dt><dd>${upFmt(s.uptime)}</dd>`;
+
+  // the one-line verdict
+  const worst=[cS,tS,rS,bS,s.link?"ok":"bad",...d.map(x=>lvl(x.pct,85,95))];
+  const v=worst.includes("bad")?"bad":worst.includes("warn")?"warn":"ok";
+  const T={ok:["Todo funciona bien","Everything is running well"],warn:["Funciona, pero algo necesita atención","Running, but something needs attention"],bad:["Hay un problema","There's a problem"]}[v];
+  $("verdict").dataset.v=v;$("vicon").innerHTML=svg(v);
+  $("vtitle").innerHTML=`${T[0]} <span class="en" lang="en">· ${T[1]}</span>`;
+  $("vsub").textContent=v==="ok"?"Procesador, temperatura, memoria y discos en niveles normales. · CPU, temperature, memory and drives are normal."
+   :"Mira las tarjetas marcadas en amarillo o rojo. · Look at the cards marked yellow or red.";
+  $("facts").innerHTML=`<span>Aplicaciones · Apps: <b>${tot-down} de ${tot} en línea</b></span><span>Encendido · Up: <b>${upFmt(s.uptime)}</b></span><span>Internet: <b>${s.internet?"Sí · Yes":s.internet==null?"…":"No"}</b></span>`;
+  const f=$("foot");f.className="";f.textContent=`En vivo · Live · actualizado ${s.time} · Lecturas guardadas cada minuto en ~/deck-logs`;
  }catch(e){
-  document.getElementById("foot").textContent="NO SIGNAL FROM SERVER — IS THE DASHBOARD STILL RUNNING?";
+  if(++lost>=3){const f=$("foot");f.className="lost";f.textContent="Sin señal del servidor: revisa la corriente, la red o la computadora. · No signal: check power, network or the computer.";
+   $("verdict").dataset.v="bad";$("vicon").innerHTML=svg("bad");$("vtitle").textContent="Sin señal · No signal";}
  }
 }
-
-// startup needle sweep, like turning the key
-function sweep(){
- const ids=Object.keys(gauges);
- ids.forEach(id=>{const G=gauges[id];G.g.style.transform=`rotate(${START+SWEEP}deg)`});
- setTimeout(()=>{ids.forEach(id=>{gauges[id].g.style.transform=`rotate(${START}deg)`});
-  setTimeout(()=>{tick();setInterval(tick,1000)},900)},1000);
-}
-
-const colors=["","blue","red","white"],names=["AMBER","BLUE","RED","WHITE"];
-let ci=0;try{ci=+localStorage.getItem("dashColor")||0}catch(e){}
-function applyColor(){document.body.className=colors[ci];document.getElementById("lightBtn").textContent="BACKLIGHT: "+names[ci];
- try{localStorage.setItem("dashColor",ci)}catch(e){}}
-document.getElementById("lightBtn").onclick=()=>{ci=(ci+1)%colors.length;applyColor()};
-applyColor();sweep();
+function clock(){const n=new Date();let t;try{t=n.toLocaleDateString("es-PR",{weekday:"long",day:"numeric",month:"long"})+" · "+n.toLocaleTimeString("es-PR",{hour:"numeric",minute:"2-digit"})}catch(e){t=n.toString()}
+ $("clock").textContent=t.charAt(0).toUpperCase()+t.slice(1);}
+function night(on,save){document.body.classList.toggle("night",on);$("nightBtn").setAttribute("aria-pressed",on);$("nightBtn").textContent=on?"☀️ Día · Day":"🌙 Noche · Night";
+ if(save)try{localStorage.setItem("gaugesNight",on?"1":"0")}catch(e){}}
+$("nightBtn").onclick=()=>night(!document.body.classList.contains("night"),true);
+let n0=false;try{n0=localStorage.getItem("gaugesNight")==="1"}catch(e){}
+night(n0,false);$("vicon").innerHTML=svg("wait");clock();setInterval(clock,30000);tick();setInterval(tick,1000);
 </script>
 </body></html>"""
 
