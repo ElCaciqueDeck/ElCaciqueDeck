@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # ElCaciqueDeck - start every server with one command
 #
-#   bash ~/elcaciquedeck/start-all.sh
+#   bash ~/elcaciquedeck/start-all.sh           everything that's set up
+#   bash ~/elcaciquedeck/start-all.sh --light   LIGHT MODE: only the family apps (cooler, less memory):
+#       front page + names, Flix, Photos (without its AI helper), Library, Arcade, Academy, Home, Gauges.
+#       Skipped: Docs, Vault, Calendar, Finanzas, Office, Cams, Guía (AI), Sync.
 #
 # Starts only what's set up and not already running, then shows a status table.
 # Servers keep running after you close the Terminal. Stop them all with:
@@ -16,6 +19,8 @@ CACIQUE_LEVEL=2
 # shellcheck disable=SC1091
 [ -f "$HOME/elcaciquedeck-data/cacique.conf" ] && . "$HOME/elcaciquedeck-data/cacique.conf"
 RUN="$REPO/reports/run"
+LIGHT=0; [ "$1" = "--light" ] && LIGHT=1
+LIGHT_SKIP=" paperless vaultwarden calendar finanzas office cameras guide "
 mkdir -p "$RUN"
 
 up() {   # true if something answers on the port (even with an error - we only avoid starting it twice)
@@ -24,7 +29,7 @@ up() {   # true if something answers on the port (even with an error - we only a
 }
 
 echo
-echo "  ELCACIQUEDECK · starting servers"
+echo "  ELCACIQUEDECK · starting servers$([ "$LIGHT" = 1 ] && echo " (LIGHT MODE: family apps only)")"
 echo "  ---------------------------------"
 
 if [ -d "$LIBRARY/Kiwix" ]; then
@@ -74,6 +79,9 @@ fi
 
 # --- Docker servers (only the ones that have been set up) ---------------
 start_stack() {   # start_stack <folder> <name> <marker file that proves it was set up>
+    if [ "$LIGHT" = 1 ] && [[ "$LIGHT_SKIP" == *" $1 "* ]]; then
+        echo "  $2 skipped (light mode)"; return
+    fi
     if [ -e "$REPO/$1/$3" ]; then
         (cd "$REPO/$1" && docker compose up -d >"$RUN/$1.log" 2>&1) \
             && echo "  $2 started" || echo "  $2 FAILED - see $RUN/$1.log"
@@ -82,6 +90,8 @@ start_stack() {   # start_stack <folder> <name> <marker file that proves it was 
 start_stack paperless     "CaciqueDocs"   ".env"
 start_stack adguard       "CaciqueGuard"  "conf"
 start_stack immich        "CaciquePhotos" ".env"
+# light mode: the photo app's AI helper (faces/search) is the biggest memory user - pause it; photos still work
+[ "$LIGHT" = 1 ] && docker stop immich_machine_learning >/dev/null 2>&1 && echo "  CaciquePhotos AI helper paused (light mode)"
 start_stack homeassistant "CaciqueHome"   ".env"
 start_stack arcade        "CaciqueArcade" ".env"
 start_stack vaultwarden   "CaciqueVault"  ".env"
@@ -94,15 +104,15 @@ start_stack guide         "CaciqueGuía (AI engine)" ".env"
 start_stack homepage      "Cacique"       ".env"
 
 # --- programs that are not in Docker, added by the installer --------------
-if [ -f "$REPO/guide/.env" ] && ! up 8070; then
+if [ "$LIGHT" = 0 ] && [ -f "$REPO/guide/.env" ] && ! up 8070; then
     nohup python3 "$REPO/guide/caciqueguia.py" >"$RUN/guide.log" 2>&1 &
     echo "  CaciqueGuía (chat page) starting..."
 fi
-if [ -f "$REPO/finanzas/.env" ] && ! up 8075; then
+if [ "$LIGHT" = 0 ] && [ -f "$REPO/finanzas/.env" ] && ! up 8075; then
     nohup python3 "$REPO/finanzas/caciquefinanzas.py" >"$RUN/finanzas.log" 2>&1 &
     echo "  CaciqueFinanzas coach starting..."
 fi
-if command -v syncthing >/dev/null && [ -f "$HOME/elcaciquedeck-data/sync.enabled" ] && ! up 8384; then
+if [ "$LIGHT" = 0 ] && command -v syncthing >/dev/null && [ -f "$HOME/elcaciquedeck-data/sync.enabled" ] && ! up 8384; then
     nohup syncthing serve --no-browser --gui-address=0.0.0.0:8384 >"$RUN/syncthing.log" 2>&1 &
     echo "  CaciqueSync starting..."
 fi
