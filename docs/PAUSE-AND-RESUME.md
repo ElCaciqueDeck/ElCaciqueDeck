@@ -26,7 +26,10 @@
 - Smart home next: Kasa HS103 (v5, may ask for the Kasa account once) and Philips Hue in CaciqueHome.
 
 ## ▶️ Tomorrow (Nov 12) · pick up here
-1. Server on: `bash ~/elcaciquedeck/start-all.sh --light`, then `bash ~/elcaciquedeck/status.sh` (all at `.250`; check Library + Arcade are UP).
+1. **The IdeaPad stays ON overnight (Nov 11 → 12)** in light mode, lid closed, raised for airflow, both drives connected,
+   so CaciqueGauges keeps logging; Jay watches it from his phone. Two family members got the `.250` link to try from either Wi-Fi.
+   Tomorrow: **no restart needed**. Just `bash ~/elcaciquedeck/status.sh` (all at `.250`; check Library + Arcade are UP),
+   ask the two family members if the page opened, and look at the overnight log (`ls ~/deck-logs`).
 2. **Account tests:** ElCaciqueAdmin first, then Jay's personal account. Run every family app with each one,
    from the wired PC **and** a phone on **both** Wi-Fis (Liberty + living-room Archer).
 3. If time allows: **smart devices into CaciqueHome**. The Kasa plug shows as **"HS103"** in the Deeper app (confirmed);
