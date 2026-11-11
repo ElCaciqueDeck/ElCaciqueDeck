@@ -41,7 +41,7 @@ if ! command -v curl >/dev/null; then
     sudo apt-get install -y curl >/dev/null 2>&1 && ok "curl installed" || warn "Could not install curl; tests will be skipped"
 fi
 
-LAPTOP_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')"
+LAPTOP_IP="$(ip -4 -o addr show scope global 2>/dev/null | awk '$2 !~ /^(docker|br-|veth|virbr|tailscale|lo)/ {split($4,a,"/"); print a[1]; exit}')"
 [ -n "$LAPTOP_IP" ] && ok "Laptop number (IP): $LAPTOP_IP" || warn "Could not find the laptop's IP (is the network cable in?)"
 
 # ---------------------------------------------------------------- 2

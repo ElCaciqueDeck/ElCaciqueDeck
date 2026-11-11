@@ -36,7 +36,8 @@ finish() {
 }
 
 laptop_ip() {
-    ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}'
+    # the house address of this computer (Wi-Fi or cable) - never Docker's inside-the-computer networks (172.x)
+    ip -4 -o addr show scope global 2>/dev/null | awk '$2 !~ /^(docker|br-|veth|virbr|tailscale|lo)/ {split($4,a,"/"); print a[1]; exit}'
 }
 
 need_docker() {

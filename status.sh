@@ -8,7 +8,8 @@ code() {
     else (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && echo 200 || echo 000; fi
 }
 line() { printf "  %-16s %-6s %s\n" "$1" "$2" "$3"; }
-IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')"
+IP="$(ip -4 -o addr show scope global 2>/dev/null | awk '$2 !~ /^(docker|br-|veth|virbr|tailscale|lo)/ {split($4,a,"/"); print a[1]; exit}')"
+[ -n "$IP" ] || echo "  !! This computer has NO house address right now: the Wi-Fi/cable is not connected."
 
 echo
 line "SERVER" "STATUS" "ADDRESS"
