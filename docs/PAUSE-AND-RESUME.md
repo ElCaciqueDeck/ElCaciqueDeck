@@ -14,6 +14,14 @@
 | Drives | ✅ Library + Vault mount at `/media/<user>/…` at power-on (fstab by label) |
 | Still open | ⬜ Phone couldn't open the front page ("taking too long"); ⬜ account tests with ElCaciqueAdmin + Jay; ⬜ reserve the server's address in the router |
 
+## Update · Nov 10–11, 2026 (interim network, family access)
+- Living-room **TP-Link Archer AX1500 → Access Point mode**: the house is ONE network (`192.168.40.x`); the Deeper Mini
+  (transparent) now sees and filters every device behind it. **Deeper HTTPS filter OFF** (it broke YouTube on the TV).
+- IdeaPad back as the interim server in **light mode**, lid closed: `bash ~/elcaciquedeck/start-all.sh --light`
+- The Liberty Sagemcom page has no DHCP reservation → fixed address set on the IdeaPad:
+  `bash ~/elcaciquedeck/tools/set-address.sh --check`, then without `--check` (default: number .27).
+- Smart home next: Kasa HS103 (v5, may ask for the Kasa account once) and Philips Hue in CaciqueHome.
+
 ## The hardware plan (decided Nov 5)
 **4 new computers:**
 - **3 servers:** Lenovo ThinkCentre M720q (i5, 16 GB) = the Proxmox cluster (1 head + 2 workers). `docs/rig-shopping-list.md`
