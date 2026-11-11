@@ -411,7 +411,7 @@ footer.lost{color:var(--bad);font-weight:700}
  <header>
   <div class="brand"><span class="orb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg></span>
    <div><div class="name">CaciqueGauges</div><div class="sub">Salud del Home Lab · <span lang="en">Home Lab health</span></div></div></div>
-  <div class="tools"><span class="chip" id="clock">—</span><button class="btn" id="nightBtn" type="button" aria-pressed="false">🌙 Noche · Night</button></div>
+  <div class="tools"><span class="chip" id="clock">—</span><button class="btn" id="unitBtn" type="button" title="Cambiar a °C · Switch to °C">°F</button><button class="btn" id="nightBtn" type="button" aria-pressed="false">🌙 Noche · Night</button></div>
  </header>
 
  <section class="panel" aria-live="polite">
@@ -490,7 +490,7 @@ async function tick(){
   const bS=b.pct==null?"na":(b.pct<15&&!b.ac?"bad":b.pct<30&&!b.ac?"warn":"ok");
   let M="";
   M+=card("cpu","Procesador","CPU",Math.round(s.cpu),"%",s.cpu,cS,`Carga · Load ${s.load[0]} · ${s.cores} núcleos · cores`,HIST.cpu,100);
-  M+=card("temp","Temperatura","Temperature",s.temp==null?null:Math.round(s.temp),"°C",s.temp==null?null:Math.min(100,(s.temp-30)/(95-30)*100),tS,
+  M+=card("temp","Temperatura","Temperature",s.temp==null?null:Math.round(FAHR?s.temp*9/5+32:s.temp),FAHR?"°F":"°C",s.temp==null?null:Math.min(100,(s.temp-30)/(95-30)*100),tS,
    s.temp==null?"Este equipo no muestra la temperatura · No sensor":(s.temp<70?"Cómodo · Comfortable":s.temp<85?"Caliente: revisa la ventilación · Warm: check airflow":"Muy caliente · Very hot"),HIST.temp,95);
   M+=card("ram","Memoria","Memory",Math.round(s.ram_pct),"%",s.ram_pct,rS,`${s.ram_used_gb} de ${s.ram_total_gb} GB en uso · in use`,HIST.ram,100);
   M+=card("net","Red","Network",net,"Mbps",null,s.link?"ok":"bad",`↓ ${s.rx.toFixed(1)} · ↑ ${s.tx.toFixed(1)} Mbps`,HIST.net,null);
@@ -534,6 +534,11 @@ function clock(){const n=new Date();let t;try{t=n.toLocaleDateString("es-PR",{we
  $("clock").textContent=t.charAt(0).toUpperCase()+t.slice(1);}
 function night(on,save){document.body.classList.toggle("night",on);$("nightBtn").setAttribute("aria-pressed",on);$("nightBtn").textContent=on?"☀️ Día · Day":"🌙 Noche · Night";
  if(save)try{localStorage.setItem("gaugesNight",on?"1":"0")}catch(e){}}
+// Puerto Rico reads °F; one tap switches to °C (remembered on this device)
+let FAHR=true;try{FAHR=localStorage.getItem("gaugesUnit")!=="C"}catch(e){}
+function unitLabel(){$("unitBtn").textContent=FAHR?"°F":"°C";$("unitBtn").title=FAHR?"Cambiar a °C · Switch to °C":"Cambiar a °F · Switch to °F";}
+$("unitBtn").onclick=()=>{FAHR=!FAHR;try{localStorage.setItem("gaugesUnit",FAHR?"F":"C")}catch(e){}unitLabel();tick();};
+unitLabel();
 $("nightBtn").onclick=()=>night(!document.body.classList.contains("night"),true);
 let n0=false;try{n0=localStorage.getItem("gaugesNight")==="1"}catch(e){}
 night(n0,false);$("vicon").innerHTML=svg("wait");clock();setInterval(clock,30000);tick();setInterval(tick,1000);

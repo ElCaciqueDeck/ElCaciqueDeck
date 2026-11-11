@@ -12,14 +12,17 @@
 | Front page | ✅ Aero Naturaleza design, Familia / Invitado views (merged to `main`) |
 | CaciqueGauges (:8888) | ✅ Aero health page, always-on service; first look on the IdeaPad still to confirm (reload the tab) |
 | Drives | ✅ Library + Vault mount at `/media/<user>/…` at power-on (fstab by label) |
-| Still open | ⬜ Phone couldn't open the front page ("taking too long"); ⬜ account tests with ElCaciqueAdmin + Jay; ⬜ reserve the server's address in the router |
+| Still open | ✅ phone access (Nov 11); ✅ fixed address; ⬜ account tests with ElCaciqueAdmin + Jay; ⬜ who-owns-which-device list → personal accounts; ⬜ Library/Arcade check |
 
 ## Update · Nov 10–11, 2026 (interim network, family access)
 - Living-room **TP-Link Archer AX1500 → Access Point mode**: the house is ONE network (`192.168.40.x`); the Deeper Mini
   (transparent) now sees and filters every device behind it. **Deeper HTTPS filter OFF** (it broke YouTube on the TV).
 - IdeaPad back as the interim server in **light mode**, lid closed: `bash ~/elcaciquedeck/start-all.sh --light`
-- The Liberty Sagemcom page has no DHCP reservation → fixed address set on the IdeaPad:
-  `bash ~/elcaciquedeck/tools/set-address.sh --check`, then without `--check` (default: number .27).
+- The Liberty Sagemcom page has no DHCP reservation → fixed address set on the IdeaPad with `tools/set-address.sh`.
+  **.27 was taken by another device** (it ignored ping), so the server is now **`192.168.x.250`** (high numbers stay clear of
+  the router's handouts). Survived a restart. ✅ Front page from the wired PC and phones on both Wi-Fis; CaciqueGauges ≈1–2% CPU, 48 °C.
+- To restart Ubuntu when GNOME blocks `sudo reboot`: `sudo systemctl reboot -i`.
+- CaciqueGauges shows °F by default (Puerto Rico), one tap for °C.
 - Smart home next: Kasa HS103 (v5, may ask for the Kasa account once) and Philips Hue in CaciqueHome.
 
 ## The hardware plan (decided Nov 5)
