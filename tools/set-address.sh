@@ -26,10 +26,21 @@ do_() { if [ "$CHECK" = 1 ]; then echo "  would run: $*"; else "$@"; fi; }
 step "1/5  The connection in use"
 DEV="$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev"){print $(i+1); exit}}')"
 GW="$(ip route show default 2>/dev/null | awk '{print $3; exit}')"
-[ -n "$DEV" ] && [ -n "$GW" ] || fail "No network connection found. Connect to the home Wi-Fi (or cable) and run this again."
+case "$DEV" in docker*|br-*|veth*) DEV=""; GW="" ;; esac
+if [ -z "$DEV" ]; then
+    # Wi-Fi joined but WITHOUT a house address (e.g. the fixed number was taken): use the saved profile instead
+    DEV="$(nmcli -t -f DEVICE,TYPE,STATE device 2>/dev/null | awk -F: '($2=="wifi"||$2=="ethernet") && $3 ~ /^connected/ {print $1; exit}')"
+    [ -n "$DEV" ] || fail "No network connection found. Connect to the home Wi-Fi (or cable) and run this again."
+    CON0="$(nmcli -t -f NAME,DEVICE connection show --active | awk -F: -v d="$DEV" '$2==d{print $1; exit}')"
+    GW="$(nmcli -g ipv4.gateway connection show "$CON0" 2>/dev/null)"
+    [ -n "$GW" ] || fail "$DEV is joined but has no house address and no saved router. Undo first: bash ~/elcaciquedeck/tools/set-address.sh --auto"
+    warn "$DEV is joined to the Wi-Fi but has NO house address right now (using the saved settings)"
+fi
 CON="$(nmcli -t -f NAME,DEVICE connection show --active | awk -F: -v d="$DEV" '$2==d{print $1; exit}')"
 [ -n "$CON" ] || fail "Could not find the NetworkManager connection for $DEV"
 CUR="$(ip -4 -o addr show dev "$DEV" | awk '{print $4; exit}')"      # e.g. 192.168.40.33/24
+[ -n "$CUR" ] || CUR="$(nmcli -g ipv4.addresses connection show "$CON" 2>/dev/null | cut -d, -f1)"
+[ -n "$CUR" ] || CUR="${GW%.*}.0/24"
 CUR_IP="${CUR%/*}"; PREFIX="${CUR#*/}"
 ok "Connection: \"$CON\" on $DEV ($( [[ $DEV == wl* ]] && echo Wi-Fi || echo cable ))"
 ok "Address now: $CUR_IP   Router: $GW"
@@ -43,17 +54,27 @@ if [ "$AUTO" = 1 ]; then
 fi
 
 [ -n "$WANT" ] || WANT="${GW%.*}.27"
+# a high number (e.g. .250) is safest: routers hand out numbers from the bottom up
 [[ "$WANT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "\"$WANT\" is not an address like 192.168.40.27"
 [ "${WANT%.*}" = "${GW%.*}" ] || fail "$WANT is not on the same network as the router ($GW). Use ${GW%.*}.<number>"
 [ "$WANT" != "$GW" ] || fail "That's the router's own address. Pick another number."
 
 step "2/5  Is $WANT free?"
-if [ "$WANT" = "$CUR_IP" ]; then
+# phones and TVs often ignore 'ping', but every device must answer the network's "who has this number?" (ARP)
+taken() {
+    ping -c 2 -W 1 -I "$DEV" "$1" >/dev/null 2>&1 && return 0
+    ip neigh show "$1" dev "$DEV" 2>/dev/null | grep -q lladdr && return 0
+    if command -v arping >/dev/null; then
+        sudo -n arping -D -q -c 2 -I "$DEV" "$1" >/dev/null 2>&1; [ $? = 1 ] && return 0   # 1 = someone replied
+    fi
+    return 1
+}
+if [ "$WANT" = "$CUR_IP" ] && ip -4 -o addr show dev "$DEV" | grep -q " $WANT/"; then
     ok "This computer already has $WANT (it will be made permanent)"
-elif ping -c 2 -W 1 "$WANT" >/dev/null 2>&1; then
-    fail "Another device answers on $WANT. Choose another number, e.g.: bash ~/elcaciquedeck/tools/set-address.sh ${GW%.*}.50"
+elif taken "$WANT"; then
+    fail "Another device already uses $WANT ($(ip neigh show "$WANT" dev "$DEV" 2>/dev/null | awk '{print $3}')). Choose another number, e.g.: bash ~/elcaciquedeck/tools/set-address.sh ${GW%.*}.250"
 else
-    ok "Nobody answers on $WANT - it's free"
+    ok "Nobody uses $WANT - it's free"
 fi
 
 # every old address El Cacique may have saved (the current one + the one the front page was set up with)
