@@ -36,8 +36,8 @@ ok "Address now: $CUR_IP   Router: $GW"
 
 if [ "$AUTO" = 1 ]; then
     step "Back to an automatic address"
-    do_ nmcli connection modify "$CON" ipv4.method auto ipv4.addresses "" ipv4.gateway "" ipv4.dns ""
-    do_ nmcli connection up "$CON"
+    do_ sudo nmcli connection modify "$CON" ipv4.method auto ipv4.addresses "" ipv4.gateway "" ipv4.dns "" ipv4.ignore-auto-dns no
+    do_ sudo nmcli device reapply "$DEV"
     ok "Automatic address again. If the number changes, run this tool once more with the number you want."
     finish; exit 0
 fi
@@ -69,12 +69,29 @@ if [ "$CHECK" = 0 ]; then
 fi
 
 step "3/5  Fixed address"
-do_ nmcli connection modify "$CON" ipv4.method manual ipv4.addresses "$WANT/${PREFIX:-24}" ipv4.gateway "$GW" ipv4.dns "$GW"
-if [ "$CHECK" = 0 ]; then
-    nmcli connection up "$CON" >/dev/null 2>&1 || { sleep 3; nmcli connection up "$CON" >/dev/null 2>&1; }
-    sleep 4
-    NOW="$(ip -4 -o addr show dev "$DEV" | awk '{print $4; exit}')"; NOW="${NOW%/*}"
-    [ "$NOW" = "$WANT" ] && ok "Address is now $WANT (fixed)" || fail "The address is $NOW, not $WANT. Undo with: bash ~/elcaciquedeck/tools/set-address.sh --auto"
+has_ip() { ip -4 -o addr show dev "$DEV" | grep -q " $1/"; }
+if [ "$CHECK" = 1 ]; then
+    echo "  would run: sudo nmcli connection modify \"$CON\" ipv4.method manual ipv4.addresses $WANT/${PREFIX:-24} ipv4.gateway $GW ipv4.dns $GW"
+    echo "  would run: sudo nmcli device reapply $DEV   (applies it without disconnecting)"
+else
+    # 1) save the fixed address in the Wi-Fi profile (errors are shown, not hidden)
+    sudo nmcli connection modify "$CON" ipv4.method manual ipv4.addresses "$WANT/${PREFIX:-24}" \
+        ipv4.gateway "$GW" ipv4.dns "$GW" ipv4.ignore-auto-dns yes \
+        || fail "Could not save the fixed address in \"$CON\" (see the message above)"
+    ok "Saved in the connection profile: $(nmcli -g ipv4.method,ipv4.addresses connection show "$CON" | tr '\n' ' ')"
+    # 2) apply it NOW: 'reapply' keeps the Wi-Fi connected (no password needed); 'up' reconnects as a fallback
+    if ! sudo nmcli device reapply "$DEV"; then
+        warn "reapply didn't work - reconnecting the Wi-Fi instead (it drops a few seconds)"
+        sudo nmcli connection up "$CON" || sudo nmcli --ask connection up "$CON" \
+            || warn "Reconnecting failed (message above). The fixed address is saved and will apply at the next restart."
+    fi
+    for i in $(seq 1 15); do has_ip "$WANT" && break; sleep 1; done
+    if has_ip "$WANT"; then
+        ok "Address is now $WANT (fixed)"
+    else
+        info "What the Wi-Fi has right now: $(ip -4 -o addr show dev "$DEV" | awk '{print $4}' | tr '\n' ' ')"
+        fail "The address $WANT is saved but not active yet. Restart the computer (sudo reboot), then run: bash ~/elcaciquedeck/tools/set-address.sh   (or undo: --auto)"
+    fi
     ping -c 1 -W 2 "$GW" >/dev/null 2>&1 && ok "Router answers" || warn "The router doesn't answer yet"
 fi
 
