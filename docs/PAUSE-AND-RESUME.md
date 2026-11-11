@@ -25,6 +25,14 @@
 - CaciqueGauges shows °F by default (Puerto Rico), one tap for °C.
 - Smart home next: Kasa HS103 (v5, may ask for the Kasa account once) and Philips Hue in CaciqueHome.
 
+## ▶️ Tomorrow (Nov 12) · pick up here
+1. Server on: `bash ~/elcaciquedeck/start-all.sh --light`, then `bash ~/elcaciquedeck/status.sh` (all at `.250`; check Library + Arcade are UP).
+2. **Account tests:** ElCaciqueAdmin first, then Jay's personal account. Run every family app with each one,
+   from the wired PC **and** a phone on **both** Wi-Fis (Liberty + living-room Archer).
+3. If time allows: **smart devices into CaciqueHome**. The Kasa plug shows as **"HS103"** in the Deeper app (confirmed);
+   plus the Kasa switches (ask who installed them / which Kasa account) and the Hue bridge (button press).
+4. Then the who-owns-which-device list (Deeper app) → personal accounts for each family member.
+
 ## The hardware plan (decided Nov 5)
 **4 new computers:**
 - **3 servers:** Lenovo ThinkCentre M720q (i5, 16 GB) = the Proxmox cluster (1 head + 2 workers). `docs/rig-shopping-list.md`
