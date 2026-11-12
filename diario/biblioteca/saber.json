@@ -1,0 +1,84 @@
+[
+ {
+  "id": "saber-01",
+  "tema": "saber",
+  "es": "Sabiduría ante todo: adquiere sabiduría; y ante toda tu posesión adquiere inteligencia.",
+  "en": "Wisdom is the principal thing; therefore get wisdom: and with all thy getting get understanding.",
+  "fuente": "Proverbios 4:7 · Proverbs 4:7",
+  "para": "todos",
+  "verificar": true
+ },
+ {
+  "id": "saber-02",
+  "tema": "saber",
+  "es": "Con sabiduría se edificará la casa, y con prudencia se afirmará; y con ciencia se henchirán las cámaras de todo bien preciado y agradable.",
+  "en": "Through wisdom is an house builded; and by understanding it is established: and by knowledge shall the chambers be filled with all precious and pleasant riches.",
+  "fuente": "Proverbios 24:3-4 · Proverbs 24:3-4",
+  "para": "todos",
+  "verificar": true
+ },
+ {
+  "id": "saber-03",
+  "tema": "saber",
+  "es": "Somos más ricos de lo que pensamos: salud, familia, techo, fe y saber.",
+  "en": "We are richer than we think: health, family, a roof, faith and knowledge.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "saber-04",
+  "tema": "saber",
+  "es": "El conocimiento es la riqueza que nadie te puede quitar.",
+  "en": "Knowledge is the wealth nobody can take from you.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "saber-05",
+  "tema": "saber",
+  "es": "Lee diez páginas hoy. En un año son más de diez libros.",
+  "en": "Read ten pages today. In a year that's more than ten books.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "saber-06",
+  "tema": "saber",
+  "es": "Aprende una cosa nueva hoy y enséñasela a alguien en la cena.",
+  "en": "Learn one new thing today and teach it to someone at dinner.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "saber-07",
+  "tema": "saber",
+  "es": "La riqueza se construye despacio: gastar menos de lo que entra, cada mes.",
+  "en": "Wealth is built slowly: spend less than comes in, every month.",
+  "para": "adultos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "saber-08",
+  "tema": "saber",
+  "es": "Antes de comprar algo, espera un día. Si mañana todavía lo necesitas, cómpralo.",
+  "en": "Before buying something, wait a day. If you still need it tomorrow, buy it.",
+  "para": "adultos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "saber-09",
+  "tema": "saber",
+  "es": "Agradecer lo que hay es el primer paso para que haya más.",
+  "en": "Being grateful for what we have is the first step to having more.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "saber-10",
+  "tema": "saber",
+  "es": "Un error no es un fracaso: es una lección que ya pagaste. Aprovéchala.",
+  "en": "A mistake isn't a failure: it's a lesson you already paid for. Use it.",
+  "para": "todos",
+  "fuente": "Cacique"
+ }
+]

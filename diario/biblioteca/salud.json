@@ -1,0 +1,74 @@
+[
+ {
+  "id": "salud-01",
+  "tema": "salud",
+  "es": "¿Ya tomaste agua? Un vaso ahora.",
+  "en": "Have you had water yet? One glass now.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-02",
+  "tema": "salud",
+  "es": "Respira: cuatro segundos adentro, cuatro aguantando, cuatro afuera. Repite tres veces.",
+  "en": "Breathe: four seconds in, four holding, four out. Repeat three times.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-03",
+  "tema": "salud",
+  "es": "Muévete diez minutos hoy: una caminata, estirar, bailar en la sala. Todo cuenta.",
+  "en": "Move ten minutes today: a walk, a stretch, dancing in the living room. It all counts.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-04",
+  "tema": "salud",
+  "es": "Dormir bien es productivo. Hoy, apaga las pantallas una hora antes de acostarte.",
+  "en": "Good sleep is productive. Tonight, screens off one hour before bed.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-05",
+  "tema": "salud",
+  "es": "Sal afuera cinco minutos. El sol y el aire también son medicina.",
+  "en": "Step outside for five minutes. Sun and fresh air are medicine too.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-06",
+  "tema": "salud",
+  "es": "Come un color más hoy: una fruta, un vegetal.",
+  "en": "Eat one more color today: a fruit, a vegetable.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-07",
+  "tema": "salud",
+  "es": "Endereza la espalda, baja los hombros, suelta la quijada. Ya.",
+  "en": "Straighten your back, drop your shoulders, unclench your jaw. There.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-08",
+  "tema": "salud",
+  "es": "Unos minutos en silencio también son descanso. Medita, ora o solo escucha.",
+  "en": "A few minutes of silence is rest too. Meditate, pray or just listen.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "salud-09",
+  "tema": "salud",
+  "es": "Cuida tu cuerpo: es la única casa donde vas a vivir siempre.",
+  "en": "Take care of your body: it's the only home you'll live in forever.",
+  "para": "adultos",
+  "fuente": "Cacique"
+ }
+]

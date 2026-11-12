@@ -2,7 +2,7 @@
 # ElCaciqueDeck - give the server a FIXED address and update El Cacique to use it (one command)
 #
 #   bash ~/elcaciquedeck/tools/set-address.sh                 fixed address 192.168.x.27 (same network, number 27)
-#   bash ~/elcaciquedeck/tools/set-address.sh 192.168.40.50   fixed address of your choice
+#   bash ~/elcaciquedeck/tools/set-address.sh 192.168.1.50   fixed address of your choice
 #   bash ~/elcaciquedeck/tools/set-address.sh --check         only SHOW what it would do (changes nothing)
 #   bash ~/elcaciquedeck/tools/set-address.sh --auto          undo: back to an automatic address from the router
 #
@@ -38,7 +38,7 @@ if [ -z "$DEV" ]; then
 fi
 CON="$(nmcli -t -f NAME,DEVICE connection show --active | awk -F: -v d="$DEV" '$2==d{print $1; exit}')"
 [ -n "$CON" ] || fail "Could not find the NetworkManager connection for $DEV"
-CUR="$(ip -4 -o addr show dev "$DEV" | awk '{print $4; exit}')"      # e.g. 192.168.40.33/24
+CUR="$(ip -4 -o addr show dev "$DEV" | awk '{print $4; exit}')"      # e.g. 192.168.1.33/24
 [ -n "$CUR" ] || CUR="$(nmcli -g ipv4.addresses connection show "$CON" 2>/dev/null | cut -d, -f1)"
 [ -n "$CUR" ] || CUR="${GW%.*}.0/24"
 CUR_IP="${CUR%/*}"; PREFIX="${CUR#*/}"
@@ -55,7 +55,7 @@ fi
 
 [ -n "$WANT" ] || WANT="${GW%.*}.27"
 # a high number (e.g. .250) is safest: routers hand out numbers from the bottom up
-[[ "$WANT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "\"$WANT\" is not an address like 192.168.40.27"
+[[ "$WANT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "\"$WANT\" is not an address like 192.168.1.27"
 [ "${WANT%.*}" = "${GW%.*}" ] || fail "$WANT is not on the same network as the router ($GW). Use ${GW%.*}.<number>"
 [ "$WANT" != "$GW" ] || fail "That's the router's own address. Pick another number."
 

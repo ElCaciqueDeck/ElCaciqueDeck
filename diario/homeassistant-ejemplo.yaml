@@ -1,0 +1,65 @@
+# Cacique Diario + CaciqueHome (Home Assistant) - EXAMPLES to copy, not loaded automatically.
+# Change SERVIDOR to your server number (from status.sh) and the entity names (media_player..., binary_sensor..., person...) to yours.
+# After pasting into configuration.yaml: Developer tools -> YAML -> Check configuration -> Restart.
+
+# 1) The message of the day as a sensor (state = theme; the words are in the attributes)
+rest:
+  - resource: http://SERVIDOR:8097/api/mensaje?para=familia
+    scan_interval: 1800
+    sensor:
+      - name: "Cacique Diario"
+        value_template: "{{ value_json.tema }}"
+        json_attributes: [es, en, texto, fuente]
+
+automation:
+  # 2) Good-morning message in the kitchen: weekdays, the first movement after 6:00 (once per morning)
+  - alias: "Cacique Diario - buenos días en la cocina"
+    id: cacique_diario_buenos_dias
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.cocina_movimiento        # your kitchen motion sensor
+        to: "on"
+    condition:
+      - condition: time
+        after: "06:00:00"
+        before: "09:30:00"
+        weekday: [mon, tue, wed, thu, fri]
+      - condition: template
+        value_template: >
+          {{ this.attributes.last_triggered is none or now() - this.attributes.last_triggered > timedelta(hours=4) }}
+    action:
+      - service: homeassistant.update_entity
+        target: { entity_id: sensor.cacique_diario }
+      - service: tts.speak
+        target: { entity_id: tts.piper }                    # the house voice (Piper, offline)
+        data:
+          media_player_entity_id: media_player.cocina       # your kitchen speaker
+          message: "Buenos días. Hoy es un buen día. {{ state_attr('sensor.cacique_diario', 'es') }}"
+
+  # 3) No sensor? Same message at a fixed time instead
+  - alias: "Cacique Diario - mensaje de las 7"
+    id: cacique_diario_siete
+    trigger:
+      - platform: time
+        at: "07:00:00"
+    action:
+      - service: homeassistant.update_entity
+        target: { entity_id: sensor.cacique_diario }
+      - service: tts.speak
+        target: { entity_id: tts.piper }
+        data:
+          media_player_entity_id: media_player.cocina
+          message: "{{ state_attr('sensor.cacique_diario', 'es') }}"
+
+  # 4) Welcome home: when a person's phone comes home (Home Assistant app on their phone, installed by them)
+  - alias: "Cacique Diario - bienvenida"
+    id: cacique_diario_bienvenida
+    trigger:
+      - platform: state
+        entity_id: person.nombre                              # one trigger per person
+        to: "home"
+    action:
+      - service: notify.mobile_app_telefono_de_nombre         # their phone, through the Home Assistant app
+        data:
+          title: "Bienvenido a casa · Welcome home"
+          message: "{{ state_attr('sensor.cacique_diario', 'es') }}"

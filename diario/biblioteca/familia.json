@@ -1,0 +1,142 @@
+[
+ {
+  "id": "familia-01",
+  "tema": "familia",
+  "es": "¡Mirad cuán bueno y cuán delicioso es habitar los hermanos igualmente en uno!",
+  "en": "Behold, how good and how pleasant it is for brethren to dwell together in unity!",
+  "fuente": "Salmo 133:1 · Psalm 133:1",
+  "para": "todos",
+  "verificar": true
+ },
+ {
+  "id": "familia-02",
+  "tema": "familia",
+  "es": "Antes sed los unos con los otros benignos, misericordiosos, perdonándoos los unos a los otros, como también Dios os perdonó en Cristo.",
+  "en": "And be ye kind one to another, tenderhearted, forgiving one another, even as God for Christ's sake hath forgiven you.",
+  "fuente": "Efesios 4:32 · Ephesians 4:32",
+  "para": "todos",
+  "verificar": true
+ },
+ {
+  "id": "familia-03",
+  "tema": "familia",
+  "es": "Honra a tu padre y a tu madre, porque tus días se alarguen en la tierra que Jehová tu Dios te da.",
+  "en": "Honour thy father and thy mother: that thy days may be long upon the land which the LORD thy God giveth thee.",
+  "fuente": "Éxodo 20:12 · Exodus 20:12",
+  "para": "todos",
+  "verificar": true
+ },
+ {
+  "id": "familia-04",
+  "tema": "familia",
+  "es": "Instruye al niño en su carrera: aun cuando fuere viejo no se apartará de ella.",
+  "en": "Train up a child in the way he should go: and when he is old, he will not depart from it.",
+  "fuente": "Proverbios 22:6 · Proverbs 22:6",
+  "para": "adultos",
+  "verificar": true
+ },
+ {
+  "id": "familia-05",
+  "tema": "familia",
+  "es": "Una familia unida es la mayor riqueza que existe. Somos ricos.",
+  "en": "A united family is the greatest wealth there is. We are rich.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-06",
+  "tema": "familia",
+  "es": "Hoy comamos juntos en la mesa, sin teléfonos. La conversación también alimenta.",
+  "en": "Let's eat together at the table today, no phones. Conversation feeds us too.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-07",
+  "tema": "familia",
+  "es": "Pregúntale a alguien de la casa: ¿cómo te fue hoy, de verdad?",
+  "en": "Ask someone at home: how did your day really go?",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-08",
+  "tema": "familia",
+  "es": "Un abrazo de diez segundos cambia el día de cualquiera. Regala uno.",
+  "en": "A ten-second hug changes anyone's day. Give one away.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-09",
+  "tema": "familia",
+  "es": "En esta casa nos ayudamos. Si ves algo por hacer, hazlo por el otro.",
+  "en": "In this house we help each other. If you see something that needs doing, do it for someone else.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-10",
+  "tema": "familia",
+  "es": "Las palabras que decimos en casa construyen o derrumban. Hoy, construye.",
+  "en": "The words we say at home build up or tear down. Today, build.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-11",
+  "tema": "familia",
+  "es": "Las raíces fuertes sostienen el árbol en la tormenta. Nuestra familia es nuestra raíz.",
+  "en": "Strong roots hold the tree in the storm. Our family is our root.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-12",
+  "tema": "familia",
+  "es": "¿Le dijiste hoy a tu esposa que la amas?",
+  "en": "Did you tell your wife you love her today?",
+  "para": "esposo",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-13",
+  "tema": "familia",
+  "es": "¿Le dijiste hoy a tu esposo cuánto lo valoras?",
+  "en": "Did you tell your husband how much you value him today?",
+  "para": "esposa",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-14",
+  "tema": "familia",
+  "es": "¿Le dijiste hoy a tus hijos que estás orgulloso de ellos?",
+  "en": "Did you tell your children you're proud of them today?",
+  "para": "padres",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-15",
+  "tema": "familia",
+  "es": "Tus nietos aprenden mirándote. Tu ejemplo es una herencia.",
+  "en": "Your grandchildren learn by watching you. Your example is an inheritance.",
+  "para": "abuelos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-16",
+  "tema": "familia",
+  "es": "Llama o escríbele hoy a un familiar que hace tiempo no ves.",
+  "en": "Call or text a relative you haven't seen in a while today.",
+  "para": "adultos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "familia-17",
+  "tema": "familia",
+  "es": "Dale las gracias a mamá o a papá por algo pequeño que hicieron hoy.",
+  "en": "Thank mom or dad for something small they did today.",
+  "para": "hijos",
+  "fuente": "Cacique"
+ }
+]

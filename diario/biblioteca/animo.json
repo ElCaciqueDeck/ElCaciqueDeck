@@ -1,0 +1,82 @@
+[
+ {
+  "id": "animo-01",
+  "tema": "animo",
+  "es": "Tú puedes. Ya has superado días más difíciles que este.",
+  "en": "You can do it. You've already gotten through harder days than this one.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-02",
+  "tema": "animo",
+  "es": "Vales más de lo que piensas.",
+  "en": "You're worth more than you think.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-03",
+  "tema": "animo",
+  "es": "Hoy es un día hermoso para empezar de nuevo.",
+  "en": "Today is a beautiful day to start again.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-04",
+  "tema": "animo",
+  "es": "No tienes que hacerlo perfecto. Solo tienes que empezar.",
+  "en": "You don't have to do it perfectly. You just have to start.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-05",
+  "tema": "animo",
+  "es": "Lo que siembras hoy con paciencia, lo cosechas mañana con alegría.",
+  "en": "What you sow today with patience, you'll harvest tomorrow with joy.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-06",
+  "tema": "animo",
+  "es": "Eres capaz, eres valiente y no estás solo.",
+  "en": "You are capable, you are brave and you are not alone.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-07",
+  "tema": "animo",
+  "es": "Un paso pequeño sigue siendo un paso adelante.",
+  "en": "A small step is still a step forward.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-08",
+  "tema": "animo",
+  "es": "Sonríele a la próxima persona que veas. Se contagia.",
+  "en": "Smile at the next person you see. It's contagious.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-09",
+  "tema": "animo",
+  "es": "El cansancio es real, y también lo es tu fuerza. Descansa, y sigue.",
+  "en": "Tiredness is real, and so is your strength. Rest, then keep going.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "animo-10",
+  "tema": "animo",
+  "es": "Buenos días. Lo tienes. Hoy va a ser un buen día.",
+  "en": "Good morning. You've got this. Today is going to be a good day.",
+  "para": "todos",
+  "fuente": "Cacique"
+ }
+]

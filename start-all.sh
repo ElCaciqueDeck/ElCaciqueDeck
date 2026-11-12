@@ -3,7 +3,7 @@
 #
 #   bash ~/elcaciquedeck/start-all.sh           everything that's set up
 #   bash ~/elcaciquedeck/start-all.sh --light   LIGHT MODE: only the family apps (cooler, less memory):
-#       front page + names, Flix, Photos (without its AI helper), Library, Arcade, Academy, Home, Gauges.
+#       front page + names, Flix, Photos (without its AI helper), Library, Arcade, Academy, Home, Gauges, Diario.
 #       Skipped: Docs, Vault, Calendar, Finanzas, Office, Cams, Guía (AI), Sync.
 #
 # Starts only what's set up and not already running, then shows a status table.
@@ -111,6 +111,10 @@ fi
 if [ "$LIGHT" = 0 ] && [ -f "$REPO/finanzas/.env" ] && ! up 8075; then
     nohup python3 "$REPO/finanzas/caciquefinanzas.py" >"$RUN/finanzas.log" 2>&1 &
     echo "  CaciqueFinanzas coach starting..."
+fi
+if [ -f "$REPO/diario/.env" ] && ! up 8097; then      # tiny: also runs in light mode
+    nohup python3 "$REPO/diario/caciquediario.py" >"$RUN/diario.log" 2>&1 &
+    echo "  Cacique Diario starting..."
 fi
 if [ "$LIGHT" = 0 ] && command -v syncthing >/dev/null && [ -f "$HOME/elcaciquedeck-data/sync.enabled" ] && ! up 8384; then
     nohup syncthing serve --no-browser --gui-address=0.0.0.0:8384 >"$RUN/syncthing.log" 2>&1 &

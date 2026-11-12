@@ -15,7 +15,7 @@
 | Still open | ✅ phone access (Nov 11); ✅ fixed address; ⬜ account tests with ElCaciqueAdmin + Jay; ⬜ who-owns-which-device list → personal accounts; ⬜ Library/Arcade check |
 
 ## Update · Nov 10–11, 2026 (interim network, family access)
-- Living-room **TP-Link Archer AX1500 → Access Point mode**: the house is ONE network (`192.168.40.x`); the Deeper Mini
+- Living-room **TP-Link Archer AX1500 → Access Point mode**: the house is ONE network (`192.168.x.x`); the Deeper Mini
   (transparent) now sees and filters every device behind it. **Deeper HTTPS filter OFF** (it broke YouTube on the TV).
 - IdeaPad back as the interim server in **light mode**, lid closed: `bash ~/elcaciquedeck/start-all.sh --light`
 - The Liberty Sagemcom page has no DHCP reservation → fixed address set on the IdeaPad with `tools/set-address.sh`.
@@ -35,6 +35,9 @@
 3. If time allows: **smart devices into CaciqueHome**. The Kasa plug shows as **"HS103"** in the Deeper app (confirmed);
    plus the Kasa switches (ask who installed them / which Kasa account) and the Hue bridge (button press).
 4. Then the who-owns-which-device list (Deeper app) → personal accounts for each family member.
+5. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
+   kitchen. `bash ~/elcaciquedeck/diario/setup-diario.sh`, then `http://<server>:8097/admin`. Plan: `docs/diario.md`;
+   what to buy (phases, starting with an onn 4K Pro for the TV): `docs/diario-shopping-list.md`.
 
 ## The hardware plan (decided Nov 5)
 **4 new computers:**

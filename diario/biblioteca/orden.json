@@ -1,0 +1,83 @@
+[
+ {
+  "id": "orden-01",
+  "tema": "orden",
+  "es": "Empero hágase todo decentemente y con orden.",
+  "en": "Let all things be done decently and in order.",
+  "fuente": "1 Corintios 14:40 · 1 Corinthians 14:40",
+  "para": "todos",
+  "verificar": true
+ },
+ {
+  "id": "orden-02",
+  "tema": "orden",
+  "es": "Espacio limpio, mente limpia. Si quieres paz por dentro, empieza por tu cuarto.",
+  "en": "Clean space, clean mind. If you want peace inside, start with your room.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-03",
+  "tema": "orden",
+  "es": "La regla de los dos minutos: si se hace en menos de dos minutos, hazlo ahora.",
+  "en": "The two-minute rule: if it takes less than two minutes, do it now.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-04",
+  "tema": "orden",
+  "es": "Cada cosa en su lugar. Lo que sacas, lo devuelves.",
+  "en": "A place for everything. What you take out, you put back.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-05",
+  "tema": "orden",
+  "es": "Tiende la cama al levantarte: la primera tarea del día, ya hecha.",
+  "en": "Make your bed when you get up: the first task of the day, already done.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-06",
+  "tema": "orden",
+  "es": "La cocina limpia antes de dormir es un regalo para el que se levanta primero.",
+  "en": "A clean kitchen before bed is a gift to whoever wakes up first.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-07",
+  "tema": "orden",
+  "es": "Diez minutos de recoger entre todos valen más que una hora de uno solo.",
+  "en": "Ten minutes of tidying together is worth more than an hour alone.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-08",
+  "tema": "orden",
+  "es": "Si no lo usas, no lo necesitas. Menos cosas, más espacio, más paz.",
+  "en": "If you don't use it, you don't need it. Fewer things, more space, more peace.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-09",
+  "tema": "orden",
+  "es": "Lava tu plato al terminar. Nadie es empleado de nadie en esta casa.",
+  "en": "Wash your dish when you're done. Nobody is anyone's servant in this house.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "orden-10",
+  "tema": "orden",
+  "es": "Una gaveta a la vez. El orden se construye poco a poco.",
+  "en": "One drawer at a time. Order is built little by little.",
+  "para": "todos",
+  "fuente": "Cacique"
+ }
+]

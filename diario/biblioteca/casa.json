@@ -1,0 +1,50 @@
+[
+ {
+  "id": "casa-01",
+  "tema": "casa",
+  "es": "¿Revisaste el calendario de hoy? Que nada te tome por sorpresa.",
+  "en": "Did you check today's calendar? Don't let anything catch you by surprise.",
+  "para": "adultos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "casa-02",
+  "tema": "casa",
+  "es": "Antes de salir: llaves, cartera, teléfono... y un beso de despedida.",
+  "en": "Before leaving: keys, wallet, phone... and a goodbye kiss.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "casa-03",
+  "tema": "casa",
+  "es": "¿Terminaste tus tareas de hoy? Una menos, más tiempo libre.",
+  "en": "Did you finish your tasks for today? One less, more free time.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "casa-04",
+  "tema": "casa",
+  "es": "Al llegar a casa: zapatos en su sitio, manos lavadas, y un saludo para todos.",
+  "en": "When you get home: shoes in their place, hands washed, and a hello for everyone.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "casa-05",
+  "tema": "casa",
+  "es": "Apaga las luces de los cuartos donde no hay nadie.",
+  "en": "Turn off the lights in empty rooms.",
+  "para": "todos",
+  "fuente": "Cacique"
+ },
+ {
+  "id": "casa-06",
+  "tema": "casa",
+  "es": "Esta noche, deja listo lo de mañana: ropa, bulto, almuerzo.",
+  "en": "Tonight, get tomorrow ready: clothes, bag, lunch.",
+  "para": "todos",
+  "fuente": "Cacique"
+ }
+]
