@@ -22,6 +22,12 @@ else
     sudo apt-get install -y python3-pil >/dev/null 2>&1 && ok "Picture cards: python3-pil installed" \
         || warn "Could not install python3-pil (no internet?). Messages work; picture cards start once it's installed."
 fi
+if python3 -c "import cryptography" 2>/dev/null; then
+    ok "Encryption: python3-cryptography is installed"
+else
+    sudo apt-get install -y python3-cryptography >/dev/null 2>&1 && ok "Encryption: python3-cryptography installed" \
+        || warn "Could not install python3-cryptography: the device recorder stays OFF (it never writes unencrypted)"
+fi
 IP="$(laptop_ip)"
 [ -n "$IP" ] && ok "Server number: $IP" || warn "No house address right now (Wi-Fi/cable off?)"
 
@@ -37,6 +43,12 @@ ENV
 chmod 600 "$DIR/.env"
 printf '%s\n' "$PW" > "$ACC/diario-password.txt"; chmod 600 "$ACC/diario-password.txt"
 ok "Adults' password saved (only on this computer): ${ACC/#$HOME/~}/diario-password.txt"
+chmod 700 "$DATA/diario" 2>/dev/null
+if python3 -c "import cryptography" 2>/dev/null; then
+    python3 -c "import sys; sys.path.insert(0, '$DIR'); import caciquediario as c; c.vault()" \
+        && ok "Encryption key ready (only on this computer): ~/elcaciquedeck-data/keys/diario.key" \
+        || warn "Could not make the encryption key"
+fi
 
 step "3/4  Firewall"
 open_port 8097 "Cacique Diario"
@@ -58,6 +70,8 @@ echo
 echo "  SHARED SCREEN (TV, kitchen, tablet):  http://${IP:-<server>}:8097"
 echo "  SMART MIRROR:                         http://${IP:-<server>}:8097/?modo=espejo"
 echo "  ADULTS' PAGE (approve, people):       http://${IP:-<server>}:8097/admin"
+echo "  DEVICE RECORDER: always on, encrypted, stays on this computer (Equipos y rutinas on the adults' page)."
+echo "  Back up the key for the safe (paper or USB, never online):  cat ~/elcaciquedeck-data/keys/diario.key"
 echo "  Next: open the adults' page, approve the Bible verses, add each person, and paste the"
 echo "  CaciquePhotos key in Ajustes so the picture cards go to the \"Cacique Diario\" album."
 finish

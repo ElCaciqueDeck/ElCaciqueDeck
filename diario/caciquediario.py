@@ -89,7 +89,7 @@ def save(name, value):
 
 
 DEFAULT_SETTINGS = {"por_dia": 3, "hora": 4, "guardar_dias": 7, "immich_url": "http://127.0.0.1:2283",
-                    "immich_key": "", "albumes_extra": "", "ia": True, "fondos": "", "presencia": False}
+                    "immich_key": "", "albumes_extra": "", "ia": True, "fondos": "", "presencia": True}
 
 
 def settings():
@@ -357,10 +357,25 @@ def make_cards(day, msgs):
 
 
 # ================================================================ CaciquePhotos (Immich): the "Cacique Diario" album
+def at_home(url):
+    """True only for addresses inside the house: this computer, 192.168.x.x / 10.x / 172.16-31.x, or a .home name."""
+    import ipaddress
+    host = (urllib.parse.urlparse(url).hostname or "").lower()
+    if host in ("localhost",) or host.endswith(".home") or host.endswith(".local"):
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+        return ip.is_private or ip.is_loopback
+    except ValueError:
+        return False
+
+
 def immich(method, api_path, body=None, data=None, ctype=None, timeout=60):
     s = settings()
     if not s.get("immich_key"):
         raise RuntimeError("no CaciquePhotos key")
+    if not at_home(s["immich_url"]) or not at_home(OLLAMA):
+        raise RuntimeError("CaciquePhotos must be an address inside the house")
     headers = {"x-api-key": s["immich_key"], "Accept": "application/json"}
     if body is not None:
         data, ctype = json.dumps(body).encode(), "application/json"
@@ -450,6 +465,8 @@ def ai_suggest(per_theme=2):
     """Ask CaciqueGuía's local AI for new messages; they wait for an adult in the approval page."""
     if not settings().get("ia"):
         return "IA apagada · AI off"
+    if not at_home(OLLAMA):
+        return "IA fuera de la casa: no se usa · AI outside the house: not used"
     try:
         urllib.request.urlopen(OLLAMA + "/api/tags", timeout=3).read()
     except Exception:
@@ -591,21 +608,76 @@ def neighbors(dev, net):
     return here
 
 
+# ---- privacy: everything the recorder writes is ENCRYPTED on this computer's disk, and never goes to GitHub
+# (it lives in ~/elcaciquedeck-data, outside the project folder). The key is made here, on first use, and stays here:
+# ~/elcaciquedeck-data/keys/diario.key (only this user can read it). Copy it to paper/USB for the safe: without it,
+# the recordings can't be read on another computer. If python3-cryptography is missing, NOTHING is recorded.
+KEY_FILE = os.path.join(os.path.expanduser("~"), "elcaciquedeck-data", "keys", "diario.key")
+
+
+def vault():
+    from cryptography.fernet import Fernet      # AES + a seal against changes (python3-cryptography)
+    if not os.path.exists(KEY_FILE):
+        os.makedirs(os.path.dirname(KEY_FILE), mode=0o700, exist_ok=True)
+        fd = os.open(KEY_FILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "wb") as f:
+            f.write(Fernet.generate_key())
+    return Fernet(open(KEY_FILE, "rb").read().strip())
+
+
+def can_encrypt():
+    try:
+        vault()
+        return True
+    except Exception:
+        return False
+
+
+def load_secret(name, default):
+    try:
+        return json.loads(vault().decrypt(open(path(name + ".enc"), "rb").read()).decode())
+    except FileNotFoundError:
+        return default
+    except Exception as e:
+        print("  ! could not read %s.enc: %s" % (name, e), file=sys.stderr)
+        return default
+
+
+def save_secret(name, value):
+    os.makedirs(DATA, exist_ok=True)
+    tmp = path(name + ".enc.tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        f.write(vault().encrypt(json.dumps(value, ensure_ascii=False).encode()))
+    os.replace(tmp, path(name + ".enc"))
+
+
 def log_event(kind, who, event, ip="", when=None):
-    os.makedirs(path("presencia"), exist_ok=True)
+    """One arrival/departure, as one encrypted line in presencia/<year-month>.log.enc"""
+    os.makedirs(path("presencia"), mode=0o700, exist_ok=True)
     stamp = time.localtime(when) if when else time.localtime()
-    f = path("presencia", time.strftime("%Y-%m", stamp) + ".csv")
-    new = not os.path.exists(f)
-    with open(f, "a", encoding="utf-8") as h:
-        if new:
-            h.write("time,kind,who,event,ip\n")
-        h.write("%s,%s,%s,%s,%s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", stamp), kind, who, event, ip))
+    f = path("presencia", time.strftime("%Y-%m", stamp) + ".log.enc")
+    line = "%s,%s,%s,%s,%s" % (time.strftime("%Y-%m-%d %H:%M:%S", stamp), kind, who, event, ip)
+    fd = os.open(f, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    with os.fdopen(fd, "ab") as h:
+        h.write(vault().encrypt(line.encode()) + b"\n")
+
+
+def read_events():
+    v = vault()
+    for f in sorted(glob.glob(path("presencia", "*.log.enc"))):
+        for tok in open(f, "rb").read().split(b"\n"):
+            if tok.strip():
+                try:
+                    yield v.decrypt(tok.strip()).decode()
+                except Exception:
+                    continue
 
 
 def presence_step(here, now=None):
     """Update who is home from one look at the network; write arrivals/departures."""
     now = now or time.time()
-    st = load("presencia.json", {"equipos": {}, "personas": {}})
+    st = load_secret("presencia", {"equipos": {}, "personas": {}})
     eq = st.setdefault("equipos", {})
     for mac, ip in here.items():
         d = eq.setdefault(mac, {"primera_vez": now})
@@ -616,7 +688,7 @@ def presence_step(here, now=None):
         if d.get("aqui") and mac not in here and now - d.get("visto", 0) > AWAY_AFTER:
             d["aqui"] = False
             log_event("equipo", mac, "sale", d.get("ip", ""), d.get("visto"))     # left right after it was last seen
-    names = load("equipos.json", {})           # {mac: {"nombre": ..., "persona": pid}}
+    names = load_secret("equipos", {})          # {mac: {"nombre": ..., "persona": pid}}
     per = st.setdefault("personas", {})
     owners = {}
     for mac, info in names.items():
@@ -630,27 +702,26 @@ def presence_step(here, now=None):
             per[pid] = home
             last = max(eq.get(m, {}).get("visto", now) for m in macs)
             log_event("persona", pid, "llega" if home else "sale", "", now if home else last)
-    save("presencia.json", st)
+    save_secret("presencia", st)
 
 
 def routines(weeks=8):
     """Each person's usual weekday times: first departure in the morning, return in the afternoon (medians)."""
     first_out, back = {}, {}
     since = dt.date.today() - dt.timedelta(weeks=weeks)
-    for f in sorted(glob.glob(path("presencia", "*.csv"))):
-        for line in open(f, encoding="utf-8").read().splitlines()[1:]:
-            try:
-                t, kind, who, ev, _ = line.split(",", 4)
-                when = dt.datetime.strptime(t, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                continue
-            if kind != "persona" or when.date() < since or when.weekday() > 4:
-                continue
-            mins = when.hour * 60 + when.minute
-            if ev == "sale" and 180 <= mins <= 660:
-                first_out.setdefault(who, {}).setdefault(when.date(), mins)
-            if ev == "llega" and 720 <= mins <= 1320:
-                back.setdefault(who, {}).setdefault(when.date(), mins)
+    for line in read_events():
+        try:
+            t, kind, who, ev, _ = line.split(",", 4)
+            when = dt.datetime.strptime(t, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        if kind != "persona" or when.date() < since or when.weekday() > 4:
+            continue
+        mins = when.hour * 60 + when.minute
+        if ev == "sale" and 180 <= mins <= 660:
+            first_out.setdefault(who, {}).setdefault(when.date(), mins)
+        if ev == "llega" and 720 <= mins <= 1320:
+            back.setdefault(who, {}).setdefault(when.date(), mins)
 
     def median(vals):
         v = sorted(vals)
@@ -665,7 +736,7 @@ def routines(weeks=8):
 def presence_loop():
     while True:
         try:
-            if settings().get("presencia"):
+            if settings().get("presencia") and can_encrypt():      # never records without encryption
                 dev, net = lan()
                 if dev:
                     presence_step(neighbors(dev, net))
@@ -830,8 +901,10 @@ def admin_page(tab, msg=""):
 <div class="row"><button name="on" value="%s" class="%s">%s</button></div></form>""" % (
             "Registro encendido · Recording is on" if on else "Registro apagado · Recording is off",
             "0" if on else "1", "no" if on else "ok", "Apagar · Turn off" if on else "Encender · Turn on")
-        st, names = load("presencia.json", {"equipos": {}}), load("equipos.json", {})
-        rt = routines()
+        st, names = (load_secret("presencia", {"equipos": {}}), load_secret("equipos", {})) if can_encrypt() else ({"equipos": {}}, {})
+        if not can_encrypt():
+            body += "<p class='note'>Falta python3-cryptography: no se graba nada sin cifrar. · python3-cryptography is missing: nothing is recorded without encryption. (sudo apt install -y python3-cryptography)</p>"
+        rt = routines() if can_encrypt() else {}
         if rt:
             body += "<h3>Rutinas (lunes a viernes, últimas 8 semanas) · Routines (weekdays, last 8 weeks)</h3><ul>"
             hm = lambda m: "—" if m is None else "%d:%02d %s" % ((m // 60 - 1) % 12 + 1, m % 60, "a. m." if m < 720 else "p. m.")
@@ -1110,6 +1183,8 @@ class Handler(BaseHTTPRequestHandler):
                 for k in ("immich_url", "albumes_extra", "fondos"):
                     s[k] = f.get(k, "").strip()
                 s["immich_url"] = s["immich_url"] or DEFAULT_SETTINGS["immich_url"]
+                if not at_home(s["immich_url"]):          # privacy: the cards never go outside the house
+                    s["immich_url"] = DEFAULT_SETTINGS["immich_url"]
                 for k, lo, hi in (("por_dia", 1, 6), ("hora", 0, 23), ("guardar_dias", 1, 60)):
                     try:
                         s[k] = max(lo, min(hi, int(f.get(k))))
@@ -1133,9 +1208,9 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/admin/equipo":
                 mac = f.get("mac", "").lower()
                 if re.fullmatch(r"[0-9a-f:]{17}", mac):
-                    names = load("equipos.json", {})
+                    names = load_secret("equipos", {})
                     names[mac] = {"nombre": f.get("nombre", "").strip()[:60], "persona": f.get("persona", "") if f.get("persona", "") in people() else ""}
-                    save("equipos.json", names)
+                    save_secret("equipos", names)
                 return self.go("/admin?t=equipos&m=" + urllib.parse.quote("Guardado · Saved"))
             if u.path == "/admin/rehacer":
                 log = run_day(dt.date.today(), force=True)
@@ -1149,6 +1224,7 @@ class Handler(BaseHTTPRequestHandler):
 def first_run():
     """Starting files for a new home (only written when they don't exist yet)."""
     os.makedirs(DATA, exist_ok=True)
+    os.chmod(DATA, 0o700)                         # only this user can open the folder
     if not os.path.exists(path("personas.json")):
         save("personas.json", {"familia": {"nombre": "Familia", "roles": [], "temas": list(TEMAS), "idioma": "es"}})
     if not os.path.exists(path("recordatorios.json")):

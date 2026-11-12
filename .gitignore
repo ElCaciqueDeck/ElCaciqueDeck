@@ -11,3 +11,8 @@ homepage/icons/
 homepage/config/logs/
 manual/site/
 homepage/config-live/
+
+# Encrypted recordings and keys never belong in GitHub (they live in ~/elcaciquedeck-data anyway)
+*.enc
+*.key
+elcaciquedeck-data/

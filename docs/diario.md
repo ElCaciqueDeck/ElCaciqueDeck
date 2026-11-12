@@ -29,7 +29,7 @@ in English). Each person (and *Familia* for shared screens and picture cards) ha
 | `diario/caciquediario.py` | The server on **port 8097**: screen page, adults' page, API, nightly job |
 | Nightly job (04:00) | Picks each person's messages (no repeats for 30 days), draws 2-3 **picture cards**, puts them in the **"Cacique Diario" album** in CaciquePhotos, removes cards older than 7 days |
 | Adults' page `/admin` | **Por aprobar** (verses, AI) · **Hoy** · **Personas** · **Recordatorios** (trash day…) · **Mis mensajes** · **Equipos y rutinas** · **Ajustes** |
-| Equipos y rutinas (off until an adult turns it on) | Every 2 min: which devices are on the home Wi-Fi (like the router's list). Name each device, say whose it is; after a few weeks it shows each person's usual weekday leave / arrive times (medians), for messages that wait for them. Data stays in `~/elcaciquedeck-data/diario/presencia/` |
+| Equipos y rutinas (always on) | Every 2 min: which devices are on the home Wi-Fi (like the router's list). Name each device, say whose it is; after a few weeks it shows each person's usual weekday leave / arrive times (medians), for messages that wait for them. Encrypted, in `~/elcaciquedeck-data/diario/` |
 | Optional AI | If CaciqueGuía is running, it writes new messages each night; they wait in **Por aprobar** |
 
 ## Addresses (from any device at home)
@@ -81,3 +81,18 @@ Nothing starts by itself at power-on.
 
 ## Shopping list
 See `docs/diario-shopping-list.md`.
+
+## Privacy of the device recorder
+- **What it records:** only *which device answered on the home Wi-Fi, and when it arrived or left* (its network ID
+  and house number). **Never** what anyone does, visits, writes or watches: it doesn't look at traffic at all.
+- **Where:** `~/elcaciquedeck-data/diario/` on the server's own disk: outside the project folder, so it can never be
+  pushed to GitHub (`.gitignore` also blocks `*.enc` and `*.key`). Folder readable only by the server's user (700/600).
+- **Encrypted:** every arrival/departure line, the device names and the current state are encrypted (Fernet:
+  AES with a tamper seal). Key: `~/elcaciquedeck-data/keys/diario.key`, made on this computer, never online.
+  **Back it up on paper or a USB in the safe**: without it the recordings can't be read on a new server.
+  If encryption isn't available (python3-cryptography missing), **nothing is recorded**.
+- **Stays in the house:** Cacique Diario only talks to addresses inside the house (CaciquePhotos, the local AI);
+  any outside address is refused.
+- **Honest limit:** the key sits on the same computer so the recorder can run day and night. Encryption protects a
+  copied drive, a backup or a stolen disk; it doesn't protect against someone already signed in as the server's user.
+  Keep the server's password strong.
