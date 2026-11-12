@@ -22,15 +22,26 @@
   if (window.__elCaciqueAero) return;
   window.__elCaciqueAero = true;
 
+  // ---------------------------------------------------------------- one language at a time (ES or EN), per device
+  var LANG = "es";
+  try { LANG = localStorage.getItem("cq-lang") || ((navigator.language || "es").toLowerCase().indexOf("en") === 0 ? "en" : "es"); } catch (e) { /* private mode */ }
+  function T(es, en) { return LANG === "en" ? (en || es) : es; }
+  function L(es, en) { return '<span data-cq-es="' + esc(es) + '" data-cq-en="' + esc(en || es) + '">' + esc(T(es, en)) + "</span>"; }
+  // "Español · English" texts written in services.yaml / settings.yaml: keep one side
+  function pickSide(text) {
+    var i = text.indexOf(" · ");
+    return i < 0 ? text : (LANG === "en" ? text.slice(i + 3) : text.slice(0, i));
+  }
+
   // ---------------------------------------------------------------- what each view shows (edit here)
   // Names are the button names in services.yaml. Apps that aren't installed simply don't appear.
   // CaciqueLibrary / CaciqueAcademy can be added to Familia once their content has been checked for kids.
   var VIEWS = {
     todas: { es: "Todas las apps", en: "All apps", icon: "grid" },
-    familia: { es: "Familia", en: "Family", icon: "family", apps: ["CaciqueFlix", "Familia Abierta", "CaciqueArcade", "Cacique Diario"],
-      title: "Para la familia", sub: "Toca un botón grande · Tap a big button" },
+    familia: { es: "Familia", en: "Family", icon: "family", apps: ["CaciqueFlix", "Familia Abierta", "CaciqueArcade"],
+      title: ["Para la familia", "For the family"], sub: ["Toca un botón grande", "Tap a big button"] },
     invitado: { es: "Invitado", en: "Guest", icon: "guest", apps: ["CaciqueFlix", "Familia Abierta", "CaciqueArcade"],
-      title: "Para las visitas", sub: "Lo que compartimos contigo · What we share with you" },
+      title: ["Para las visitas", "For our guests"], sub: ["Lo que compartimos contigo", "What we share with you"] },
   };
   // friendlier words for the big buttons (the normal directory keeps services.yaml's descriptions)
   var BIG_WORDS = {
@@ -39,7 +50,6 @@
     "CaciqueArcade": ["Juegos", "Games"],
     "CaciqueLibrary": ["Aprende y lee", "Learn & read"],
     "CaciqueAcademy": ["Aprende jugando", "Learn by playing"],
-    "Cacique Diario": ["Mensaje del día", "Message of the day"],
   };
   var STATUS = {
     up: ["En línea", "Online"],
@@ -74,8 +84,7 @@
     return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
   }
   function pill(st) {
-    return '<span class="cq-pill" data-st="' + st + '">' + svg(st, "cq-pill-ico") +
-      "<span>" + STATUS[st][0] + ' <span class="cq-en" lang="en">· ' + STATUS[st][1] + "</span></span></span>";
+    return '<span class="cq-pill" data-st="' + st + '">' + svg(st, "cq-pill-ico") + "<span>" + T(STATUS[st][0], STATUS[st][1]) + "</span></span>";
   }
 
   // ---------------------------------------------------------------- the view (hash first, then this device's choice)
@@ -99,8 +108,8 @@
     });
     var info = VIEWS[v];
     var t = document.getElementById("cq-easy-title"), s = document.getElementById("cq-easy-sub");
-    if (t && info.title) t.textContent = info.title;
-    if (s && info.sub) s.textContent = info.sub;
+    if (t && info.title) t.textContent = T(info.title[0], info.title[1]);
+    if (s && info.sub) s.textContent = T(info.sub[0], info.sub[1]);
     drawBig();
   }
 
@@ -113,21 +122,24 @@
 
     var top = el("header", { id: "cq-top" },
       '<div class="cq-brand"><span class="cq-orb" aria-hidden="true"><img src="/icons/cacique-emblem.svg" alt="" width="34" height="34"></span>' +
-      '<span><span class="cq-brand-name">El Cacique</span><span class="cq-brand-sub">Tu hogar digital · <span lang="en">Your digital home</span></span></span></div>' +
-      '<div class="cq-date" id="cq-date" aria-live="off"></div>');
+      '<span><span class="cq-brand-name">El Cacique</span><span class="cq-brand-sub">' + L("Tu hogar digital", "Your digital home") + "</span></span></div>" +
+      '<div class="cq-topright"><div class="cq-date" id="cq-date" aria-live="off"></div>' +
+      '<div class="cq-lang" role="group" aria-label="Idioma / Language"><button type="button" data-cq-lang="es">ES</button><button type="button" data-cq-lang="en">EN</button></div></div>');
 
     var buttons = Object.keys(VIEWS).map(function (k) {
       var v = VIEWS[k];
       return '<button type="button" class="cq-view-btn" data-cq-view="' + k + '" aria-pressed="false">' + svg(v.icon) +
-        '<span>' + v.es + (v.en !== v.es ? ' <span class="cq-en" lang="en">· ' + v.en + "</span>" : "") + "</span></button>";
+        L(v.es, v.en) + "</button>";
     }).join("");
     var hero = el("section", { id: "cq-hero", "aria-labelledby": "cq-hello" },
-      '<p class="cq-eyebrow">Sencillo para todos · <span lang="en">Simple for everyone</span></p>' +
-      '<h1 id="cq-hello">Bienvenidos a casa.</h1>' +
-      '<p class="cq-subtitle">Escoge lo que quieres hacer. Todo está a un toque.<br><span class="cq-en" lang="en">Choose what you\'d like to do. Everything is one tap away.</span></p>' +
-      '<div class="cq-views" role="group" aria-label="Vista · View">' + buttons + "</div>" +
-      '<p class="cq-note">Estos botones solo cambian lo que se ve en esta pantalla. No inician sesión ni dan permisos. ' +
-      '<span class="cq-en" lang="en">They only change what this screen shows; they don\'t sign anyone in.</span></p>');
+      '<p class="cq-eyebrow" id="cq-greet"></p>' +
+      '<h1 id="cq-hello">' + L("Bienvenidos a casa.", "Welcome home.") + "</h1>" +
+      // the home's message of the day (Cacique Diario), part of the page: nothing to open, nothing to sign into
+      '<figure class="cq-motd" id="cq-motd" hidden><blockquote id="cq-motd-text"></blockquote><figcaption id="cq-motd-src"></figcaption></figure>' +
+      '<p class="cq-subtitle">' + L("Escoge lo que quieres hacer. Todo está a un toque.", "Choose what you'd like to do. Everything is one tap away.") + "</p>" +
+      '<div class="cq-views" role="group" aria-label="Vista / View">' + buttons + "</div>" +
+      '<p class="cq-note">' + L("Estos botones solo cambian lo que se ve en esta pantalla. No inician sesión ni dan permisos.",
+        "These buttons only change what this screen shows. They don't sign anyone in.") + "</p>");
 
     var easy = el("section", { id: "cq-easy", "aria-labelledby": "cq-easy-title" },
       '<div class="cq-easy-main"><div class="cq-easy-head"><h2 id="cq-easy-title"></h2><p id="cq-easy-sub"></p></div>' +
@@ -136,14 +148,14 @@
         '<div class="cq-album-art" aria-hidden="true"><span class="cq-sun"></span><span class="cq-hill a"></span><span class="cq-hill b"></span>' +
           '<span class="cq-frame f1"></span><span class="cq-frame f2"></span><span class="cq-frame f3"></span></div>' +
         '<h2 id="cq-album-title">Familia Abierta</h2>' +
-        '<p>Las fotos que la familia decidió compartir, en presentación. <span class="cq-en" lang="en">The photos the family chose to share, as a slideshow.</span></p>' +
-        '<a class="cq-album-go" id="cq-album-go" href="#">' + svg("play") + '<span>Ver las fotos <span class="cq-en" lang="en">· View photos</span></span></a>' +
-        '<p class="cq-album-small">Solo el álbum compartido. Los álbumes privados se quedan privados. <span class="cq-en" lang="en">Only the shared album; private albums stay private.</span></p>' +
+        "<p>" + L("Las fotos que la familia decidió compartir, en presentación.", "The photos the family chose to share, as a slideshow.") + "</p>" +
+        '<a class="cq-album-go" id="cq-album-go" href="#">' + svg("play") + L("Ver las fotos", "View photos") + "</a>" +
+        '<p class="cq-album-small">' + L("Solo el álbum compartido. Los álbumes privados se quedan privados.", "Only the shared album. Private albums stay private.") + "</p>" +
       "</aside>");
 
     var foot = el("footer", { id: "cq-foot" },
-      "Un hogar, muchas aplicaciones · <span lang=\"en\">One home, many apps</span><br>" +
-      "Hecho en Puerto Rico · Todo se queda en la casa · <span lang=\"en\">Everything stays at home</span>");
+      L("Un hogar, muchas aplicaciones", "One home, many apps") + "<br>" +
+      L("Hecho en Puerto Rico · Todo se queda en la casa", "Made in Puerto Rico · Everything stays at home"));
 
     var next = document.getElementById("__next");
     document.body.insertBefore(top, next);
@@ -154,7 +166,12 @@
     document.addEventListener("click", function (e) {
       var b = e.target.closest && e.target.closest(".cq-view-btn");
       if (b) setView(b.getAttribute("data-cq-view"), true);
+      var lb = e.target.closest && e.target.closest("[data-cq-lang]");
+      if (lb) setLang(lb.getAttribute("data-cq-lang"));
     });
+    loadMotd();
+    setInterval(loadMotd, 600000);
+    setInterval(showMotd, 15000);
     window.addEventListener("hashchange", function () { setView(wantedView(), false); });
     tickDate();
     setInterval(tickDate, 30000);
@@ -165,11 +182,70 @@
     if (!d) return;
     var now = new Date(), txt;
     try {
-      txt = now.toLocaleDateString("es-PR", { weekday: "long", day: "numeric", month: "long" }) + " · " +
-        now.toLocaleTimeString("es-PR", { hour: "numeric", minute: "2-digit" });
+      var loc = LANG === "en" ? "en-US" : "es-PR";
+      txt = now.toLocaleDateString(loc, { weekday: "long", day: "numeric", month: "long" }) + " · " +
+        now.toLocaleTimeString(loc, { hour: "numeric", minute: "2-digit" });
     } catch (e) { txt = now.toDateString(); }
     txt = txt.charAt(0).toUpperCase() + txt.slice(1);
     if (d.textContent !== txt) d.textContent = txt;
+    var g = document.getElementById("cq-greet"), h = now.getHours();
+    var greet = h < 12 ? T("Buenos días", "Good morning") : h < 19 ? T("Buenas tardes", "Good afternoon") : T("Buenas noches", "Good evening");
+    if (g && g.textContent !== greet) g.textContent = greet;
+  }
+
+  // ---------------------------------------------------------------- the home's message of the day (Cacique Diario)
+  var MOTD = [], motdI = 0;
+  function loadMotd() {
+    if (!window.fetch) return;
+    fetch(location.protocol + "//" + location.hostname + ":8097/api/hoy?para=familia", { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { MOTD = (d.mensajes || []).filter(function (m) { return m.es; }); showMotd(); })
+      .catch(function () { var f = document.getElementById("cq-motd"); if (f) f.hidden = true; });
+  }
+  function showMotd() {
+    var f = document.getElementById("cq-motd");
+    if (!f || !MOTD.length) return;
+    var m = MOTD[motdI++ % MOTD.length];
+    f.classList.add("cq-fade");
+    setTimeout(function () {
+      document.getElementById("cq-motd-text").textContent = T(m.es, m.en);
+      var src = m.recordatorio ? "" : (m.fuente && m.fuente !== "Cacique" ? pickSide(m.fuente) : "");
+      document.getElementById("cq-motd-src").textContent = src;
+      f.hidden = false;
+      f.classList.remove("cq-fade");
+    }, f.hidden ? 0 : 450);
+  }
+
+  function setLang(l) {
+    if (l !== "es" && l !== "en") return;
+    LANG = l;
+    try { localStorage.setItem("cq-lang", l); } catch (e) { /* fine */ }
+    document.documentElement.setAttribute("lang", l);
+    document.querySelectorAll("[data-cq-es]").forEach(function (n) { n.textContent = n.getAttribute("data-cq-" + l); });
+    document.querySelectorAll("[data-cq-lang]").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-cq-lang") === l ? "true" : "false"); });
+    document.querySelectorAll("[data-cq-orig]").forEach(function (n) { setSide(n, n.getAttribute("data-cq-orig")); });
+    if (MOTD.length) { motdI = Math.max(0, motdI - 1); showMotd(); }
+    lastBig = "";
+    tickDate();
+    setView(view, false);
+    refresh();
+  }
+  // keep one side of an "Español · English" text, remembering the original for the language switch
+  function setSide(node, orig) {
+    var want = pickSide(orig), tn = null;
+    node.childNodes.forEach(function (c) { if (c.nodeType === 3 && c.nodeValue.trim()) tn = tn || c; });
+    if (tn) { if (tn.nodeValue !== want) tn.nodeValue = want; }
+    else if (node.textContent !== want) node.textContent = want;
+  }
+  function localize(node) {
+    var text = (node.textContent || "").trim();
+    if (!node.getAttribute("data-cq-orig")) {
+      if (text.indexOf(" · ") < 0) return;
+      node.setAttribute("data-cq-orig", text);
+    } else if (text.indexOf(" · ") >= 0 && text !== node.getAttribute("data-cq-orig")) {
+      node.setAttribute("data-cq-orig", text);          // Homepage redrew it with new words
+    }
+    setSide(node, node.getAttribute("data-cq-orig"));
   }
 
   // ---------------------------------------------------------------- reading what Homepage draws
@@ -206,6 +282,7 @@
       if (b) { b.setAttribute("tabindex", "-1"); b.setAttribute("aria-hidden", "false"); }
       h.insertAdjacentHTML("afterbegin", svg(ico, "cq-gico"));
     });
+    document.querySelectorAll("h2.service-group-name, .service-description").forEach(localize);
   }
 
   function tagServices(all) {
@@ -213,7 +290,7 @@
       var c = all[name], li = c.li;
       if (li.getAttribute("data-cq-status") !== c.status) li.setAttribute("data-cq-status", c.status);
       var link = li.querySelector("a.service-title-text");
-      var label = name + ". " + c.desc + ". Estado · Status: " + STATUS[c.status].join(" · ");
+      var label = name + ". " + c.desc + ". " + T("Estado", "Status") + ": " + T(STATUS[c.status][0], STATUS[c.status][1]);
       if (link && link.getAttribute("aria-label") !== label) link.setAttribute("aria-label", label);
       // the icon repeats the same link: one tab stop per card
       var iconLink = li.querySelector("a.service-icon");
@@ -232,15 +309,15 @@
     var info = VIEWS[view], all = cards();
     if (!info.apps) { lastBig = ""; return; }
     var html = info.apps.filter(function (n) { return all[n]; }).map(function (n) {
-      var c = all[n], w = BIG_WORDS[n] || [c.desc, ""];
+      var c = all[n], w = BIG_WORDS[n] ? T(BIG_WORDS[n][0], BIG_WORDS[n][1]) : c.desc;
       return '<a class="cq-big" href="' + esc(c.href) + '" target="' + esc(c.target) + '" data-st="' + c.status + '" ' +
-        'aria-label="' + esc(n + ". " + w[0] + (w[1] ? " · " + w[1] : "") + ". Estado · Status: " + STATUS[c.status].join(" · ")) + '">' +
+        'aria-label="' + esc(n + ". " + w + ". " + T("Estado", "Status") + ": " + T(STATUS[c.status][0], STATUS[c.status][1])) + '">' +
         '<span class="cq-big-icon" aria-hidden="true">' + (c.icon ? '<img src="' + esc(c.icon) + '" alt="">' : "") + "</span>" +
         '<span class="cq-big-text"><span class="cq-big-name">' + esc(n) + "</span>" +
-        '<span class="cq-big-desc">' + esc(w[0]) + (w[1] ? ' <span class="cq-en" lang="en">· ' + esc(w[1]) + "</span>" : "") + "</span>" +
+        '<span class="cq-big-desc">' + esc(w) + "</span>" +
         pill(c.status) + "</span></a>";
     }).join("");
-    if (!html) html = '<p class="cq-empty">Todavía no hay aplicaciones para esta vista. · <span lang="en">No apps for this view yet.</span></p>';
+    if (!html) html = '<p class="cq-empty">' + esc(T("Todavía no hay aplicaciones para esta vista.", "No apps for this view yet.")) + "</p>";
     if (html !== lastBig) {      // redraw only when something changed (keeps keyboard focus steady)
       var focused = document.activeElement && document.activeElement.closest && document.activeElement.closest(".cq-big");
       var href = focused ? focused.getAttribute("href") : null;
@@ -276,6 +353,7 @@
   }
   function start() {
     refresh();
+    setLang(LANG);
     setView(view, false);
     var root = document.getElementById("__next") || document.body;
     new MutationObserver(queue).observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });

@@ -89,7 +89,7 @@ def save(name, value):
 
 
 DEFAULT_SETTINGS = {"por_dia": 3, "hora": 4, "guardar_dias": 7, "immich_url": "http://127.0.0.1:2283",
-                    "immich_key": "", "albumes_extra": "", "ia": True, "fondos": ""}
+                    "immich_key": "", "albumes_extra": "", "ia": True, "fondos": "", "presencia": False}
 
 
 def settings():
@@ -101,7 +101,7 @@ def settings():
 def people():
     p = load("personas.json", {})
     if "familia" not in p:
-        p["familia"] = {"nombre": "Familia", "roles": [], "temas": list(TEMAS), "idioma": "es+en"}
+        p["familia"] = {"nombre": "Familia", "roles": [], "temas": list(TEMAS), "idioma": "es"}
     return p
 
 
@@ -320,6 +320,17 @@ def card(msg, out_file, rng, photos, W=1920, H=1080):
     im.convert("RGB").save(out_file, "JPEG", quality=90)
 
 
+def one_language(m, lang):
+    """The message in one language ('es' or 'en'), or both ('es+en')."""
+    if lang == "es+en":
+        return m
+    src, k = m.get("fuente", ""), m.get("fuente", "").find(" · ")
+    if k >= 0:
+        src = src[k + 3:] if lang == "en" else src[:k]
+    text = (m.get("en") or m.get("es")) if lang == "en" else m.get("es")
+    return dict(m, es=text, en="", fuente=src)
+
+
 def make_cards(day, msgs):
     """Picture cards for the shared family messages. Returns the files (empty if Pillow is missing)."""
     import importlib.util
@@ -334,9 +345,11 @@ def make_cards(day, msgs):
         for ext in ("jpg", "jpeg", "png", "JPG", "JPEG", "PNG"):
             photos += glob.glob(os.path.join(os.path.expanduser(fondos), "**", "*." + ext), recursive=True)
     rng = random.Random(day.isoformat())
+    lang = people()["familia"].get("idioma", "es")       # the cards speak the family's language (one, unless "both")
     files = []
     for i, m in enumerate([m for m in msgs if not m.get("recordatorio")]):
-        f = os.path.join(folder, "diario-%s-%d.jpg" % (day.isoformat(), i + 1))
+        m = one_language(m, lang)
+        f = os.path.join(folder, "diario-%s-%d-%s.jpg" % (day.isoformat(), i + 1, lang.replace("+", "")))
         if not os.path.exists(f):
             card(m, f, rng, photos)
         files.append(f)
@@ -533,6 +546,134 @@ def scheduler():
         time.sleep(60)
 
 
+# ================================================================ presence: which home devices are on the Wi-Fi (for routines)
+# Off until an adult turns it on (Ajustes). Every 2 minutes it asks the home network "who's here?" (ARP, like the
+# router's own device list), writes arrivals and departures to presencia/<year-month>.csv, and keeps nothing else.
+# Adults name each device and say whose it is; after a few weeks the page shows each person's usual
+# leave / arrive times, so morning messages can be waiting for them. Nothing leaves the house.
+AWAY_AFTER = 10 * 60          # a device counts as gone after 10 minutes without answering (phones doze)
+
+
+def lan():
+    """(device, network address like 192.168.1.) of the house connection, or (None, None)."""
+    try:
+        import subprocess
+        r = subprocess.run(["ip", "-4", "-o", "addr", "show", "scope", "global"], capture_output=True, text=True, timeout=5).stdout
+        for line in r.splitlines():
+            f = line.split()
+            if len(f) > 3 and not re.match(r"(docker|br-|veth|virbr|tailscale|lo)", f[1]):
+                ip, prefix = f[3].split("/")
+                if prefix == "24":
+                    return f[1], ip.rsplit(".", 1)[0] + "."
+    except Exception:
+        pass
+    return None, None
+
+
+def neighbors(dev, net):
+    """{mac: ip} of the devices that answer right now."""
+    import socket, subprocess
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(0.01)
+    for i in range(1, 255):                     # one tiny packet each: the computer asks "who has this number?"
+        try:
+            sock.sendto(b"", (net + str(i), 9))
+        except OSError:
+            pass
+    sock.close()
+    time.sleep(12)                              # give every device time to answer (or to be marked failed)
+    out = subprocess.run(["ip", "-j", "neigh", "show", "dev", dev], capture_output=True, text=True, timeout=10).stdout
+    here = {}
+    for n in json.loads(out or "[]"):
+        state = n.get("state") or []
+        if n.get("lladdr") and any(st in ("REACHABLE", "PERMANENT") for st in state):
+            here[n["lladdr"].lower()] = n.get("dst", "")
+    return here
+
+
+def log_event(kind, who, event, ip="", when=None):
+    os.makedirs(path("presencia"), exist_ok=True)
+    stamp = time.localtime(when) if when else time.localtime()
+    f = path("presencia", time.strftime("%Y-%m", stamp) + ".csv")
+    new = not os.path.exists(f)
+    with open(f, "a", encoding="utf-8") as h:
+        if new:
+            h.write("time,kind,who,event,ip\n")
+        h.write("%s,%s,%s,%s,%s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", stamp), kind, who, event, ip))
+
+
+def presence_step(here, now=None):
+    """Update who is home from one look at the network; write arrivals/departures."""
+    now = now or time.time()
+    st = load("presencia.json", {"equipos": {}, "personas": {}})
+    eq = st.setdefault("equipos", {})
+    for mac, ip in here.items():
+        d = eq.setdefault(mac, {"primera_vez": now})
+        if not d.get("aqui"):
+            log_event("equipo", mac, "llega", ip, now)
+        d.update(aqui=True, visto=now, ip=ip)
+    for mac, d in eq.items():
+        if d.get("aqui") and mac not in here and now - d.get("visto", 0) > AWAY_AFTER:
+            d["aqui"] = False
+            log_event("equipo", mac, "sale", d.get("ip", ""), d.get("visto"))     # left right after it was last seen
+    names = load("equipos.json", {})           # {mac: {"nombre": ..., "persona": pid}}
+    per = st.setdefault("personas", {})
+    owners = {}
+    for mac, info in names.items():
+        if info.get("persona"):
+            owners.setdefault(info["persona"], []).append(mac)
+    for pid, macs in owners.items():
+        home = any(eq.get(m, {}).get("aqui") for m in macs)
+        if per.get(pid) is None:
+            per[pid] = home
+        elif per[pid] != home:
+            per[pid] = home
+            last = max(eq.get(m, {}).get("visto", now) for m in macs)
+            log_event("persona", pid, "llega" if home else "sale", "", now if home else last)
+    save("presencia.json", st)
+
+
+def routines(weeks=8):
+    """Each person's usual weekday times: first departure in the morning, return in the afternoon (medians)."""
+    first_out, back = {}, {}
+    since = dt.date.today() - dt.timedelta(weeks=weeks)
+    for f in sorted(glob.glob(path("presencia", "*.csv"))):
+        for line in open(f, encoding="utf-8").read().splitlines()[1:]:
+            try:
+                t, kind, who, ev, _ = line.split(",", 4)
+                when = dt.datetime.strptime(t, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                continue
+            if kind != "persona" or when.date() < since or when.weekday() > 4:
+                continue
+            mins = when.hour * 60 + when.minute
+            if ev == "sale" and 180 <= mins <= 660:
+                first_out.setdefault(who, {}).setdefault(when.date(), mins)
+            if ev == "llega" and 720 <= mins <= 1320:
+                back.setdefault(who, {}).setdefault(when.date(), mins)
+
+    def median(vals):
+        v = sorted(vals)
+        return v[len(v) // 2] if v else None
+    out = {}
+    for who in set(first_out) | set(back):
+        o, b = list(first_out.get(who, {}).values()), list(back.get(who, {}).values())
+        out[who] = {"sale": median(o), "dias_sale": len(o), "llega": median(b), "dias_llega": len(b)}
+    return out
+
+
+def presence_loop():
+    while True:
+        try:
+            if settings().get("presencia"):
+                dev, net = lan()
+                if dev:
+                    presence_step(neighbors(dev, net))
+        except Exception as e:
+            print("  ! presence:", e, file=sys.stderr, flush=True)
+        time.sleep(120)
+
+
 # ================================================================ pages
 STYLE = """
 :root{--ink:#0d3b5c;--sub:#3e6c8a;--glass:rgba(255,255,255,.55);--edge:rgba(255,255,255,.85);--ok:#1e8a4c;--no:#b3392f}
@@ -566,22 +707,26 @@ body.solo-es .en{display:none}body.solo-en .es{display:none}body.solo-en .en{fon
 </style></head><body>
 <div class="top"><span id="hello"></span><b id="clock"></b></div>
 <main><div class="card" id="card"><div class="tema" id="tema"></div><p class="es" id="es">Cacique Diario</p>
-<p class="en" id="en" lang="en">Loading the message of the day…</p><div class="src" id="src"></div></div></main>
+<p class="en" id="en" lang="en"></p><div class="src" id="src"></div></div></main>
 <div class="dots" id="dots"></div>
 <script>
 const q=new URLSearchParams(location.search),para=q.get("para")||"familia",modo=q.get("modo")||"",lang=q.get("idioma")||"";
 const SEC=+(q.get("segundos")||20), TEMAS=%TEMAS%;
-if(modo)document.body.classList.add(modo);if(lang==="es")document.body.classList.add("solo-es");if(lang==="en")document.body.classList.add("solo-en");
+if(modo)document.body.classList.add(modo);
+function setLang(l){document.body.classList.remove("solo-es","solo-en");if(l==="es"||l==="en")document.body.classList.add("solo-"+l);document.documentElement.lang=l==="en"?"en":"es";}
+setLang(lang||"es");
 let M=[],i=0;const $=id=>document.getElementById(id);
 function greet(){const h=new Date().getHours();return h<12?["Buenos días","Good morning"]:h<19?["Buenas tardes","Good afternoon"]:["Buenas noches","Good evening"];}
-function clock(){const n=new Date();let d;try{d=n.toLocaleDateString("es-PR",{weekday:"long",day:"numeric",month:"long"})+" · "+n.toLocaleTimeString("es-PR",{hour:"numeric",minute:"2-digit"})}catch(e){d=n.toString()}
- $("clock").textContent=d.charAt(0).toUpperCase()+d.slice(1);const g=greet();$("hello").textContent=(M.nombre?g[0]+", "+M.nombre:g[0])+" · "+g[1];}
+const EN=()=>document.body.classList.contains("solo-en"), BOTH=()=>!document.body.classList.contains("solo-en")&&!document.body.classList.contains("solo-es");
+const W=(a)=>EN()?a[1]:BOTH()?a[0]+" · "+a[1]:a[0];
+function clock(){const n=new Date(),loc=EN()?"en-US":"es-PR";let d;try{d=n.toLocaleDateString(loc,{weekday:"long",day:"numeric",month:"long"})+" · "+n.toLocaleTimeString(loc,{hour:"numeric",minute:"2-digit"})}catch(e){d=n.toString()}
+ $("clock").textContent=d.charAt(0).toUpperCase()+d.slice(1);const g=W(greet());$("hello").textContent=M.nombre?g+", "+M.nombre:g;}
 function show(){if(!M.mensajes||!M.mensajes.length)return;const m=M.mensajes[i%M.mensajes.length];$("card").classList.add("hide");
- setTimeout(()=>{const t=m.recordatorio?["Recordatorio","Reminder"]:(TEMAS[m.tema]||["",""]);$("tema").textContent=t[0]+" · "+t[1];
-  $("es").textContent=m.es;$("en").textContent=m.en||"";$("src").textContent=!m.recordatorio&&m.fuente&&m.fuente!=="Cacique"?m.fuente:"";
+ setTimeout(()=>{const t=m.recordatorio?["Recordatorio","Reminder"]:(TEMAS[m.tema]||["",""]);$("tema").textContent=W(t);
+  $("es").textContent=m.es;$("en").textContent=m.en||"";const f=!m.recordatorio&&m.fuente&&m.fuente!=="Cacique"?m.fuente:"",k=f.indexOf(" · ");$("src").textContent=k<0||BOTH()?f:EN()?f.slice(k+3):f.slice(0,k);
   $("dots").innerHTML=M.mensajes.map((_,k)=>`<i class="${k===i%M.mensajes.length?"on":""}"></i>`).join("");$("card").classList.remove("hide");i++;},700);}
 async function load(){try{const r=await fetch("/api/hoy?para="+encodeURIComponent(para),{cache:"no-store"});M=await r.json();
- if(!lang&&(M.idioma==="es"||M.idioma==="en"))document.body.classList.add("solo-"+M.idioma);clock();if(i===0)show();}catch(e){}}
+ if(!lang)setLang(M.idioma||"es");clock();if(i===0)show();}catch(e){}}
 load();setInterval(load,600000);setInterval(show,SEC*1000);clock();setInterval(clock,30000);
 </script></body></html>"""
 
@@ -594,7 +739,8 @@ def admin_page(tab, msg=""):
     s, ps = settings(), people()
     dec = load("decisiones.json", {})
     tabs = [("pendientes", "Por aprobar · To approve"), ("hoy", "Hoy · Today"), ("personas", "Personas · People"),
-            ("recordatorios", "Recordatorios · Reminders"), ("propios", "Mis mensajes · My messages"), ("ajustes", "Ajustes · Settings")]
+            ("recordatorios", "Recordatorios · Reminders"), ("propios", "Mis mensajes · My messages"), ("equipos", "Equipos y rutinas · Devices & routines"),
+            ("ajustes", "Ajustes · Settings")]
     nav = "".join('<a class="%s" href="/admin?t=%s">%s</a>' % ("on" if k == tab else "", k, v) for k, v in tabs)
     body = ""
     tema_opts = lambda sel="": "".join('<option value="%s"%s>%s · %s</option>' % (k, " selected" if k == sel else "", a, b) for k, (a, b) in TEMAS.items())
@@ -607,14 +753,15 @@ def admin_page(tab, msg=""):
             body += "<p class='empty'>Nada pendiente. · Nothing waiting.</p>"
         for it in rows:
             body += """<form method="post" action="/admin/decidir" class="item"><input type="hidden" name="id" value="%s">
-<div class="meta">%s · %s · <i>%s</i></div><textarea name="es" rows="2">%s</textarea><textarea name="en" rows="2" lang="en">%s</textarea>
+<div class="meta">%s – %s – <i>%s</i></div><textarea name="es" rows="2">%s</textarea><textarea name="en" rows="2" lang="en">%s</textarea>
 <div class="row"><button name="d" value="ok" class="ok">Aprobar · Approve</button><button name="d" value="no" class="no">Rechazar · Reject</button></div></form>""" % (
                 esc(it["id"]), esc(TEMAS.get(it["tema"], ("", ""))[0]), esc(it.get("para", "todos")), esc(it.get("fuente")), esc(it["es"]), esc(it.get("en")))
     elif tab == "hoy":
         day = dt.date.today()
         reg = load("registro.json", {})
-        body += "<h2>Hoy · Today (%s)</h2><p class='sub'>Último trabajo diario · last daily run: %s %s<br>%s<br>%s</p>" % (
-            day.isoformat(), esc(reg.get("ultimo", "—")), esc(reg.get("hora", "")), esc(" · ".join(reg.get("notas", []))), esc(reg.get("ia", "")))
+        body += "<h2>Hoy · Today <small>%s</small></h2><p class='sub'>Último trabajo diario · Last daily run: <b>%s %s</b></p><div class='sub'>%s</div>" % (
+            day.isoformat(), esc(reg.get("ultimo", "—")), esc(reg.get("hora", "")),
+            "".join("<div>%s</div>" % esc(n) for n in reg.get("notas", []) + ([reg["ia"]] if reg.get("ia") else [])))
         body += '<form method="post" action="/admin/rehacer"><button>Rehacer hoy (mensajes, tarjetas y álbum) · Redo today</button></form>'
         for pid, p in ps.items():
             body += "<h3>%s <a class='lnk' href='/?para=%s' target='_blank'>abrir pantalla · open screen</a></h3><ul>" % (esc(p.get("nombre", pid)), esc(pid))
@@ -626,20 +773,23 @@ def admin_page(tab, msg=""):
             body += "<h3>Tarjetas de hoy · Today's cards</h3><div class='cards'>" + "".join(
                 "<img src='/tarjeta/%s/%s' alt=''>" % (day.isoformat(), esc(os.path.basename(f))) for f in imgs) + "</div>"
     elif tab == "personas":
-        body += "<h2>Personas · People</h2><p class='sub'>Cada persona tiene su pantalla: <code>http://&lt;servidor&gt;:8097/?para=&lt;nombre&gt;</code>. Los roles deciden qué mensajes personales recibe (por ejemplo, <i>esposo</i>). Las pantallas compartidas usan <b>Familia</b>. · Each person gets a screen; roles decide personal messages.</p>"
+        body += ("<h2>Personas · People</h2><p class='sub'><span class='es'>Cada persona tiene su pantalla: <code>http://&lt;servidor&gt;:8097/?para=&lt;nombre&gt;</code>. "
+                 "Los roles deciden qué mensajes personales recibe (por ejemplo, <i>esposo</i>). Las pantallas compartidas y la portada usan <b>Familia</b>.</span>"
+                 "<span class='en'>Each person gets a screen: <code>http://&lt;server&gt;:8097/?para=&lt;name&gt;</code>. Roles decide which personal messages "
+                 "they get (for example, <i>husband</i>). Shared screens and the front page use <b>Familia</b>.</span></p>")
         for pid, p in ps.items():
             roles = "".join('<label><input type="checkbox" name="roles" value="%s"%s> %s</label>' % (k, " checked" if k in p.get("roles", []) else "", a) for k, (a, b) in ROLES.items())
             temas = "".join('<label><input type="checkbox" name="temas" value="%s"%s> %s</label>' % (k, " checked" if k in p.get("temas", TEMAS) else "", a) for k, (a, b) in TEMAS.items())
-            idi = "".join('<option value="%s"%s>%s</option>' % (k, " selected" if p.get("idioma", "es+en") == k else "", v) for k, v in (("es+en", "Español + English"), ("es", "Solo español"), ("en", "English only")))
+            idi = "".join('<option value="%s"%s>%s</option>' % (k, " selected" if p.get("idioma", "es") == k else "", v) for k, v in (("es", "Español"), ("en", "English"), ("es+en", "Los dos · Both")))
             body += """<form method="post" action="/admin/persona" class="item"><input type="hidden" name="id" value="%s">
-<div class="meta"><b>%s</b> · <a class="lnk" href="/?para=%s%s" target="_blank">pantalla · screen</a> · <a class="lnk" href="/?para=%s&modo=espejo" target="_blank">espejo · mirror</a></div>
+<div class="meta"><b>%s</b> – <a class="lnk" href="/?para=%s%s" target="_blank">pantalla · screen</a> – <a class="lnk" href="/?para=%s&modo=espejo" target="_blank">espejo · mirror</a></div>
 <label>Nombre · Name <input name="nombre" value="%s"></label>
 <div class="checks"><span>Roles:</span>%s</div><div class="checks"><span>Temas · Themes:</span>%s</div>
 <label>Mensajes por día · per day <input name="por_dia" type="number" min="1" max="8" value="%s"></label>
 <label>Idioma · Language <select name="idioma">%s</select></label>
 <div class="row"><button class="ok">Guardar · Save</button>%s</div></form>""" % (
                 esc(pid), esc(pid), esc(pid), "&idioma=" + esc(p.get("idioma")) if p.get("idioma") in ("es", "en") else "", esc(pid),
-                esc(p.get("nombre", pid)), roles if pid != "familia" else "<i>pantallas compartidas: solo mensajes para todos</i>", temas,
+                esc(p.get("nombre", pid)), roles if pid != "familia" else "<i>pantallas compartidas: solo mensajes para todos · shared screens: messages for everyone only</i>", temas,
                 esc(p.get("por_dia") or s["por_dia"]), idi,
                 '<button name="borrar" value="1" class="no">Quitar · Remove</button>' if pid != "familia" else "")
         body += """<form method="post" action="/admin/persona" class="item new"><div class="meta"><b>Añadir persona · Add a person</b></div>
@@ -649,7 +799,7 @@ def admin_page(tab, msg=""):
         for i, r in enumerate(load("recordatorios.json", [])):
             days = ", ".join(DIAS[d] for d in r.get("dias", []))
             body += """<form method="post" action="/admin/recordatorio" class="item"><input type="hidden" name="i" value="%d">
-<div class="meta">%s · %s %s</div><b>%s</b><br><span lang="en">%s</span>
+<div class="meta">%s – %s %s</div><b>%s</b><br><span lang="en">%s</span>
 <div class="row"><button name="borrar" value="1" class="no">Quitar · Remove</button></div></form>""" % (
                 i, esc(days), esc(r.get("para", "todos")), "" if r.get("activo", True) else "(apagado)", esc(r["es"]), esc(r.get("en")))
         checks = "".join('<label><input type="checkbox" name="dias" value="%d"> %s</label>' % (i, d) for i, d in enumerate(DIAS))
@@ -665,9 +815,43 @@ def admin_page(tab, msg=""):
 <label>English <textarea name="en" rows="2"></textarea></label><label>Fuente · Source <input name="fuente" placeholder="Cacique"></label>
 <div class="row"><button class="ok">Añadir · Add</button></div></form>""" % (tema_opts(), para_opts)
         for it in reversed(own):
-            body += """<form method="post" action="/admin/propio" class="item"><input type="hidden" name="borrar" value="%s"><div class="meta">%s · %s</div>
+            body += """<form method="post" action="/admin/propio" class="item"><input type="hidden" name="borrar" value="%s"><div class="meta">%s – %s</div>
 <b>%s</b><br><span lang="en">%s</span><div class="row"><button class="no">Quitar · Remove</button></div></form>""" % (
                 esc(it["id"]), esc(TEMAS.get(it["tema"], ("", ""))[0]), esc(it.get("para")), esc(it["es"]), esc(it.get("en")))
+    elif tab == "equipos":
+        on = s.get("presencia")
+        body += ("<h2>Equipos y rutinas · Devices &amp; routines</h2><p class='sub'><span class='es'>Cada 2 minutos El Cacique mira qué equipos están "
+                 "en el Wi-Fi de la casa (como la lista de equipos del router). Ponle nombre a cada uno y di de quién es. Después de unas semanas, aquí "
+                 "salen las horas de cada persona, para que los mensajes de la mañana la estén esperando. Nada sale de la casa.</span>"
+                 "<span class='en'>Every 2 minutes El Cacique looks at which devices are on the home Wi-Fi (like the router's device list). Name each "
+                 "one and say whose it is. After a few weeks, each person's usual times show here, so morning messages can be waiting for them. "
+                 "Nothing leaves the house.</span></p>")
+        body += """<form method="post" action="/admin/presencia" class="item"><div class="meta"><b>%s</b></div>
+<div class="row"><button name="on" value="%s" class="%s">%s</button></div></form>""" % (
+            "Registro encendido · Recording is on" if on else "Registro apagado · Recording is off",
+            "0" if on else "1", "no" if on else "ok", "Apagar · Turn off" if on else "Encender · Turn on")
+        st, names = load("presencia.json", {"equipos": {}}), load("equipos.json", {})
+        rt = routines()
+        if rt:
+            body += "<h3>Rutinas (lunes a viernes, últimas 8 semanas) · Routines (weekdays, last 8 weeks)</h3><ul>"
+            hm = lambda m: "—" if m is None else "%d:%02d %s" % ((m // 60 - 1) % 12 + 1, m % 60, "a. m." if m < 720 else "p. m.")
+            for who, r in rt.items():
+                body += "<li><b>%s</b><br><span>Sale · Leaves</span> <b>%s</b> (%d <span>días · days</span>) – <span>Llega · Arrives</span> <b>%s</b> (%d <span>días · days</span>)</li>" % (
+                    esc(ps.get(who, {}).get("nombre", who)), hm(r["sale"]), r["dias_sale"], hm(r["llega"]), r["dias_llega"])
+            body += "</ul>"
+        eq = sorted(st.get("equipos", {}).items(), key=lambda kv: -kv[1].get("visto", 0))
+        if not eq:
+            body += "<p class='empty'>Todavía no hay equipos. · No devices yet.</p>"
+        person_opts = lambda sel: '<option value="">Nadie (es de la casa) · Nobody (the house)</option>' + "".join(
+            '<option value="%s"%s>%s</option>' % (esc(pid), " selected" if pid == sel else "", esc(p.get("nombre", pid))) for pid, p in ps.items() if pid != "familia")
+        for mac, d in eq:
+            n = names.get(mac, {})
+            seen = time.strftime("%d/%m %H:%M", time.localtime(d.get("visto", 0)))
+            body += """<form method="post" action="/admin/equipo" class="item"><input type="hidden" name="mac" value="%s">
+<div class="meta"><span>%s</span> – %s – <code>%s</code> – <span>%s</span> %s</div><label>Nombre del equipo · Device name <input name="nombre" value="%s" placeholder="Teléfono, TV, enchufe…"></label>
+<label>De quién es · Whose is it <select name="persona">%s</select></label><div class="row"><button class="ok">Guardar · Save</button></div></form>""" % (
+                esc(mac), "🟢 en casa · home" if d.get("aqui") else "⚪ fuera · away", esc(d.get("ip", "")), esc(mac),
+                "visto · seen", esc(seen), esc(n.get("nombre", "")), person_opts(n.get("persona", "")))
     elif tab == "ajustes":
         body += """<h2>Ajustes · Settings</h2><form method="post" action="/admin/ajustes" class="item">
 <label>Clave de CaciquePhotos (Immich → tu foto → Configuración de la cuenta → Claves API → Nueva) · CaciquePhotos API key
@@ -682,15 +866,37 @@ def admin_page(tab, msg=""):
 <div class="row"><button class="ok">Guardar · Save</button></div></form>""" % (
             "guardada - escribe otra para cambiarla" if s.get("immich_key") else "pega la clave aquí", esc(s["immich_url"]), esc(s["albumes_extra"]),
             esc(s["por_dia"]), esc(s["hora"]), esc(s["guardar_dias"]), esc(s["fondos"]), " checked" if s.get("ia") else "")
-    note = "<div class='note'>%s</div>" % esc(msg) if msg else ""
+    note = "<div class='note'>%s</div>" % "".join("<div>%s</div>" % esc(x) for x in msg.split("\n")) if msg else ""
     return ADMIN_SHELL.replace("{{NAV}}", nav).replace("{{BODY}}", note + body)
 
 
+# one language at a time on the adults' pages: "Español · English" texts keep one side (ES/EN switch, remembered)
+LANGJS = r"""<script>
+(function(){var L;try{L=localStorage.getItem("cq-lang")}catch(e){}
+ L=L||((navigator.language||"es").toLowerCase().indexOf("en")===0?"en":"es");var O=new WeakMap();
+ function side(o){var k=o.indexOf(" · ");if(k<0)return o;var t=(L==="en"?o.slice(k+3):o.slice(0,k)).trim();
+  if(/:\s*$/.test(o)&&!/:$/.test(t))t+=":";return o.match(/^\s*/)[0]+t+o.match(/\s*$/)[0];}
+ function walk(n){if(n.nodeType===3){var o=O.has(n)?O.get(n):n.nodeValue;if(o.indexOf(" · ")<0)return;O.set(n,o);n.nodeValue=side(o);return;}
+  if(n.nodeType!==1||/^(TEXTAREA|SCRIPT|STYLE|CODE)$/.test(n.nodeName))return;
+  if(n.placeholder){var p=n.getAttribute("data-ph")||n.placeholder;n.setAttribute("data-ph",p);n.placeholder=side(p);}
+  n.childNodes.forEach(walk);}
+ function apply(){document.documentElement.lang=L;walk(document.body);
+  document.querySelectorAll("[data-l]").forEach(function(b){b.setAttribute("aria-pressed",b.getAttribute("data-l")===L)});}
+ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-l]");if(!b)return;e.preventDefault();
+  L=b.getAttribute("data-l");try{localStorage.setItem("cq-lang",L)}catch(x){}apply();});
+ apply();})();
+</script>"""
+LANGCSS = """.lang{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--glass);border:1px solid var(--edge)}
+.lang button{border:0;background:none;color:var(--ink);font:700 13px/1 inherit;min-width:40px;min-height:32px;border-radius:999px;cursor:pointer;padding:0}
+.lang button[aria-pressed="true"]{background:#fff;box-shadow:0 2px 6px rgba(0,40,80,.15)}
+html[lang=en] .es,html[lang=es] .en:not([lang]){display:none}
+"""
+
 ADMIN_SHELL = """<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cacique Diario · admin</title><style>""" + STYLE + """
+<title>Cacique Diario</title><style>""" + STYLE + LANGCSS + """
 body{padding:16px}.wrap{max-width:980px;margin:0 auto}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:#fff;text-shadow:0 2px 6px rgba(0,40,80,.35)}
-header h1{margin:8px 0;font-size:28px}header a{color:#fff}
+header h1{margin:8px 0;font-size:28px}header a{color:#fff}.hr{display:flex;gap:12px;align-items:center}
 nav{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}
 nav a{padding:9px 14px;border-radius:999px;background:var(--glass);border:1px solid var(--edge);color:var(--ink);text-decoration:none;font-size:15px}
 nav a.on{background:#fff;font-weight:600}
@@ -710,11 +916,12 @@ button.no{background:linear-gradient(#f0857b,#b3392f);color:#fff}
 .lnk{font-size:14px;font-weight:400;margin-left:8px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 .cards img{width:100%;border-radius:12px;box-shadow:0 6px 20px rgba(0,40,80,.2)}code{background:#fff;padding:1px 6px;border-radius:6px}
 ul{padding-left:20px}li{margin:6px 0}li span{color:var(--sub);font-style:italic}
-</style></head><body><div class="wrap"><header><h1>Cacique Diario</h1><a href="/admin/salir">Salir · Log out</a></header>
-<nav>{{NAV}}</nav><section>{{BODY}}</section></div></body></html>"""
+</style></head><body><div class="wrap"><header><h1>Cacique Diario</h1><div class="hr"><div class="lang"><button type="button" data-l="es">ES</button><button type="button" data-l="en">EN</button></div>
+<a href="/admin/salir">Salir · Log out</a></div></header>
+<nav>{{NAV}}</nav><section>{{BODY}}</section></div>""" + LANGJS + """</body></html>"""
 
 LOGIN = """<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cacique Diario · entrar</title><style>""" + STYLE + """
+<title>Cacique Diario</title><style>""" + STYLE + LANGCSS + """
 body{display:flex;align-items:center;justify-content:center;padding:16px}
 form{background:var(--glass);border:1px solid var(--edge);border-radius:24px;padding:28px;width:100%;max-width:380px;backdrop-filter:blur(12px);
  display:flex;flex-direction:column;gap:12px}h1{margin:0}p{margin:0;color:var(--sub)}
@@ -722,7 +929,7 @@ input{font:inherit;font-size:17px;padding:11px;border-radius:12px;border:1px sol
 button{font:inherit;font-size:17px;padding:11px;border-radius:999px;border:0;background:linear-gradient(#5fd38d,#1e8a4c);color:#fff;cursor:pointer}
 .err{color:#b3392f}</style></head><body><form method="post" action="/admin/entrar"><h1>Cacique Diario</h1>
 <p>Página de los adultos · Adults' page</p>{{ERR}}<input type="password" name="pw" placeholder="Contraseña · Password" autofocus required>
-<button>Entrar · Log in</button></form></body></html>"""
+<button>Entrar · Log in</button><div class="lang" style="align-self:center"><button type="button" data-l="es">ES</button><button type="button" data-l="en">EN</button></div></form>""" + LANGJS + """</body></html>"""
 
 
 # ================================================================ web server
@@ -778,7 +985,7 @@ class Handler(BaseHTTPRequestHandler):
                 if pid not in ps:
                     pid = "familia"
                 return self.jsend({"fecha": dt.date.today().isoformat(), "para": pid, "nombre": ps[pid].get("nombre", "") if pid != "familia" else "",
-                                   "idioma": ps[pid].get("idioma", "es+en"), "mensajes": pick(pid, dt.date.today())})
+                                   "idioma": ps[pid].get("idioma", "es"), "mensajes": pick(pid, dt.date.today())})
             if u.path == "/api/mensaje":     # one message, for CaciqueHome to say out loud
                 pid = q.get("para", "familia")
                 pid = pid if pid in people() else "familia"
@@ -862,9 +1069,9 @@ class Handler(BaseHTTPRequestHandler):
                         p["roles"] = [r for r in form.get("roles", []) if r in ROLES] if pid != "familia" else []
                         p["temas"] = [t for t in form.get("temas", []) if t in TEMAS] or list(TEMAS)
                         p["por_dia"] = max(1, min(8, int(f.get("por_dia") or 3)))
-                        p["idioma"] = f.get("idioma") if f.get("idioma") in ("es", "en", "es+en") else "es+en"
+                        p["idioma"] = f.get("idioma") if f.get("idioma") in ("es", "en", "es+en") else "es"
                     else:
-                        p.setdefault("roles", ["adultos"]); p.setdefault("temas", list(TEMAS)); p.setdefault("idioma", "es+en")
+                        p.setdefault("roles", ["adultos"]); p.setdefault("temas", list(TEMAS)); p.setdefault("idioma", "es")
                     ps[pid] = p
                 save("personas.json", ps)
                 today = os.path.join("dias", dt.date.today().isoformat() + ".json")
@@ -914,13 +1121,25 @@ class Handler(BaseHTTPRequestHandler):
                 if s.get("immich_key"):
                     try:
                         album_id(ALBUM)
-                        note += " · CaciquePhotos OK: álbum \"%s\" listo" % ALBUM
+                        note += "\nCaciquePhotos OK: álbum \"%s\" listo · album ready" % ALBUM
                     except Exception as e:
-                        note += " · CaciquePhotos no respondió: %s" % e
+                        note += "\nCaciquePhotos no respondió · did not answer: %s" % e
                 return self.go("/admin?t=ajustes&m=" + urllib.parse.quote(note))
+            if u.path == "/admin/presencia":
+                st = load("ajustes.json", {})
+                st["presencia"] = f.get("on") == "1"
+                save("ajustes.json", st)
+                return self.go("/admin?t=equipos&m=" + urllib.parse.quote("Guardado · Saved"))
+            if u.path == "/admin/equipo":
+                mac = f.get("mac", "").lower()
+                if re.fullmatch(r"[0-9a-f:]{17}", mac):
+                    names = load("equipos.json", {})
+                    names[mac] = {"nombre": f.get("nombre", "").strip()[:60], "persona": f.get("persona", "") if f.get("persona", "") in people() else ""}
+                    save("equipos.json", names)
+                return self.go("/admin?t=equipos&m=" + urllib.parse.quote("Guardado · Saved"))
             if u.path == "/admin/rehacer":
                 log = run_day(dt.date.today(), force=True)
-                return self.go("/admin?t=hoy&m=" + urllib.parse.quote(" · ".join(log.get("notas", []))))
+                return self.go("/admin?t=hoy&m=" + urllib.parse.quote("\n".join(log.get("notas", []))))
             return self.send(404, "not found", "text/plain")
         except Exception as e:
             print("  ! POST %s: %s" % (u.path, e), file=sys.stderr, flush=True)
@@ -931,7 +1150,7 @@ def first_run():
     """Starting files for a new home (only written when they don't exist yet)."""
     os.makedirs(DATA, exist_ok=True)
     if not os.path.exists(path("personas.json")):
-        save("personas.json", {"familia": {"nombre": "Familia", "roles": [], "temas": list(TEMAS), "idioma": "es+en"}})
+        save("personas.json", {"familia": {"nombre": "Familia", "roles": [], "temas": list(TEMAS), "idioma": "es"}})
     if not os.path.exists(path("recordatorios.json")):
         save("recordatorios.json", [{"dias": [2], "es": "Hoy es miércoles: saquemos la basura.",
                                      "en": "It's Wednesday: let's take out the trash.", "para": "todos", "activo": True}])
@@ -955,6 +1174,7 @@ def main():
         print("  Hecho · Done:", " · ".join(log.get("notas", [])))
         return
     threading.Thread(target=scheduler, daemon=True).start()
+    threading.Thread(target=presence_loop, daemon=True).start()
     srv = ThreadingHTTPServer((BIND, PORT), Handler)
     print("  Cacique Diario on port %d (data: %s)" % (PORT, DATA), flush=True)
     srv.serve_forever()

@@ -110,6 +110,24 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   box-shadow: 0 4px 14px rgba(35, 126, 118, .1);
 }
 
+.cq-topright { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cq-lang { display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; background: rgba(255, 255, 255, .62); border: 1px solid var(--cq-line);
+  box-shadow: 0 4px 14px rgba(35, 126, 118, .1); }
+.cq-lang button { appearance: none; cursor: pointer; border: 0; background: transparent; color: var(--cq-ink-2);
+  font: 700 14px/1 var(--cq-font); min-width: 44px; min-height: 36px; border-radius: 999px; letter-spacing: .5px; }
+.cq-lang button[aria-pressed="true"] { color: #fff; background: var(--cq-gloss), linear-gradient(180deg, #2fc0c0, #116f7f);
+  box-shadow: 0 3px 8px rgba(21, 106, 128, .3); text-shadow: 0 1px 1px rgba(0, 50, 60, .4); }
+
+/* ---------- the home's message of the day ---------- */
+.cq-motd { margin: 6px 0 14px; padding: 14px 18px 14px 20px; max-width: 760px; position: relative; z-index: 1;
+  border-left: 4px solid var(--cq-sun); border-radius: 4px 18px 18px 4px;
+  background: linear-gradient(100deg, rgba(255, 248, 225, .85), rgba(255, 255, 255, .45));
+  transition: opacity .45s var(--cq-ease); }
+.cq-motd blockquote { margin: 0; font-size: clamp(18px, 2.1vw, 23px); line-height: 1.38; font-weight: 600; color: var(--cq-ink); text-wrap: pretty; }
+.cq-motd figcaption { margin-top: 6px; font-size: 14px; color: var(--cq-ink-2); }
+.cq-motd figcaption:empty { display: none; }
+.cq-motd.cq-fade { opacity: 0; }
+
 /* ---------- glass panels ---------- */
 #cq-hero, #cq-easy .cq-easy-main, .cq-album, #layout-groups .services-group {
   background: linear-gradient(115deg, rgba(255, 255, 255, .86), rgba(243, 255, 248, .66));
@@ -241,6 +259,8 @@ body[data-cq-view="familia"] #__next, body[data-cq-view="invitado"] #__next { di
 }
 .cq-album-go .cq-en { color: #e6fbf8; font-size: 15px; }
 .cq-album-go svg { width: 22px; height: 22px; fill: currentColor; }
+.cq-album-go { max-width: 100%; box-sizing: border-box; }
+#cq-easy > * { min-width: 0; }
 .cq-album-small { margin-top: 14px !important; font-size: 14px !important; }
 
 /* ---------- Todas las apps: Homepage's own groups, restyled ---------- */

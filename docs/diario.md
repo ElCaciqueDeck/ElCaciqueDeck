@@ -4,7 +4,17 @@
 > welcome when someone arrives. Faith, family union, order, health, knowledge and courage, a little every day,
 > backed by the example of the adults at home. *La casa habla, y el ejemplo de los adultos la respalda.*
 
-**Rules this app keeps**
+**Part of the house, not an app.** Nobody installs anything or signs in to see it:
+- the **El Cacique front page** shows the message of the day under "Bienvenidos a casa" (every view, every device);
+- the **photo frames** and the **TV when idle** show the day's picture cards (from the CaciquePhotos album);
+- the **smart mirror**, the **kitchen speaker** and the **welcome home** use the same messages.
+Only the adults' page (`/admin`, under *Servidor* on the front page) is a page you open on purpose.
+
+**One language at a time.** Every screen shows Spanish **or** English, never both stacked. The front page,
+CaciqueGauges and the adults' page have an **ES | EN** switch (remembered on each device; a phone set to English starts
+in English). Each person (and *Familia* for shared screens and picture cards) has a language in **Personas**.
+
+**Rules it keeps**
 - The house's own screens and speakers only. Personal phones get messages **only through an app the person installed**
   (the Home Assistant app). Nothing is slipped into other apps or websites.
 - **Bible verses and AI-written messages wait for an adult** in the approval page before any screen shows them.
@@ -18,7 +28,8 @@
 | `diario/biblioteca/*.json` | The message library (7 themes, Spanish + English). Bible text: Reina-Valera 1909 + KJV (public domain) |
 | `diario/caciquediario.py` | The server on **port 8097**: screen page, adults' page, API, nightly job |
 | Nightly job (04:00) | Picks each person's messages (no repeats for 30 days), draws 2-3 **picture cards**, puts them in the **"Cacique Diario" album** in CaciquePhotos, removes cards older than 7 days |
-| Adults' page `/admin` | **Por aprobar** (verses, AI) · **Hoy** · **Personas** · **Recordatorios** (trash day…) · **Mis mensajes** · **Ajustes** |
+| Adults' page `/admin` | **Por aprobar** (verses, AI) · **Hoy** · **Personas** · **Recordatorios** (trash day…) · **Mis mensajes** · **Equipos y rutinas** · **Ajustes** |
+| Equipos y rutinas (off until an adult turns it on) | Every 2 min: which devices are on the home Wi-Fi (like the router's list). Name each device, say whose it is; after a few weeks it shows each person's usual weekday leave / arrive times (medians), for messages that wait for them. Data stays in `~/elcaciquedeck-data/diario/presencia/` |
 | Optional AI | If CaciqueGuía is running, it writes new messages each night; they wait in **Por aprobar** |
 
 ## Addresses (from any device at home)
@@ -27,7 +38,7 @@
 | TV / kitchen / tablet (shared) | `http://<server>:8097` |
 | One person's screen | `http://<server>:8097/?para=<person>` |
 | Smart mirror (black background) | `http://<server>:8097/?modo=espejo` |
-| Spanish only / English only | add `&idioma=es` or `&idioma=en` |
+| Force a language | add `&idioma=es`, `&idioma=en` or `&idioma=es%2Ben` (both) |
 | Change speed (seconds per message) | add `&segundos=30` |
 | For CaciqueHome / the mirror (JSON) | `/api/hoy?para=<person>` · `/api/mensaje?para=<person>&idioma=es` |
 

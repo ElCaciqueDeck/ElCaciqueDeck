@@ -35,7 +35,11 @@
 3. If time allows: **smart devices into CaciqueHome**. The Kasa plug shows as **"HS103"** in the Deeper app (confirmed);
    plus the Kasa switches (ask who installed them / which Kasa account) and the Hue bridge (button press).
 4. Then the who-owns-which-device list (Deeper app) → personal accounts for each family member.
-5. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
+5. **Nov 12 changes:** one language at a time (ES | EN switch) on the front page, CaciqueGauges and Diario; the message
+   of the day now lives **on the front page itself** (no separate app for the family); **Equipos y rutinas** (device
+   presence → each person's usual times) in Diario, off until turned on. Open item: Mom's Samsung can't open the front
+   page while the wife's phone can (diagnose: Wi-Fi name, phone's address, exact error, which browser).
+6. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
    kitchen. `bash ~/elcaciquedeck/diario/setup-diario.sh`, then `http://<server>:8097/admin`. Plan: `docs/diario.md`;
    what to buy (phases, starting with an onn 4K Pro for the TV): `docs/diario-shopping-list.md`.
 

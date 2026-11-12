@@ -330,6 +330,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .sub{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink2);margin-top:3px}
 .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .chip{font-size:15px;color:var(--ink2);background:var(--panel1);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
+.seg{display:flex;gap:4px}.seg .btn{padding:0 12px;opacity:.6}.seg .btn[aria-pressed="true"]{opacity:1;border-color:var(--aqua)}
 .btn{appearance:none;cursor:pointer;min-height:44px;padding:0 16px;border-radius:14px;font:650 15px var(--font);color:var(--ink);
  border:1px solid var(--edge);background:var(--gloss),var(--card);box-shadow:0 4px 12px rgba(21,106,128,.12)}
 /* panels */
@@ -410,49 +411,55 @@ footer.lost{color:var(--bad);font-weight:700}
 <div class="wrap">
  <header>
   <div class="brand"><span class="orb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg></span>
-   <div><div class="name">CaciqueGauges</div><div class="sub">Salud del Home Lab · <span lang="en">Home Lab health</span></div></div></div>
-  <div class="tools"><span class="chip" id="clock">—</span><button class="btn" id="unitBtn" type="button" title="Cambiar a °C · Switch to °C">°F</button><button class="btn" id="nightBtn" type="button" aria-pressed="false">🌙 Noche · Night</button></div>
+   <div><div class="name">CaciqueGauges</div><div class="sub"><span data-es="Salud del Home Lab" data-en="Home Lab health">Salud del Home Lab</span></div></div></div>
+  <div class="tools"><span class="chip" id="clock">—</span><div class="seg" role="group" aria-label="Idioma · Language"><button class="btn" type="button" data-lang="es">ES</button><button class="btn" type="button" data-lang="en">EN</button></div><button class="btn" id="unitBtn" type="button">°F</button><button class="btn" id="nightBtn" type="button" aria-pressed="false">🌙 Noche</button></div>
  </header>
 
  <section class="panel" aria-live="polite">
   <div class="verdict" id="verdict" data-v="wait">
    <div class="vicon" id="vicon" aria-hidden="true"></div>
-   <div class="vtext"><div class="vtitle" id="vtitle">Revisando… · Checking…</div>
-    <div class="vsub" id="vsub">Leyendo el estado del servidor. · Reading the server's health.</div>
+   <div class="vtext"><div class="vtitle" id="vtitle"><span data-es="Revisando…" data-en="Checking…">Revisando…</span></div>
+    <div class="vsub" id="vsub"><span data-es="Leyendo el estado del servidor." data-en="Reading the server's health.">Leyendo el estado del servidor.</span></div>
     <div class="facts" id="facts"></div></div>
   </div>
  </section>
 
  <section class="panel" aria-labelledby="h-now">
-  <h2 id="h-now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg>Ahora mismo <span class="en" lang="en">· Right now</span></h2>
+  <h2 id="h-now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg><span data-es="Ahora mismo" data-en="Right now">Ahora mismo</span></h2>
   <div class="grid" id="metrics"></div>
  </section>
 
  <section class="panel" aria-labelledby="h-drives">
-  <h2 id="h-drives"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2.5"/><path d="M7 12h.01M11 12h6"/></svg>Discos <span class="en" lang="en">· Drives</span></h2>
+  <h2 id="h-drives"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2.5"/><path d="M7 12h.01M11 12h6"/></svg><span data-es="Discos" data-en="Drives">Discos</span></h2>
   <div class="drives" id="drives"></div>
  </section>
 
  <div class="two">
   <section class="panel" aria-labelledby="h-apps">
-   <h2 id="h-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>Aplicaciones <span class="en" lang="en">· Apps</span></h2>
+   <h2 id="h-apps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span data-es="Aplicaciones" data-en="Apps">Aplicaciones</span></h2>
    <div class="apps" id="apps"></div>
   </section>
   <section class="panel" aria-labelledby="h-net">
-   <h2 id="h-net"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.8 16a4.8 4.8 0 0 1 6.4 0"/><circle cx="12" cy="19" r="1"/></svg>Conexión y equipo <span class="en" lang="en">· Connection & computer</span></h2>
+   <h2 id="h-net"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.8 16a4.8 4.8 0 0 1 6.4 0"/><circle cx="12" cy="19" r="1"/></svg><span data-es="Conexión y equipo" data-en="Connection &amp; computer">Conexión y equipo</span></h2>
    <dl class="kv" id="kv"></dl>
   </section>
  </div>
- <footer id="foot">Conectando… · Connecting…</footer>
+ <footer id="foot"><span data-es="Conectando…" data-en="Connecting…">Conectando…</span></footer>
 </div>
 <script>
 const $=id=>document.getElementById(id);
+// one language at a time (Spanish or English), remembered on this device
+let LANG="es";try{LANG=localStorage.getItem("cqLang")||((navigator.language||"es").toLowerCase().startsWith("en")?"en":"es")}catch(e){}
+const L=(es,en)=>LANG==="en"?en:es, LOC=()=>LANG==="en"?"en-US":"es-PR";
+function applyLang(){document.documentElement.lang=LANG;document.querySelectorAll("[data-es]").forEach(e=>{e.textContent=e.dataset[LANG]});
+ document.querySelectorAll(".seg [data-lang]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===LANG));}
 const ICON={ok:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',warn:'<path d="M12 7v6M12 17h.01"/>',bad:'<path d="M7 7l10 10M17 7 7 17"/>',na:'<path d="M6 12h12"/>',wait:'<path d="M12 6v6l3.5 2"/><circle cx="12" cy="12" r="8.5"/>',
  drive:'<rect x="3" y="7" width="18" height="10" rx="2.5"/><path d="M7 12h.01M11 12h6"/>'};
 const svg=(n,c)=>`<svg ${c?`class="${c}"`:""} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[n]}</svg>`;
 const WORD={ok:["Normal","Normal"],warn:["Alto","High"],bad:["Crítico","Critical"],na:["Sin sensor","No sensor"]};
-const APPNAMES={LIBRARY:"CaciqueLibrary",FLIX:"CaciqueFlix",DOCS:"CaciqueDocs",GUARD:"CaciqueGuard",NAMES:"Nombres · Names",PHOTOS:"CaciquePhotos",
- HOME:"CaciqueHome",FRONT:"Cacique (portada)",ARCADE:"CaciqueArcade",ACADEMY:"CaciqueAcademy",VAULT:"CaciqueVault"};
+const APPNAMES={LIBRARY:"CaciqueLibrary",FLIX:"CaciqueFlix",DOCS:"CaciqueDocs",GUARD:"CaciqueGuard",NAMES:["Nombres","Names"],PHOTOS:"CaciquePhotos",
+ HOME:"CaciqueHome",FRONT:["Cacique (portada)","Cacique (front page)"],ARCADE:"CaciqueArcade",ACADEMY:"CaciqueAcademy",VAULT:"CaciqueVault"};
+const appName=k=>{const a=APPNAMES[k];return Array.isArray(a)?L(...a):(a||k)};
 const HIST={cpu:[],temp:[],ram:[],net:[]}, KEEP=300;   // last 5 minutes, one reading per second
 const lvl=(v,w,b)=>v==null||isNaN(v)?"na":v>=b?"bad":v>=w?"warn":"ok";
 
@@ -463,16 +470,16 @@ function spark(arr,max){
  return`<svg class="spark" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true"><polygon class="area" points="${x(0)},46 ${pts} ${x(n-1)},46"/><polyline class="line" points="${pts}"/></svg>`;
 }
 function card(id,label,en,value,unit,pct,s,detail,hist,max){
- const st=WORD[s];
- return`<article class="card" data-s="${s}" aria-label="${label} ${value==null?"":value+unit}, ${st[0]}">
-  <div class="ctop"><span class="clabel">${label}<span class="en" lang="en">${en}</span></span><span class="state">${svg(s)}${st[0]} <span lang="en">· ${st[1]}</span></span></div>
+ const st=L(...WORD[s]), name=L(label,en);
+ return`<article class="card" data-s="${s}" aria-label="${name} ${value==null?"":value+unit}, ${st}">
+  <div class="ctop"><span class="clabel">${name}</span><span class="state">${svg(s)}${st}</span></div>
   <div class="big">${value==null?"—":value}<small>${value==null?"":unit}</small></div>
   ${pct==null?"":`<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><div class="fill" style="width:${Math.max(0,Math.min(100,pct))}%"></div></div>`}
   <div class="detail">${detail||""}</div>
-  ${hist?spark(hist,max)+`<div class="sparkcap"><span>${since(hist.length)}</span><span>ahora · now</span></div>`:""}
+  ${hist?spark(hist,max)+`<div class="sparkcap"><span>${since(hist.length)}</span><span>${L("ahora","now")}</span></div>`:""}
  </article>`;
 }
-function since(n){return n>=KEEP?"hace 5 min · 5 min ago":n<60?`hace ${n} s · ${n} s ago`:`hace ${Math.floor(n/60)} min · ${Math.floor(n/60)} min ago`}
+function since(n){const t=n>=KEEP?"5 min":n<60?n+" s":Math.floor(n/60)+" min";return L("hace "+t,t+" ago")}
 function upFmt(s){const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
  return(d?d+" d ":"")+h+" h "+m+" min";}
 function push(k,v){if(v==null||isNaN(v))return;HIST[k].push(v);if(HIST[k].length>KEEP)HIST[k].shift();}
@@ -489,59 +496,61 @@ async function tick(){
   const cS=lvl(s.cpu,70,90), tS=lvl(s.temp,70,85), rS=lvl(s.ram_pct,80,92);
   const bS=b.pct==null?"na":(b.pct<15&&!b.ac?"bad":b.pct<30&&!b.ac?"warn":"ok");
   let M="";
-  M+=card("cpu","Procesador","CPU",Math.round(s.cpu),"%",s.cpu,cS,`Carga · Load ${s.load[0]} · ${s.cores} núcleos · cores`,HIST.cpu,100);
+  M+=card("cpu","Procesador","CPU",Math.round(s.cpu),"%",s.cpu,cS,L(`Carga ${s.load[0]} · ${s.cores} núcleos`,`Load ${s.load[0]} · ${s.cores} cores`),HIST.cpu,100);
   M+=card("temp","Temperatura","Temperature",s.temp==null?null:Math.round(FAHR?s.temp*9/5+32:s.temp),FAHR?"°F":"°C",s.temp==null?null:Math.min(100,(s.temp-30)/(95-30)*100),tS,
-   s.temp==null?"Este equipo no muestra la temperatura · No sensor":(s.temp<70?"Cómodo · Comfortable":s.temp<85?"Caliente: revisa la ventilación · Warm: check airflow":"Muy caliente · Very hot"),HIST.temp,95);
-  M+=card("ram","Memoria","Memory",Math.round(s.ram_pct),"%",s.ram_pct,rS,`${s.ram_used_gb} de ${s.ram_total_gb} GB en uso · in use`,HIST.ram,100);
+   s.temp==null?L("Este equipo no muestra la temperatura","No temperature sensor"):(s.temp<70?L("Cómodo","Comfortable"):s.temp<85?L("Caliente: revisa la ventilación","Warm: check the airflow"):L("Muy caliente","Very hot")),HIST.temp,95);
+  M+=card("ram","Memoria","Memory",Math.round(s.ram_pct),"%",s.ram_pct,rS,L(`${s.ram_used_gb} de ${s.ram_total_gb} GB en uso`,`${s.ram_used_gb} of ${s.ram_total_gb} GB in use`),HIST.ram,100);
   M+=card("net","Red","Network",net,"Mbps",null,s.link?"ok":"bad",`↓ ${s.rx.toFixed(1)} · ↑ ${s.tx.toFixed(1)} Mbps`,HIST.net,null);
-  M+=card("bat",b.ac===false?"Batería":"Corriente","Power",b.pct,"%",b.pct,bS,
-   b.pct==null?"Sin batería · No battery":({Charging:"Cargando · Charging",Discharging:"Usando la batería · On battery",Full:"Llena · Full","Not charging":"Conectada · Plugged in"}[b.status]||b.status||"")+(b.watts?` · ${b.watts} W`:""),null);
+  M+=card("bat",b.ac===false?"Batería":"Corriente",b.ac===false?"Battery":"Power",b.pct,"%",b.pct,bS,
+   b.pct==null?L("Sin batería","No battery"):(({Charging:["Cargando","Charging"],Discharging:["Usando la batería","On battery"],Full:["Llena","Full"],"Not charging":["Conectada","Plugged in"]}[b.status]||[b.status||"",b.status||""])[LANG==="en"?1:0])+(b.watts?` · ${b.watts} W`:""),null);
   if(s.fan!=null)M+=card("fan","Ventilador","Fan",s.fan,"RPM",Math.min(100,s.fan/60),lvl(s.fan,4500,5500),"",null);
   $("metrics").innerHTML=M;
 
-  $("drives").innerHTML=d.length?d.map(x=>{const ds=lvl(x.pct,85,95);const nm=x.name==="SYSTEM"?"Sistema · System":x.name.charAt(0)+x.name.slice(1).toLowerCase();
+  $("drives").innerHTML=d.length?d.map(x=>{const ds=lvl(x.pct,85,95);const nm=x.name==="SYSTEM"?L("Sistema","System"):x.name.charAt(0)+x.name.slice(1).toLowerCase();
    return`<div class="drive" data-s="${ds}"><span class="dicon">${svg("drive")}</span><div class="dtext"><div class="dname">${nm}</div>
     <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${x.pct}" aria-label="${nm} ${x.pct}%"><div class="fill" style="width:${x.pct}%"></div></div>
-    <div class="dfree">${x.free_gb.toLocaleString("es")} GB libres de ${x.total_gb.toLocaleString("es")} GB · ${x.pct}% usado · used</div></div></div>`}).join("")
-   :'<p class="dfree">No se ven discos · No drives found</p>';
+    <div class="dfree">${L(`${x.free_gb.toLocaleString("es")} GB libres de ${x.total_gb.toLocaleString("es")} GB · ${x.pct}% usado`,`${x.free_gb.toLocaleString("en")} GB free of ${x.total_gb.toLocaleString("en")} GB · ${x.pct}% used`)}</div></div></div>`}).join("")
+   :`<p class="dfree">${L("No se ven discos","No drives found")}</p>`;
 
   const svc=s.services||{};let A="",down=0,tot=0;
   for(const k in svc){tot++;if(!svc[k])down++;
-   A+=`<div class="app ${svc[k]?"up":"down"}"><span class="dot">${svg(svc[k]?"ok":"na")}</span><div><b>${APPNAMES[k]||k}</b><span>${svc[k]?"En línea · Online":"Apagada · Off"}</span></div></div>`;}
+   A+=`<div class="app ${svc[k]?"up":"down"}"><span class="dot">${svg(svc[k]?"ok":"na")}</span><div><b>${appName(k)}</b><span>${svc[k]?L("En línea","Online"):L("Apagada","Off")}</span></div></div>`;}
   $("apps").innerHTML=A;
 
-  $("kv").innerHTML=`<dt>Red de la casa · LAN</dt><dd>${s.link?"Conectada · Connected":"Sin conexión · Disconnected"}</dd>
-   <dt>Internet</dt><dd>${s.internet==null?"Revisando…":s.internet?"Sí · Yes":"No (la casa funciona igual) · No"}</dd>
-   <dt>Dirección · Address</dt><dd>${s.ip||"—"}</dd><dt>Conexión · Interface</dt><dd>${s.iface?(s.iface.startsWith("wl")?"Wi-Fi ("+s.iface+")":"Cable ("+s.iface+")"):"—"}</dd>
-   <dt>Equipo · Computer</dt><dd>${s.host}</dd><dt>Encendido · Up</dt><dd>${upFmt(s.uptime)}</dd>`;
+  $("kv").innerHTML=`<dt>${L("Red de la casa","Home network")}</dt><dd>${s.link?L("Conectada","Connected"):L("Sin conexión","Disconnected")}</dd>
+   <dt>Internet</dt><dd>${s.internet==null?L("Revisando…","Checking…"):s.internet?L("Sí","Yes"):L("No (la casa funciona igual)","No (the home still works)")}</dd>
+   <dt>${L("Dirección","Address")}</dt><dd>${s.ip||"—"}</dd><dt>${L("Conexión","Interface")}</dt><dd>${s.iface?(s.iface.startsWith("wl")?"Wi-Fi ("+s.iface+")":"Cable ("+s.iface+")"):"—"}</dd>
+   <dt>${L("Equipo","Computer")}</dt><dd>${s.host}</dd><dt>${L("Encendido","Up")}</dt><dd>${upFmt(s.uptime)}</dd>`;
 
   // the one-line verdict
   const worst=[cS,tS,rS,bS,s.link?"ok":"bad",...d.map(x=>lvl(x.pct,85,95))];
   const v=worst.includes("bad")?"bad":worst.includes("warn")?"warn":"ok";
   const T={ok:["Todo funciona bien","Everything is running well"],warn:["Funciona, pero algo necesita atención","Running, but something needs attention"],bad:["Hay un problema","There's a problem"]}[v];
   $("verdict").dataset.v=v;$("vicon").innerHTML=svg(v);
-  $("vtitle").innerHTML=`${T[0]} <span class="en" lang="en">· ${T[1]}</span>`;
-  $("vsub").textContent=v==="ok"?"Procesador, temperatura, memoria y discos en niveles normales. · CPU, temperature, memory and drives are normal."
-   :"Mira las tarjetas marcadas en amarillo o rojo. · Look at the cards marked yellow or red.";
-  $("facts").innerHTML=`<span>Aplicaciones · Apps: <b>${tot-down} de ${tot} en línea</b></span><span>Encendido · Up: <b>${upFmt(s.uptime)}</b></span><span>Internet: <b>${s.internet?"Sí · Yes":s.internet==null?"…":"No"}</b></span>`;
-  const f=$("foot");f.className="";f.textContent=`En vivo · Live · actualizado ${s.time} · Lecturas guardadas cada minuto en ~/deck-logs`;
+  $("vtitle").textContent=L(...T);
+  $("vsub").textContent=v==="ok"?L("Procesador, temperatura, memoria y discos en niveles normales.","CPU, temperature, memory and drives are normal.")
+   :L("Mira las tarjetas marcadas en amarillo o rojo.","Look at the cards marked yellow or red.");
+  $("facts").innerHTML=`<span>${L("Aplicaciones","Apps")}: <b>${L(`${tot-down} de ${tot} en línea`,`${tot-down} of ${tot} online`)}</b></span><span>${L("Encendido","Up")}: <b>${upFmt(s.uptime)}</b></span><span>Internet: <b>${s.internet?L("Sí","Yes"):s.internet==null?"…":"No"}</b></span>`;
+  const f=$("foot");f.className="";f.textContent=L(`En vivo · actualizado ${s.time} · lecturas guardadas cada minuto en ~/deck-logs`,`Live · updated ${s.time} · readings saved every minute in ~/deck-logs`);
  }catch(e){
-  if(++lost>=3){const f=$("foot");f.className="lost";f.textContent="Sin señal del servidor: revisa la corriente, la red o la computadora. · No signal: check power, network or the computer.";
-   $("verdict").dataset.v="bad";$("vicon").innerHTML=svg("bad");$("vtitle").textContent="Sin señal · No signal";}
+  if(++lost>=3){const f=$("foot");f.className="lost";f.textContent=L("Sin señal del servidor: revisa la corriente, la red o la computadora.","No signal from the server: check the power, the network or the computer.");
+   $("verdict").dataset.v="bad";$("vicon").innerHTML=svg("bad");$("vtitle").textContent=L("Sin señal","No signal");}
  }
 }
-function clock(){const n=new Date();let t;try{t=n.toLocaleDateString("es-PR",{weekday:"long",day:"numeric",month:"long"})+" · "+n.toLocaleTimeString("es-PR",{hour:"numeric",minute:"2-digit"})}catch(e){t=n.toString()}
+function clock(){const n=new Date();let t;try{t=n.toLocaleDateString(LOC(),{weekday:"long",day:"numeric",month:"long"})+" · "+n.toLocaleTimeString(LOC(),{hour:"numeric",minute:"2-digit"})}catch(e){t=n.toString()}
  $("clock").textContent=t.charAt(0).toUpperCase()+t.slice(1);}
-function night(on,save){document.body.classList.toggle("night",on);$("nightBtn").setAttribute("aria-pressed",on);$("nightBtn").textContent=on?"☀️ Día · Day":"🌙 Noche · Night";
+function night(on,save){document.body.classList.toggle("night",on);$("nightBtn").setAttribute("aria-pressed",on);$("nightBtn").textContent=on?L("☀️ Día","☀️ Day"):L("🌙 Noche","🌙 Night");
  if(save)try{localStorage.setItem("gaugesNight",on?"1":"0")}catch(e){}}
 // Puerto Rico reads °F; one tap switches to °C (remembered on this device)
 let FAHR=true;try{FAHR=localStorage.getItem("gaugesUnit")!=="C"}catch(e){}
-function unitLabel(){$("unitBtn").textContent=FAHR?"°F":"°C";$("unitBtn").title=FAHR?"Cambiar a °C · Switch to °C":"Cambiar a °F · Switch to °F";}
+function unitLabel(){$("unitBtn").textContent=FAHR?"°F":"°C";$("unitBtn").title=FAHR?L("Cambiar a °C","Switch to °C"):L("Cambiar a °F","Switch to °F");}
 $("unitBtn").onclick=()=>{FAHR=!FAHR;try{localStorage.setItem("gaugesUnit",FAHR?"F":"C")}catch(e){}unitLabel();tick();};
 unitLabel();
 $("nightBtn").onclick=()=>night(!document.body.classList.contains("night"),true);
 let n0=false;try{n0=localStorage.getItem("gaugesNight")==="1"}catch(e){}
-night(n0,false);$("vicon").innerHTML=svg("wait");clock();setInterval(clock,30000);tick();setInterval(tick,1000);
+document.querySelectorAll(".seg [data-lang]").forEach(b=>b.onclick=()=>{LANG=b.dataset.lang;try{localStorage.setItem("cqLang",LANG)}catch(e){}
+ applyLang();unitLabel();night(document.body.classList.contains("night"),false);clock();tick();});
+applyLang();night(n0,false);$("vicon").innerHTML=svg("wait");clock();setInterval(clock,30000);tick();setInterval(tick,1000);
 </script>
 </body></html>"""
 

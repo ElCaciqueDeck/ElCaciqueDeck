@@ -81,13 +81,6 @@
         description: Luces y casa inteligente · Smart home & lights
         siteMonitor: http://127.0.0.1:8123
 
-    - Cacique Diario:
-        # needs: diario/.env
-        icon: /icons/diario.svg
-        href: http://{{HOMEPAGE_VAR_IP}}:8097
-        description: El mensaje del día de la casa · The home's message of the day
-        siteMonitor: http://127.0.0.1:8097/health
-
     - CaciqueCalendar:
         # needs: calendar/.env
         icon: /icons/calendar.svg
@@ -142,3 +135,10 @@
         href: https://{{HOMEPAGE_VAR_IP}}:8443
         description: Contraseñas de los adultos · Adults' password safe
         siteMonitor: http://127.0.0.1:8222/alive
+
+    - Cacique Diario:
+        # needs: diario/.env
+        icon: /icons/diario.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8097/admin
+        description: Mensajes de la casa (adultos) · Home messages (adults)
+        siteMonitor: http://127.0.0.1:8097/health
