@@ -39,7 +39,13 @@
    of the day now lives **on the front page itself** (no separate app for the family); **Equipos y rutinas** (device
    presence → each person's usual times) in Diario, off until turned on. Open item: Mom's Samsung can't open the front
    page while the wife's phone can (diagnose: Wi-Fi name, phone's address, exact error, which browser).
-6. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
+6. **Nov 13:** Mom's Samsung **opens the front page** (via Chrome) and every active app was checked with her →
+   3 of 4 family members confirmed. Proton (ElCaciqueDeck's email) asks for a second password after the Ledger key:
+   set aside, resolve later (Forgot password / recovery phrase; El Cacique and GitHub pushes are not affected).
+   **This weekend (Jay's pace):** write the passwords in the notebook (`tools/show-passwords.sh --admin / --people / --other`),
+   check whether Jay is on the adults list (add with `accounts/people.sh add <login> Jay` + `create-accounts.sh`),
+   then test ElCaciqueAdmin and Jay's account app by app, so he can teach the family.
+7. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
    kitchen. `bash ~/elcaciquedeck/diario/setup-diario.sh`, then `http://<server>:8097/admin`. Plan: `docs/diario.md`;
    what to buy (phases, starting with an onn 4K Pro for the TV): `docs/diario-shopping-list.md`.
 
