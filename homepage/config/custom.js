@@ -38,7 +38,7 @@
   // CaciqueLibrary / CaciqueAcademy can be added to Familia once their content has been checked for kids.
   var VIEWS = {
     todas: { es: "Todas las apps", en: "All apps", icon: "grid" },
-    familia: { es: "Familia", en: "Family", icon: "family", apps: ["CaciqueFlix", "Familia Abierta", "CaciqueArcade"],
+    familia: { es: "Familia", en: "Family", icon: "family", apps: ["CaciqueFlix", "Familia Abierta", "CaciqueArcade", "Cacique Raíces"],
       title: ["Para la familia", "For the family"], sub: ["Toca un botón grande", "Tap a big button"] },
     invitado: { es: "Invitado", en: "Guest", icon: "guest", apps: ["CaciqueFlix", "Familia Abierta", "CaciqueArcade"],
       title: ["Para las visitas", "For our guests"], sub: ["Lo que compartimos contigo", "What we share with you"] },
@@ -50,6 +50,7 @@
     "CaciqueArcade": ["Juegos", "Games"],
     "CaciqueLibrary": ["Aprende y lee", "Learn & read"],
     "CaciqueAcademy": ["Aprende jugando", "Learn by playing"],
+    "Cacique Raíces": ["Nuestra historia", "Our story"],
   };
   var STATUS = {
     up: ["En línea", "Online"],

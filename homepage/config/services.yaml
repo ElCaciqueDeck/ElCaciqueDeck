@@ -46,6 +46,13 @@
         description: Fotos para visitas, en presentación · Family Open photos slideshow
         siteMonitor: http://127.0.0.1:2283
 
+    - Cacique Raíces:
+        # needs: raices/.env
+        icon: /icons/raices.svg
+        href: http://{{HOMEPAGE_VAR_IP}}:8098
+        description: Nuestra historia familiar · Our family story
+        siteMonitor: http://127.0.0.1:8098/health
+
     - CaciqueSync:
         # needs: ~/elcaciquedeck-data/sync.enabled
         icon: /icons/sync.svg

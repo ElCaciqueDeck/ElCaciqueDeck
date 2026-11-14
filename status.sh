@@ -16,7 +16,7 @@ line "SERVER" "STATUS" "ADDRESS"
 line "------" "------" "-------"
 for s in "Cacique:80" "CaciqueLibrary:8080" "CaciqueFlix:8096" "CaciqueDocs:8000" "CaciquePhotos:2283" \
          "CaciqueHome:8123" "CaciqueArcade:8090" "CaciqueAcademy:8095" "CaciqueDash:8888" "CaciqueGuard:3000" "CaciqueVault:8222" \
-         "CaciqueCalendar:5232" "CaciqueSync:8384" "CaciqueCams:5000" "CaciqueGuia:8070" "CaciqueFinanzas:5006" "FinanzasCoach:8075" "CaciqueOffice:8085" "CaciqueDiario:8097"; do
+         "CaciqueCalendar:5232" "CaciqueSync:8384" "CaciqueCams:5000" "CaciqueGuia:8070" "CaciqueFinanzas:5006" "FinanzasCoach:8075" "CaciqueOffice:8085" "CaciqueDiario:8097" "CaciqueRaices:8098"; do
     name="${s%%:*}"; port="${s#*:}"
     # the newer apps are only listed once they are installed
     case "$name" in
@@ -26,6 +26,7 @@ for s in "Cacique:80" "CaciqueLibrary:8080" "CaciqueFlix:8096" "CaciqueDocs:8000
         CaciqueFinanzas|FinanzasCoach) [ -f "$(dirname "$0")/finanzas/.env" ] || continue ;;
         CaciqueOffice)   [ -f "$(dirname "$0")/office/.env" ] || continue ;;
         CaciqueDiario)   [ -f "$(dirname "$0")/diario/.env" ] || continue ;;
+        CaciqueRaices)   [ -f "$(dirname "$0")/raices/.env" ] || continue ;;
         CaciqueSync)     [ -f "$HOME/elcaciquedeck-data/sync.enabled" ] || continue ;;
     esac
     addr="http://${IP:-<laptop>}"; [ "$port" != "80" ] && addr="$addr:$port"

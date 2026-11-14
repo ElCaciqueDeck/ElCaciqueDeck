@@ -19,6 +19,7 @@ fi
 pkill -f "[c]aciqueguia.py" && echo "  CaciqueGuía stopped"
 pkill -f "[c]aciquefinanzas.py" && echo "  CaciqueFinanzas coach stopped"
 pkill -f "[c]aciquediario.py" && echo "  Cacique Diario stopped"
+pkill -f "[c]aciqueraices.py" && echo "  Cacique Raíces stopped"
 pkill -x syncthing && echo "  CaciqueSync stopped"
 flatpak kill org.jellyfin.JellyfinServer 2>/dev/null && echo "  CaciqueFlix stopped"
 pkill -x kiwix-serve && echo "  CaciqueLibrary stopped"

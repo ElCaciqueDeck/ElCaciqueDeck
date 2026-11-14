@@ -45,7 +45,10 @@
    **This weekend (Jay's pace):** write the passwords in the notebook (`tools/show-passwords.sh --admin / --people / --other`),
    check whether Jay is on the adults list (add with `accounts/people.sh add <login> Jay` + `create-accounts.sh`),
    then test ElCaciqueAdmin and Jay's account app by app, so he can teach the family.
-7. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
+7. **Nov 14:** **Cacique Raíces** built (the family's encyclopedia: biographies, photos, life journal, timeline, printable
+   book; family code + personal PINs): `bash ~/elcaciquedeck/raices/setup-raices.sh`, plan in `docs/raices.md`.
+   Deeper Connect Mini settings recorded in `docs/deeper.md`.
+8. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
    kitchen. `bash ~/elcaciquedeck/diario/setup-diario.sh`, then `http://<server>:8097/admin`. Plan: `docs/diario.md`;
    what to buy (phases, starting with an onn 4K Pro for the TV): `docs/diario-shopping-list.md`.
 

@@ -132,6 +132,7 @@ if "other" in want:
     print("\n  3. OTROS / OTHER")
     print("  " + "-" * 74)
     items = [("Cacique Diario (adultos)", "http://%s:8097/admin" % HOST, read(os.path.join(ACC, "diario-password.txt"))),
+             ("Cacique Raíces (adultos)", "http://%s:8098/admin" % HOST, read(os.path.join(ACC, "raices-password.txt"))),
              ("Llave del Diario / Diario key", "(papel o USB en la caja fuerte / paper or USB in the safe)",
               read(os.path.join(DATA, "keys", "diario.key"))),
              ("CaciqueVault /admin key", "https://%s:8443/admin" % HOST, read(os.path.join(ACC, "vaultwarden-admin-token.txt"))),

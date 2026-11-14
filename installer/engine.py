@@ -57,6 +57,7 @@ APPS = [
     ("office",   "CaciqueOffice",   "LibreOffice en el navegador + archivos de cada uno (pesada: ~12 GB)", "LibreOffice in the browser + everyone's files (heavy: ~12 GB)", 1, 3.0),
     ("finanzas", "CaciqueFinanzas", "Presupuesto de la familia + coach con IA (Actual Budget)", "Family budget + AI money coach (Actual Budget)", 1, 0.4),
     ("diario",   "Cacique Diario",  "El mensaje del día: fe, familia, orden y salud en las pantallas", "Message of the day: faith, family, order and health on the screens", 1, 0.02),
+    ("raices",   "Cacique Raíces",  "La enciclopedia de la familia: biografías, fotos y diario de vida", "The family's encyclopedia: biographies, photos and life journal", 1, 0.02),
     ("sync",     "CaciqueSync",     "Nuestra propia Dropbox (Syncthing)", "Our own Dropbox (Syncthing)", 1, 0.05),
     ("guide",    "CaciqueGuía",     "IA local que ayuda a cuidar el Lab (Ollama)", "Local AI that helps care for the Lab (Ollama)", 1, 3.0),
     ("cams",     "CaciqueCams",     "Cámaras: graba aquí y borra a los 90 días (Frigate)", "Cameras: record here, delete after 90 days (Frigate)", 2, 1.5),
@@ -201,7 +202,7 @@ def existing_install():
     found = []
     for key, path in [("names", "adguard/conf"), ("front", "homepage/.env"), ("docs", "paperless/.env"),
                       ("photos", "immich/.env"), ("home", "homeassistant/.env"), ("arcade", "arcade/.env"),
-                      ("vault", "vaultwarden/.env"), ("calendar", "calendar/.env"), ("cams", "cameras/.env"), ("finanzas", "finanzas/.env"), ("office", "office/.env"), ("diario", "diario/.env"),
+                      ("vault", "vaultwarden/.env"), ("calendar", "calendar/.env"), ("cams", "cameras/.env"), ("finanzas", "finanzas/.env"), ("office", "office/.env"), ("diario", "diario/.env"), ("raices", "raices/.env"),
                       ("guide", "guide/.env")]:
         if os.path.exists(os.path.join(REPO, path)):
             found.append(key)
@@ -531,6 +532,8 @@ class Installer:
                                             env={"CQ_FORCE": "0" if engine_fits("office") else "1"})))
         if "diario" in a:
             out.append((("Cacique Diario", "Cacique Diario"), lambda: self.script("diario/setup-diario.sh")))
+        if "raices" in a:
+            out.append((("Cacique Raíces", "Cacique Raíces"), lambda: self.script("raices/setup-raices.sh")))
         if "sync" in a:
             out.append((("CaciqueSync", "CaciqueSync"), self.s_sync))
         if "cams" in a:
