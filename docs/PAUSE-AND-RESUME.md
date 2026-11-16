@@ -48,7 +48,10 @@
 7. **Nov 14:** **Cacique Raíces** built (the family's encyclopedia: biographies, photos, life journal, timeline, printable
    book; family code + personal PINs): `bash ~/elcaciquedeck/raices/setup-raices.sh`, plan in `docs/raices.md`.
    Deeper Connect Mini settings recorded in `docs/deeper.md`.
-8. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
+8. **Nov 16: full review** → `docs/AUDIT-2026-11-16.md`. New: `tools/backup.sh` (first backup of the Vault) and
+   `tools/care.sh` (weekly check-up; `--fix` for battery conservation mode, log limits, drive health, security updates).
+   Biggest advice: UPS + cable first; start with one strong M720q + one backup node instead of a 3-node cluster.
+9. **Cacique Diario** (built Nov 11–12, ready to install): the home's message of the day on frames, idle TV, mirror and
    kitchen. `bash ~/elcaciquedeck/diario/setup-diario.sh`, then `http://<server>:8097/admin`. Plan: `docs/diario.md`;
    what to buy (phases, starting with an onn 4K Pro for the TV): `docs/diario-shopping-list.md`.
 
